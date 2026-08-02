@@ -1306,9 +1306,8 @@ tr:hover td { background: var(--gray-50); }
       <div class="gold-bar"></div>
     </div>
     <h2>Sign in to your account</h2>
-    <div class="form-group">
-      <label>Username</label>
-      <input type="text" id="loginUser" autocomplete="off" placeholder="Enter your username">
+    <div class="form-group" style="display:none">
+      <input type="hidden" id="loginUser" value="">
     </div>
     <div class="form-group">
       <label>Password</label>
@@ -3941,20 +3940,17 @@ function doLogin() {
   };
 
   const cred = CREDENTIALS[role];
-  if (!cred || pass !== cred.password || (user && user !== cred.username && user !== '')) {
-    // If username provided, both must match. If no username, only password checked.
-    if (user && user.trim() !== '' && user !== cred.username) {
-      errEl.style.display='block';
-      errEl.textContent='Incorrect username for this role.';
-      setTimeout(()=>errEl.style.display='none',3500);
-      return;
-    }
-    if (pass !== cred.password) {
-      errEl.style.display='block';
-      errEl.textContent='Incorrect password. Please try again.';
-      setTimeout(()=>errEl.style.display='none',3500);
-      return;
-    }
+  if (!cred) {
+    errEl.style.display='block';
+    errEl.textContent='Invalid role selected.';
+    setTimeout(()=>errEl.style.display='none',3500);
+    return;
+  }
+  if (pass !== cred.password) {
+    errEl.style.display='block';
+    errEl.textContent='Incorrect password. Please try again.';
+    setTimeout(()=>errEl.style.display='none',3500);
+    return;
   }
 
   const roleLabels = {
@@ -4792,6 +4788,9 @@ function openAddRisk() { openModal('modalAddRisk'); }
 // =================== INIT ===================
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('loginPass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('loginRole').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();
   });
 });
@@ -7630,20 +7629,17 @@ function doLogin() {
   };
 
   const cred = CREDENTIALS[role];
-  if (!cred || pass !== cred.password || (user && user !== cred.username && user !== '')) {
-    // If username provided, both must match. If no username, only password checked.
-    if (user && user.trim() !== '' && user !== cred.username) {
-      errEl.style.display='block';
-      errEl.textContent='Incorrect username for this role.';
-      setTimeout(()=>errEl.style.display='none',3500);
-      return;
-    }
-    if (pass !== cred.password) {
-      errEl.style.display='block';
-      errEl.textContent='Incorrect password. Please try again.';
-      setTimeout(()=>errEl.style.display='none',3500);
-      return;
-    }
+  if (!cred) {
+    errEl.style.display='block';
+    errEl.textContent='Invalid role selected.';
+    setTimeout(()=>errEl.style.display='none',3500);
+    return;
+  }
+  if (pass !== cred.password) {
+    errEl.style.display='block';
+    errEl.textContent='Incorrect password. Please try again.';
+    setTimeout(()=>errEl.style.display='none',3500);
+    return;
   }
 
   const roleLabels = {
@@ -8481,6 +8477,9 @@ function openAddRisk() { openModal('modalAddRisk'); }
 // =================== INIT ===================
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('loginPass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('loginRole').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();
   });
 });
