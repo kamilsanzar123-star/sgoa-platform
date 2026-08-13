@@ -275,6 +275,12 @@ tbody tr:hover td{background:var(--g50);}
 .cbf{height:100%;border-radius:4px;background:var(--navy);}
 .cbv{font-size:12px;font-weight:600;color:var(--g600);width:38px;}
 .empty{text-align:center;color:var(--g400);padding:24px;font-size:13px;}
+#print-doc{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  #print-doc,#print-doc *{visibility:visible;}
+  #print-doc{display:block;position:absolute;top:0;left:0;width:100%;padding:30px;}
+}
 .clk{cursor:pointer;}
 .clk:hover{opacity:.8;}
 </style>
@@ -290,19 +296,7 @@ tbody tr:hover td{background:var(--g50);}
     <h2>Sign in to your account</h2>
     <div class="lf"><label>Username</label><input type="text" id="lu" autocomplete="off" placeholder="Enter username"></div>
     <div class="lf"><label>Password</label><input type="password" id="lp" placeholder="Enter password"></div>
-    <div class="lf"><label>Department / Role</label>
-      <select id="lr">
-        <option value="executive">Executive Director</option>
-        <option value="meal" selected>MEAL Head</option>
-        <option value="finance">Finance Head</option>
-        <option value="hr">HR Head</option>
-        <option value="programs">Programs Head</option>
-        <option value="supply">Supply Chain Head</option>
-        <option value="admin">Administration Head</option>
-        <option value="safeguarding">Safeguarding Head</option>
-        <option value="operations">Operations Head</option>
-      </select>
-    </div>
+    <select id="lr" style="display:none"><option value="meal">meal</option></select>
     <button class="lbtn" onclick="doLogin()">Sign In</button>
     <div class="lerr" id="lerr"></div>
     <div class="lhint">
@@ -323,6 +317,7 @@ tbody tr:hover td{background:var(--g50);}
     </div>
     <div class="nright">
       <div class="nuser"><div class="nav-av" id="uav">KS</div><div><div class="nuname" id="unm">Kamil Sanzar</div><div class="nurole" id="url">Head of MEAL</div></div></div>
+      <button class="nlogout" id="nb-back" style="display:none" onclick="goBack()">&larr; Back</button>
       <button class="nlogout" onclick="doLogout()">Sign Out</button>
     </div>
   </nav>
@@ -441,8 +436,12 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- ========= PROJECTS LIST ========= -->
 <div class="pg" id="p-projects">
-  <div class="ph"><div><h1>Project Portfolio</h1><p>All active SGOA projects — click any project for full details</p></div>
-  <div class="pha"><button class="b bn bs" onclick="openM('m-project')">+ Add Project</button></div></div>
+  <div class="ph"><div><h1>Project Portfolio</h1><p>All active SGOA projects &mdash; click any project for full details</p></div>
+  <div class="pha" id="project-add-btn"></div></div>
+  <div class="cd" id="pending-projects-card" style="display:none">
+    <div class="cdh"><div class="cdt">Pending Executive Approval</div></div>
+    <div class="cdb" id="pending-projects-list"></div>
+  </div>
   <div id="project-cards"></div>
 </div>
 
@@ -458,11 +457,12 @@ tbody tr:hover td{background:var(--g50);}
   <div class="ph"><div><h1>All Tasks — Live View</h1><p>Every task from every department, updated in real time</p></div>
   <div class="pha"><button class="b bo bs" onclick="go('exec')">Back</button><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div></div>
   <div class="stats" style="grid-template-columns:repeat(4,1fr)">
-    <div class="st rd"><div class="stl">Overdue</div><div class="stv" id="t-overdue">0</div></div>
-    <div class="st og"><div class="stl">High Priority</div><div class="stv" id="t-high">0</div></div>
-    <div class="st bl"><div class="stl">Open</div><div class="stv" id="t-open">0</div></div>
-    <div class="st gr"><div class="stl">Completed</div><div class="stv" id="t-done">0</div></div>
+    <div class="st rd clk" data-taskfilter="overdue"><div class="stl">Overdue (click to view)</div><div class="stv" id="t-overdue">0</div></div>
+    <div class="st og clk" data-taskfilter="high"><div class="stl">High Priority (click to view)</div><div class="stv" id="t-high">0</div></div>
+    <div class="st bl clk" data-taskfilter="open"><div class="stl">Open (click to view)</div><div class="stv" id="t-open">0</div></div>
+    <div class="st gr clk" data-taskfilter="done"><div class="stl">Completed (click to view)</div><div class="stv" id="t-done">0</div></div>
   </div>
+  <div id="task-filter-active" style="display:none;font-size:12px;padding:8px 12px;background:var(--g50);border-radius:7px;margin-bottom:12px"></div>
   <div class="cd">
     <div class="cdh"><div class="cdt">Task Register</div>
       <div style="display:flex;gap:7px">
@@ -480,8 +480,8 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- ========= ALL CHALLENGES ========= -->
 <div class="pg" id="p-all-challenges">
-  <div class="ph"><div><h1>Challenges, Findings & Alerts</h1><p>Full detail — department, owner, actions taken, resolution progress</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('exec')">Back</button><button class="b bn bs" onclick="openM('m-finding')">+ Add Finding</button></div></div>
+  <div class="ph"><div><h1>Challenges, Findings & Alerts</h1><p>Review department findings and give feedback \u2014 findings are raised by departments, not the Director</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('exec')">Back</button></div></div>
   <div class="stats" style="grid-template-columns:repeat(4,1fr)">
     <div class="st rd"><div class="stl">Critical</div><div class="stv" id="ch-crit">0</div></div>
     <div class="st og"><div class="stl">Major</div><div class="stv" id="ch-major">0</div></div>
@@ -810,6 +810,88 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdb tw"><table><thead><tr><th>Date</th><th>Item</th><th>Project</th><th>District</th><th>Beneficiaries</th><th>Status</th></tr></thead><tbody id="dist-body"></tbody></table></div></div>
 </div>
 
+
+<div class="pg" id="p-roadmap">
+  <div class="ph"><div><h1>Project Roadmap</h1><p>Full lifecycle from design to close-out, with your department's activities highlighted</p></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Select Project</div>
+    <select id="rm-proj" onchange="renderRoadmap()" style="font-size:12px;padding:6px 10px;border:1px solid var(--g200);border-radius:6px;font-family:inherit;min-width:200px"></select>
+  </div></div>
+  <div id="rm-body"></div>
+</div>
+
+
+<div class="pg" id="p-raise-pr">
+  <div class="ph"><div><h1>Purchase Request Form</h1><p>Sustainable Goals Organization for Afghanistan (SGOA) &mdash; official PR format</p></div></div>
+
+  <div class="cd">
+    <div class="cdh"><div class="cdt">Requester Information</div></div>
+    <div class="cdb">
+      <select id="pr-dept-select" style="display:none"></select>
+      <select id="pr-ishead" style="display:none"></select>
+      <div class="fr">
+        <div class="fg"><label>Department</label><div id="pr-dept-display" style="padding:9px 11px;background:var(--g100);border-radius:7px;font-weight:700;color:var(--navy);font-size:13px"></div></div>
+        <div class="fg"><label>Your Position</label><div id="pr-position-display" style="padding:9px 11px;background:var(--g100);border-radius:7px;font-weight:700;color:var(--navy);font-size:13px"></div></div>
+        <div class="fg"><label>PRF Number</label><div id="pr-prf-display" style="padding:9px 11px;background:var(--g100);border-radius:7px;font-weight:700;color:var(--gold);font-size:13px"></div></div>
+      </div>
+      <div id="pr-head-status" style="font-size:12px;padding:9px 12px;border-radius:7px;margin-top:8px"></div>
+      <div id="pr-track-note" style="display:none;font-size:12px;padding:9px 12px;border-radius:7px;margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="cd" id="pr-form-box" style="display:none">
+    <div class="cdh"><div class="cdt">Request Details</div></div>
+    <div class="cdb">
+      <div class="fr">
+        <div class="fg"><label>Requested Date</label><input type="text" id="pr-requesteddate" readonly style="background:var(--g100)"></div>
+        <div class="fg"><label>Required Date *</label><input type="date" id="pr-dateneeded"></div>
+        <div class="fg"><label>Donor Source</label><input type="text" id="pr-donor" placeholder="e.g. SCI-GPE"></div>
+        <div class="fg"><label>Urgency</label><select id="pr-urgency"><option value="normal">Normal</option><option value="urgent">Urgent</option></select></div>
+        <div class="fg ff"><label>Delivery Address</label><input type="text" id="pr-address" placeholder="Full delivery address"></div>
+        <div class="fg ff"><label>Special Instructions</label><input type="text" id="pr-instructions" placeholder="Optional"></div>
+        <div class="fg"><label>Project / Budget Line</label><select id="pr-project"></select></div>
+        <div class="fg"><label>Expense Type</label>
+          <select id="pr-expensetype"><option>Direct Program Expense</option><option>Operation Cost</option><option>Contractor Cost</option></select>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--navy)">Line Items</div>
+          <button class="b bo bs" onclick="addPRItemRow()">+ Add Item</button>
+        </div>
+        <div class="tw"><table id="pr-items-table">
+          <thead><tr><th>S/N</th><th>Description</th><th>Qty</th><th>Unit</th><th>Project Code</th><th>Budget Code</th><th>DEA Code</th><th>Budget Line</th><th>Unit Price</th><th>Total</th><th>Remark</th><th></th></tr></thead>
+          <tbody id="pr-items-body"></tbody>
+        </table></div>
+        <div style="text-align:right;margin-top:8px;font-size:15px;font-weight:800;color:var(--navy)">Grand Total: <span id="pr-grandtotal">$0</span></div>
+      </div>
+
+      <div class="fg ff" style="margin-top:12px"><label>Justification *</label><textarea rows="2" id="pr-justification" placeholder="Why this purchase is needed"></textarea></div>
+      <div class="fg ff"><label>Notes</label><textarea rows="2" id="pr-notes" placeholder="Additional notes"></textarea></div>
+      <div class="fg"><label>Quotes Required</label><input type="text" id="pr-quotesreq" readonly style="background:var(--g100)"></div>
+
+      <div id="pr-chain-preview" style="margin-top:14px"></div>
+      <button class="b bn" style="margin-top:14px" onclick="submitPR()">Submit Purchase Request</button>
+    </div>
+  </div>
+
+  <div class="cd">
+    <div class="cdh"><div class="cdt">My Purchase Requests</div></div>
+    <div class="cdb" id="my-pr-list"></div>
+  </div>
+</div>
+
+<div class="pg" id="p-pr-approvals">
+  <div class="ph"><div><h1>PR Approvals</h1><p>Purchase requests awaiting your action</p></div></div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="st og"><div class="stl">Awaiting Your Approval</div><div class="stv" id="pra-mine">0</div></div>
+    <div class="st bl"><div class="stl">Total In Progress</div><div class="stv" id="pra-total">0</div></div>
+    <div class="st gr"><div class="stl">Completed</div><div class="stv" id="pra-done">0</div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Requiring Your Action</div></div><div class="cdb" id="pr-my-turn"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">All Purchase Requests</div></div><div class="cdb" id="pr-all-list"></div></div>
+</div>
+
 <!-- WORKFLOW -->
 <div class="pg" id="p-workflow">
   <div class="ph"><div><h1>Workflows &amp; Approvals</h1><p>Cross-department activity approvals up to Director</p></div>
@@ -823,8 +905,15 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- USERS -->
 <div class="pg" id="p-users">
-  <div class="ph"><div><h1>User Management</h1><p>Platform access control</p></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Platform Users</div></div><div class="cdb tw"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Password</th><th>Access Scope</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
+  <div class="ph"><div><h1>User Management</h1><p>Create and manage platform access, roles, and project links</p></div>
+  <div class="pha"><button class="b bn bs" onclick="openM('m-add-user')">+ Add New User</button></div></div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="st nv"><div class="stl">Total Users</div><div class="stv" id="um-total">11</div></div>
+    <div class="st gr"><div class="stl">Active</div><div class="stv" id="um-active">11</div></div>
+    <div class="st og"><div class="stl">Inactive</div><div class="stv" id="um-inactive">0</div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Original System Accounts</div></div><div class="cdb tw"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Password</th><th>Access Scope</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Additional Users Created</div></div><div class="cdb tw"><table><thead><tr><th>Name</th><th>Username</th><th>Role Template</th><th>Linked Projects</th><th>Status</th><th>Created</th><th>Action</th></tr></thead><tbody id="users-extra-body"></tbody></table></div></div>
 </div>
 
 <!-- SETTINGS -->
@@ -1061,6 +1150,14 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>End Date</label><input type="date" id="pj-end"></div>
 <div class="fg ff"><label>Provinces/Districts</label><input type="text" id="pj-loc"></div>
 <div class="fg ff"><label>Description</label><textarea rows="2" id="pj-desc"></textarea></div>
+</div>
+<div style="background:var(--g50);padding:12px;border-radius:8px;margin-top:12px;border-left:3px solid var(--navy)">
+  <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">MEAL Review Section \u2014 sent to MEAL Head for M&amp;E approval</div>
+  <div class="fr">
+    <div class="fg ff"><label>Project Goal</label><textarea rows="2" id="pj-goal" placeholder="What is this project trying to achieve?"></textarea></div>
+    <div class="fg ff"><label>Expected Impact</label><textarea rows="2" id="pj-impact" placeholder="What does success look like?"></textarea></div>
+    <div class="fg ff"><label>Draft Indicators (one per line)</label><textarea rows="3" id="pj-indicators" placeholder="e.g. # children enrolled disaggregated by sex&#10;% attendance rate&#10;# teachers trained"></textarea></div>
+  </div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-project')">Cancel</button><button class="b bn" onclick="saveProject()">Create Project</button></div>
 </div></div>
@@ -1147,48 +1244,61 @@ programs:{u:'hamid.agha',p:'PROG@sgoa26',n:'Hamid Agha',r:'Programs Head'},
 supply:{u:'samiullah.sami',p:'LOG@sgoa26',n:'Samiullah Sami',r:'Supply Chain Head'},
 admin:{u:'malali.safi',p:'ADM@sgoa26',n:'Malali Safi',r:'Administration Head'},
 safeguarding:{u:'arzo.hotak',p:'SG@sgoa26',n:'Arzo Hotak',r:'Safeguarding Head'},
-operations:{u:'abdul.habiab',p:'OPS@sgoa26',n:'Eng Abdul Habiab',r:'Operations Head'}
+operations:{u:'abdul.habiab',p:'OPS@sgoa26',n:'Eng Abdul Habiab',r:'Operations Head'},
+progdeputy:{u:'tahir.roozi',p:'PDD@sgoa26',n:'Tahir Roozi',r:'Program Deputy Director'},
+deputy:{u:'deputy.director',p:'DD@sgoa26',n:'Deputy Director',r:'Deputy Director'}
 };
 
-var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations',executive:'Executive'};
+var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations',executive:'Executive',progdeputy:'Program Deputy Director',deputy:'Deputy Director'};
 
 // ============ ACCESS ============
 var ACCESS={
-executive:['exec','projects','project-detail','all-tasks','all-challenges','workflow','users','settings','denied',
+executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
 'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
 'admin','safeguarding','operations','ops-assets','ops-fleet'],
-meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','workflow','all-tasks','denied'],
-finance:['finance','workflow','all-tasks','denied'],
-hr:['hr','workflow','all-tasks','denied'],
-programs:['programs','prog-activities','prog-benef','prog-analysis','workflow','all-tasks','denied'],
-supply:['supply','supply-proc','supply-dist','workflow','all-tasks','denied'],
-admin:['admin','workflow','all-tasks','denied'],
-safeguarding:['safeguarding','workflow','all-tasks','denied'],
-operations:['operations','ops-assets','ops-fleet','workflow','all-tasks','denied']
+meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','roadmap','workflow','all-tasks','denied','raise-pr'],
+finance:['finance','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals'],
+hr:['hr','roadmap','workflow','all-tasks','denied','raise-pr'],
+programs:['programs','prog-activities','prog-benef','prog-analysis','projects','roadmap','workflow','all-tasks','denied','raise-pr'],
+supply:['supply','supply-proc','supply-dist','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals'],
+admin:['admin','roadmap','workflow','all-tasks','denied','raise-pr'],
+safeguarding:['safeguarding','roadmap','workflow','all-tasks','denied','raise-pr'],
+operations:['operations','ops-assets','ops-fleet','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals'],
+progdeputy:['pr-approvals','denied'],
+deputy:['pr-approvals','denied']
 };
 
 var SIDEBAR={
 executive:[
-{l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
+{l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'}]}],
 meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
-{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'}]},
-{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'}]},
+{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
 supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-dist',n:'Distribution'}]},
-{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
 operations:[{l:'OPERATIONS',i:[{p:'operations',n:'Operations Home'},{p:'ops-assets',n:'Asset Register'},{p:'ops-fleet',n:'Fleet Management'}]},
-{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}]
+{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+progdeputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'}]}],
+deputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'}]}]
 };
 
-var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations'};
+var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations',progdeputy:'pr-approvals',deputy:'pr-approvals'};
 
 var SES={role:null,name:'',init:''};
+
+function seedExistingRoadmaps(){
+  Object.keys(PROJ).forEach(function(k){
+    var already = DB.tasks.some(function(t){return t.roadmap && t.proj===k;});
+    if(!already) generateRoadmapTasks(k,PROJ[k].start,PROJ[k].end);
+  });
+}
 
 // ============ LIVE DATA STORE ============
 var DB={
@@ -1399,14 +1509,194 @@ DB.wf=[
 
 DB.dataSub=[];
 
-var PROJ={
-'GPE-STG':{name:'GPE-STG - Structured Teaching & Guiding',donor:'Save the Children International',sector:'Education',budget:850000,spent:578000,benef:3900,prog:68,start:'2026-01-01',end:'2026-12-31',loc:'Mosahi, Khak-e-Jabbar, Surobi (Kabul)',mgr:'Hamid Agha',meal:'Kamil Sanzar',status:'Active',color:'var(--green)'},
-'GPE-AL':{name:'GPE-AL - Accelerated Learning',donor:'Save the Children International',sector:'Education',budget:620000,spent:527000,benef:2520,prog:82,start:'2025-09-01',end:'2026-09-30',loc:'Kabul',mgr:'Hamid Agha',meal:'Kamil Sanzar',status:'Close-out',color:'var(--blue)'},
-'Sponsorship':{name:'Child Sponsorship Program',donor:'Multiple Sponsors',sector:'Child Welfare',budget:480000,spent:264000,benef:1200,prog:55,start:'2026-01-01',end:'2026-12-31',loc:'Kabul, Kandahar, Herat, Balkh, Nangarhar',mgr:'Hamid Agha',meal:'Kamil Sanzar',status:'Active',color:'var(--purple)'},
-'GLTTA':{name:'GLTTA - Livelihoods Program',donor:'Start Network',sector:'Livelihoods',budget:450000,spent:171000,benef:800,prog:40,start:'2026-03-01',end:'2027-02-28',loc:'Kandahar Province - 3 Districts',mgr:'Hamid Agha',meal:'Kamil Sanzar',status:'Active',color:'var(--gold)'}
+var SECTOR_THEME={
+'Education':{icon:'\uD83D\uDCDA',grad:'linear-gradient(135deg,#1e3a8a,#2563eb)',label:'Education Project'},
+'Health':{icon:'\uD83C\uDFE5',grad:'linear-gradient(135deg,#7f1d1d,#dc2626)',label:'Health Project'},
+'Livelihoods':{icon:'\uD83C\uDF3E',grad:'linear-gradient(135deg,#78350f,#C8922A)',label:'Livelihoods Project'},
+'Child Welfare':{icon:'\uD83E\uDD1D',grad:'linear-gradient(135deg,#4c1d95,#7c3aed)',label:'Child Welfare Project'},
+'WASH':{icon:'\uD83D\uDCA7',grad:'linear-gradient(135deg,#134e4a,#0d9488)',label:'WASH Project'},
+'Protection':{icon:'\uD83D\uDEE1',grad:'linear-gradient(135deg,#1c1917,#44403c)',label:'Protection Project'},
+'Food Security':{icon:'\uD83C\uDF3D',grad:'linear-gradient(135deg,#166534,#16a34a)',label:'Food Security Project'}
 };
 
-// ============ CORE FUNCTIONS ============
+var PROJ={
+'GPE-STG':{name:'GPE-STG - Structured Teaching & Guiding',donor:'Save the Children International',sector:'Education',budget:850000,spent:578000,benef:3900,prog:68,start:'2026-01-01',end:'2026-12-31',loc:'Mosahi, Khak-e-Jabbar, Surobi (Kabul)',mgr:'Hamid Agha',meal:'Kamil Sanzar',status:'Active',color:'var(--green)',
+  goal:'Out-of-school children in Mosahi, Khak-e-Jabbar and Surobi gain foundational literacy and numeracy through structured, community-based teaching and guiding.',
+  impact:'Improved learning outcomes and school readiness for 3,900 children, with a pathway back into the formal education system.'},
+'GPE-AL':{name:'GPE-AL - Accelerated Learning',donor:'Save the Children International',sector:'Education',budget:620000,spent:527000,benef:2520,prog:82,start:'2025-09-01',end:'2026-09-30',loc:'Kabul',mgr:'Hamid Agha',meal:'Kamil Sanzar',status:'Close-out',color:'var(--blue)',
+  goal:'Children who missed years of schooling catch up through an accelerated, condensed curriculum enabling reintegration into formal school.',
+  impact:'2,520 children complete accelerated learning and transition into age-appropriate formal grades.'},
+'Sponsorship':{name:'Child Sponsorship Program',donor:'Multiple Sponsors',sector:'Child Welfare',budget:480000,spent:264000,benef:1200,prog:55,start:'2026-01-01',end:'2026-12-31',loc:'Kabul, Kandahar, Herat, Balkh, Nangarhar',mgr:'Hamid Agha',meal:'Kamil Sanzar',status:'Active',color:'var(--purple)',
+  goal:'Vulnerable children across five provinces receive sustained educational, nutritional, and welfare support through individual sponsorship.',
+  impact:'1,200 children maintain school attendance, improved wellbeing, and family stability through continuous sponsor support.'},
+'GLTTA':{name:'GLTTA - Livelihoods Program',donor:'Start Network',sector:'Livelihoods',budget:450000,spent:171000,benef:800,prog:40,start:'2026-03-01',end:'2027-02-28',loc:'Kandahar Province - 3 Districts',mgr:'Hamid Agha',meal:'Kamil Sanzar',status:'Active',color:'var(--gold)',
+  goal:'Vulnerable women in Kandahar Province gain sustainable income through vocational skills training and market linkage support.',
+  impact:'800 women achieve increased and diversified household income, reducing dependency on humanitarian assistance.'}
+};
+
+// ============ PROJECT ROADMAP TEMPLATE ============
+var ROADMAP_PHASES = [
+  {id:'design', name:'Design & Approval', pct:[0,10], color:'#64748b',
+   acts:{
+     'Programs':'Draft project proposal and logframe',
+     'Finance':'Build project budget, set up budget codes',
+     'MEAL':'Review logframe for M&E feasibility, draft indicator list',
+     'HR':'Estimate staffing needs and cost',
+     'Admin':'Confirm registration/legal compliance for new sites',
+     'Safeguarding':'Initial risk screening of proposed activities and locations',
+     'Supply Chain':'Estimate procurement/logistics needs and cost',
+     'Operations':'Initial security/access assessment of target districts'
+   }},
+  {id:'inception', name:'Inception & Start-up', pct:[10,25], color:'#2563eb',
+   acts:{
+     'HR':'Recruit and onboard project staff',
+     'MEAL':'Finalize MEAL Plan, build indicator tracker, prepare baseline tools',
+     'Finance':'Open project cost center, set up financial reporting calendar',
+     'Programs':'Community entry, stakeholder/shura engagement, beneficiary selection criteria',
+     'Supply Chain':'Procure start-up equipment and materials',
+     'Admin':'Set up field office/site logistics if needed',
+     'Safeguarding':'Deliver safeguarding briefing to all project staff',
+     'Operations':'Confirm field access, security go/no-go for start-up'
+   }},
+  {id:'implementation', name:'Implementation', pct:[25,85], color:'#16a34a',
+   acts:{
+     'Programs':'Deliver planned activities per workplan',
+     'MEAL':'Conduct baseline, ongoing monitoring, CFRM operation',
+     'Supply Chain':'Procurement, distribution, fleet support to field activities',
+     'Finance':'Monthly budget vs actual tracking, process payments',
+     'HR':'Ongoing staff management, performance reviews',
+     'Safeguarding':'Ongoing monitoring, incident response as needed',
+     'Admin':'Document management, office support',
+     'Operations':'Ongoing security monitoring, movement clearance'
+   }},
+  {id:'monitoring', name:'Monitoring & Reporting', pct:[25,85], color:'#C8922A',
+   acts:{
+     'MEAL':'Data quality assurance, quarterly reports, indicator updates',
+     'Finance':'Quarterly financial reports to donor',
+     'Programs':'Progress narrative input',
+     'Safeguarding':'Quarterly safeguarding statistics',
+     'Supply Chain':'Asset and distribution reconciliation',
+     'Executive':'Review Executive Dashboard, escalation decisions'
+   }},
+  {id:'closeout', name:'Close-out', pct:[85,100], color:'#dc2626',
+   acts:{
+     'MEAL':'Endline assessment, final indicator report, lessons learned',
+     'Finance':'Final financial report, budget reconciliation',
+     'Programs':'Final narrative report, handover documentation',
+     'HR':'Staff transition/reassignment planning',
+     'Supply Chain':'Asset disposal or transfer, final procurement closure',
+     'Admin':'Archive project documentation',
+     'Safeguarding':'Final safeguarding case closure review',
+     'Operations':'Close-out security/site handover'
+   }}
+];
+
+function addDays(dateStr,days){
+  var d=new Date(dateStr); d.setDate(d.getDate()+Math.round(days));
+  return d.toISOString().split('T')[0];
+}
+
+function generateRoadmapTasks(code,start,end){
+  if(!start||!end)return;
+  var totalDays=(new Date(end)-new Date(start))/86400000;
+  if(totalDays<=0)totalDays=180;
+  ROADMAP_PHASES.forEach(function(ph){
+    var dueDay=totalDays*(ph.pct[1]/100);
+    var due=addDays(start,dueDay);
+    Object.keys(ph.acts).forEach(function(dept){
+      if(dept==='Executive')return;
+      DB.tasks.push({
+        id:nid('RM'),title:ph.acts[dept],
+        desc:'Auto-generated from Project Roadmap',
+        dept:dept,proj:code,due:due,prio:ph.id==='closeout'?'medium':'medium',
+        done:false,assign:'',roadmap:true,phase:ph.id,phaseName:ph.name,
+        status:'not-started',blockReason:''
+      });
+    });
+  });
+}
+
+function populateRoadmapProj(){
+  var sel=$('rm-proj');if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='';
+  Object.keys(PROJ).forEach(function(k){
+    var o=document.createElement('option');o.value=k;o.textContent=k+' \u2014 '+PROJ[k].name;
+    sel.appendChild(o);
+  });
+  if(cur&&PROJ[cur])sel.value=cur;
+}
+
+function renderRoadmap(){
+  var sel=$('rm-proj');
+  var code=sel?sel.value:Object.keys(PROJ)[0];
+  var p=PROJ[code];
+  if(!p){$('rm-body').innerHTML='<div class="empty">No project selected</div>';return;}
+  var myDept = SES.role==='executive'?null:DEPTNAME[SES.role];
+  var today=new Date();
+  var start=new Date(p.start),end=new Date(p.end);
+  var totalDays=(end-start)/86400000||180;
+  var elapsedPct=Math.max(0,Math.min(100,((today-start)/86400000/totalDays)*100));
+
+  var rmTasks=DB.tasks.filter(function(t){return t.roadmap&&t.proj===code&&(!myDept||t.dept===myDept);});
+  var cNotStarted=rmTasks.filter(function(t){return t.status==='not-started';}).length;
+  var cInProgress=rmTasks.filter(function(t){return t.status==='in-progress';}).length;
+  var cCompleted=rmTasks.filter(function(t){return t.status==='completed';}).length;
+  var cBlocked=rmTasks.filter(function(t){return t.status==='blocked';}).length;
+
+  var stats='<div class="stats" style="grid-template-columns:repeat(4,1fr)">';
+  stats+='<div class="st" style="border-top:3px solid var(--g400)"><div class="stl">Not Started</div><div class="stv" style="color:var(--g500)">'+cNotStarted+'</div></div>';
+  stats+='<div class="st bl"><div class="stl">In Progress</div><div class="stv" style="color:var(--blue)">'+cInProgress+'</div></div>';
+  stats+='<div class="st gr"><div class="stl">Completed</div><div class="stv" style="color:var(--green)">'+cCompleted+'</div></div>';
+  stats+='<div class="st rd"><div class="stl">Blocked</div><div class="stv" style="color:var(--red)">'+cBlocked+'</div></div>';
+  stats+='</div>';
+
+  var tl='<div style="position:relative;padding:34px 20px 16px;margin-bottom:22px">';
+  tl+='<div style="position:relative;height:4px;background:var(--g100);border-radius:2px;margin:0 40px">';
+  tl+='<div style="position:absolute;left:0;top:0;height:4px;width:'+elapsedPct+'%;background:var(--navy);border-radius:2px"></div>';
+  tl+='</div>';
+  tl+='<div style="display:flex;justify-content:space-between;margin:0 8px">';
+  ROADMAP_PHASES.forEach(function(ph){
+    var active = elapsedPct>=ph.pct[0] && elapsedPct<=ph.pct[1];
+    var passed = elapsedPct>ph.pct[1];
+    var dotColor = passed?'var(--green)':(active?ph.color:'var(--g300)');
+    tl+='<div style="text-align:center;width:120px">';
+    tl+='<div style="width:14px;height:14px;border-radius:50%;background:'+dotColor+';margin:14px auto 10px;border:4px solid var(--g50);box-shadow:0 0 0 1.5px '+dotColor+'"></div>';
+    tl+='<div style="font-size:11px;font-weight:700;color:'+(active?'var(--navy)':'var(--g500)')+';line-height:1.4">'+ph.name+'</div>';
+    tl+='</div>';
+  });
+  tl+='</div></div>';
+
+  var statusLabel={'not-started':'Not Started','in-progress':'In Progress','completed':'Completed','blocked':'Blocked'};
+  var statusBadge={'not-started':'bY','in-progress':'bB','completed':'bG','blocked':'bR'};
+
+  var cardsHtml='';
+  ROADMAP_PHASES.forEach(function(ph){
+    var active = elapsedPct>=ph.pct[0] && elapsedPct<=ph.pct[1];
+    cardsHtml+='<div class="cd"'+(active?' style="border-color:'+ph.color+';border-width:2px"':'')+'>';
+    cardsHtml+='<div class="cdh"><div class="cdt" style="color:'+ph.color+'">'+ph.name+(active?' <span class="bdg bG">Current Phase</span>':'')+'</div></div>';
+    cardsHtml+='<div class="cdb">';
+    Object.keys(ph.acts).forEach(function(dept){
+      var highlight = myDept===dept;
+      var matchTask = DB.tasks.find(function(t){return t.roadmap&&t.proj===code&&t.phase===ph.id&&t.dept===dept;});
+      var st = matchTask?matchTask.status:'not-started';
+      var reasonLine = (st==='blocked'&&matchTask&&matchTask.blockReason)?('<div style="font-size:10.5px;color:var(--red);margin-top:3px">Reason: '+matchTask.blockReason+'</div>'):'';
+      cardsHtml+='<div style="padding:8px 0;border-bottom:1px solid var(--g100);'+(highlight?'background:rgba(200,146,42,.08);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:6px':'')+'">';
+      cardsHtml+='<div style="display:flex;align-items:flex-start;gap:8px;justify-content:space-between">';
+      cardsHtml+='<div style="flex:1"><span class="bdg '+(highlight?'bD':'bY')+'" style="margin-right:6px">'+dept+'</span><span style="font-size:12px;color:var(--g700)">'+ph.acts[dept]+'</span>'+reasonLine+'</div>';
+      if(highlight&&matchTask){
+        cardsHtml+='<button class="bdg '+statusBadge[st]+' clk" style="border:none;cursor:pointer;font-family:inherit;flex-shrink:0" data-taskstatus="'+matchTask.id+'">'+statusLabel[st]+'</button>';
+      } else {
+        cardsHtml+='<span class="bdg '+statusBadge[st]+'" style="flex-shrink:0">'+statusLabel[st]+'</span>';
+      }
+      cardsHtml+='</div></div>';
+    });
+    cardsHtml+='</div></div>';
+  });
+
+  $('rm-body').innerHTML = stats + tl + '<div class="g2">' + cardsHtml + '</div>';
+}
+
 function $(id){return document.getElementById(id);}
 function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
 function fmt(n){return n.toLocaleString();}
@@ -1416,18 +1706,35 @@ function today(){return new Date().toISOString().split('T')[0];}
 function overdue(d){if(!d)return false;return new Date(d)<new Date();}
 
 function doLogin(){
-  var p=$('lp').value.trim(),r=$('lr').value,e=$('lerr'),c=CRED[r];
-  if(!c||p!==c.p){e.style.display='block';e.textContent='Incorrect password. Please check and try again.';setTimeout(function(){e.style.display='none';},3000);return;}
-  SES.role=r;SES.name=c.n;SES.init=c.n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
-  $('uav').textContent=SES.init;$('unm').textContent=SES.name;$('url').textContent=c.r;
-  buildSide(r);
+  var u=$('lu').value.trim(),p=$('lp').value.trim(),e=$('lerr');
+  var extraUser=DB.users.find(function(x){return x.username===u && x.password===p && x.status==='Active';});
+  var effRole,effName,effLabel,effPosition;
+  if(extraUser){
+    effRole=extraUser.roleTemplate;effName=extraUser.name;effLabel=ROLE_TEMPLATE_LABEL[extraUser.roleTemplate]||extraUser.roleTemplate;
+    effPosition=extraUser.position||effLabel;
+  } else {
+    var matchKey=null;
+    for(var key in CRED){ if(CRED[key].u===u){ matchKey=key; break; } }
+    var c=matchKey?CRED[matchKey]:null;
+    if(!c||p!==c.p){e.style.display='block';e.textContent='Incorrect username or password.';setTimeout(function(){e.style.display='none';},3000);return;}
+    effRole=matchKey;effName=c.n;effLabel=c.r;effPosition=c.r;
+  }
+  SES.role=effRole;SES.name=effName;SES.init=effName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+  SES.position=effPosition;
+  $('uav').textContent=SES.init;$('unm').textContent=effName;$('url').textContent=effLabel;
+  buildSide(effRole);
+  if(!DB._roadmapSeeded){seedExistingRoadmaps();DB._roadmapSeeded=true;}
+  pageHistory=[];currentPageId=null;
   $('login').classList.add('hide');
   $('app').classList.add('on');
-  go(HOME[r]||'exec');
+  refreshAllProjectDropdowns();
+  go(HOME[effRole]||'exec');
 }
+
 
 function doLogout(){
   SES={role:null,name:'',init:''};
+  pageHistory=[];currentPageId=null;
   $('login').classList.remove('hide');
   $('app').classList.remove('on');
   $('lp').value='';$('side').innerHTML='';
@@ -1443,15 +1750,33 @@ function buildSide(r){
   s.innerHTML=h;
 }
 
-function go(pg){
+var pageHistory=[];
+var currentPageId=null;
+
+function go(pg,isBack){
   if(SES.role){var a=ACCESS[SES.role]||[];if(a.indexOf(pg)===-1)pg='denied';}
+  if(!isBack && currentPageId && currentPageId!==pg){
+    pageHistory.push(currentPageId);
+  }
+  currentPageId=pg;
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
   var t=$('p-'+pg);if(t)t.classList.add('on');
   document.querySelectorAll('.sitem').forEach(function(i){i.classList.remove('on');});
   var n=document.querySelector('.sitem[data-pg="'+pg+'"]');if(n)n.classList.add('on');
   $('main').scrollTop=0;
+  var backBtn=$('nb-back');
+  if(backBtn)backBtn.style.display = pageHistory.length>0 ? 'inline-flex' : 'none';
   render(pg);
 }
+
+function goBack(){
+  if(!pageHistory.length)return;
+  var prev=pageHistory.pop();
+  go(prev,true);
+  var backBtn=$('nb-back');
+  if(backBtn)backBtn.style.display = pageHistory.length>0 ? 'inline-flex' : 'none';
+}
+
 
 function openM(id){var m=$(id);if(m)m.classList.add('on');}
 function closeM(id){var m=$(id);if(m)m.classList.remove('on');}
@@ -1461,11 +1786,22 @@ function render(pg){
   setTimeout(function(){
     try{
       if(pg==='exec'){renderExec();}
-      else if(pg==='projects'){renderProjectCards();}
+      else if(pg==='projects'){renderProjectCards();renderProjectAddBtn();}
       else if(pg==='all-tasks'){renderAllTasks();}
       else if(pg==='all-challenges'){renderAllChallenges();}
       else if(pg==='workflow'){renderWF();}
-      else if(pg==='users'){renderUsers();}
+      else if(pg==='roadmap'){
+        populateRoadmapProj();
+        renderRoadmap();
+        var rmSel=$('rm-proj');
+        if(rmSel && !rmSel._bound){
+          rmSel.addEventListener('change', renderRoadmap);
+          rmSel._bound = true;
+        }
+      }
+      else if(pg==='raise-pr'){initRaisePR();renderMyPRs();}
+      else if(pg==='pr-approvals'){renderPRApprovals();}
+      else if(pg==='users'){renderUsers();renderUserMgmt();}
       else if(pg==='meal'){renderMealHome();}
       else if(pg==='meal-ind'){renderInd();}
       else if(pg==='meal-cfrm'){renderCFRM();}
@@ -1690,11 +2026,34 @@ function renderExecDeadlines(){
   var up=DB.tasks.filter(function(t){return !t.done;}).sort(function(a,b){return new Date(a.due)-new Date(b.due);}).slice(0,6);
   up.forEach(function(t){
     var r=el('tr');
+    r.className='clk';
+    r.setAttribute('data-deadlinetask',t.id);
     var sb=overdue(t.due)?'<span class="bdg bR">Overdue</span>':(t.prio==='high'?'<span class="bdg bO">High</span>':'<span class="bdg bB">Normal</span>');
     r.innerHTML='<td>'+t.title+'</td><td>'+t.dept+'</td><td>'+dt(t.due)+'</td><td>'+sb+'</td>';
     c.appendChild(r);
   });
 }
+
+var curDeadlineTask=null;
+function openDeadlineAction(id){
+  var t=DB.tasks.find(function(x){return x.id===id;});
+  if(!t)return;
+  curDeadlineTask=id;
+  $('dl-ctx').innerHTML='<b>'+t.title+'</b><br><span style="font-size:11px;color:var(--g500)">'+t.dept+' \u00b7 Due '+dt(t.due)+(overdue(t.due)?' \u2014 OVERDUE':'')+'</span>';
+  $('dl-note').value='';
+  openM('m-deadline-action');
+}
+function sendDeadlineReminder(){
+  if(!curDeadlineTask)return;
+  var t=DB.tasks.find(function(x){return x.id===curDeadlineTask;});
+  if(!t)return;
+  var note=$('dl-note').value.trim();
+  if(!t.reminders)t.reminders=[];
+  t.reminders.push({by:SES.name,note:note||'Please complete this task as soon as possible.',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
+  closeM('m-deadline-action');
+  alert('Reminder sent to '+t.dept+' department: "'+(note||'Please complete this task as soon as possible.')+'"');
+}
+
 
 function renderExecDepts(){
   var c=$('exec-depts');if(!c)return;c.innerHTML='';
@@ -1753,11 +2112,21 @@ function openProject(k){
   var bens=DB.benef.filter(function(b){return b.proj===k;});
   var done=acts.filter(function(a){return a.status==='Complete';}).length;
 
-  var h='<div class="stats" style="grid-template-columns:repeat(4,1fr)">'+
+  var theme=SECTOR_THEME[p.sector]||{icon:'\uD83D\uDCC1',grad:'linear-gradient(135deg,#334155,#1e293b)',label:p.sector+' Project'};
+  var h='<div class="wb" style="background:'+theme.grad+';margin-bottom:16px"><div><div class="wbt">'+theme.icon+' '+theme.label+'</div><div class="wbs">'+p.sector+' \u00b7 '+p.donor+' \u00b7 '+p.loc+'</div></div><div class="wbi">'+theme.icon+'</div></div>';
+
+  h+='<div class="stats" style="grid-template-columns:repeat(4,1fr)">'+
   '<div class="st nv"><div class="stl">Overall Progress</div><div class="stv">'+p.prog+'%</div></div>'+
   '<div class="st gr"><div class="stl">Beneficiaries</div><div class="stv">'+fmt(p.benef)+'</div><div class="sts">'+bens.length+' registered in system</div></div>'+
   '<div class="st gd"><div class="stl">Budget Utilized</div><div class="stv">'+Math.round(p.spent/p.budget*100)+'%</div><div class="sts">'+money(p.spent)+' of '+money(p.budget)+'</div></div>'+
   '<div class="st bl"><div class="stl">Activities</div><div class="stv">'+acts.length+'</div><div class="sts">'+done+' completed</div></div></div>';
+
+  h+='<div class="cd" style="border-left:4px solid '+p.color+'"><div class="cdh"><div class="cdt">Goal &amp; Impact</div></div><div class="cdb">'+
+  '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Project Goal</div>'+
+  '<div style="font-size:13px;color:var(--g700);line-height:1.6">'+(p.goal||'Goal statement not yet defined for this project.')+'</div></div>'+
+  '<div><div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Expected Impact</div>'+
+  '<div style="font-size:13px;color:var(--g700);line-height:1.6">'+(p.impact||'Impact statement not yet defined for this project.')+'</div></div>'+
+  '</div></div>';
 
   h+='<div class="g2"><div class="cd"><div class="cdh"><div class="cdt">Project Information</div></div><div class="cdb tw"><table><tbody>'+
   '<tr><td style="font-weight:700;color:var(--navy);width:130px">Project Code</td><td>'+k+'</td></tr>'+
@@ -1839,6 +2208,12 @@ function openProject(k){
 }
 
 // ============ ALL TASKS ============
+var taskFilterMode='all';
+function setTaskFilter(mode){
+  taskFilterMode = (taskFilterMode===mode) ? 'all' : mode;
+  renderAllTasks();
+}
+
 function renderAllTasks(){
   var c=$('all-tasks-body');if(!c)return;c.innerHTML='';
   var df=$('tf-dept')?$('tf-dept').value:'all';
@@ -1847,6 +2222,10 @@ function renderAllTasks(){
     if(df!=='all'&&t.dept!==df)return false;
     if(sf==='open'&&t.done)return false;
     if(sf==='done'&&!t.done)return false;
+    if(taskFilterMode==='overdue'&&!(overdue(t.due)&&!t.done))return false;
+    if(taskFilterMode==='high'&&!(t.prio==='high'&&!t.done))return false;
+    if(taskFilterMode==='open'&&t.done)return false;
+    if(taskFilterMode==='done'&&!t.done)return false;
     return true;
   });
   var pend=DB.tasks.filter(function(t){return !t.done;});
@@ -1854,6 +2233,15 @@ function renderAllTasks(){
   if($('t-high'))$('t-high').textContent=pend.filter(function(t){return t.prio==='high';}).length;
   if($('t-open'))$('t-open').textContent=pend.length;
   if($('t-done'))$('t-done').textContent=DB.tasks.filter(function(t){return t.done;}).length;
+  var fbox=$('task-filter-active');
+  if(fbox){
+    if(taskFilterMode==='all'){fbox.style.display='none';}
+    else{
+      var lbl={overdue:'Overdue tasks only',high:'High priority tasks only',open:'Open tasks only',done:'Completed tasks only'};
+      fbox.style.display='block';
+      fbox.innerHTML='Showing: <b>'+lbl[taskFilterMode]+'</b> &nbsp; <a href="#" onclick="setTaskFilter(\''+taskFilterMode+'\');return false;" style="color:var(--navy);text-decoration:underline">Clear filter</a>';
+    }
+  }
   if(!ts.length){c.innerHTML='<tr><td colspan="8" class="empty">No tasks match filter</td></tr>';return;}
   ts.forEach(function(t){
     var r=el('tr');if(t.done)r.style.opacity='.5';
@@ -1862,6 +2250,7 @@ function renderAllTasks(){
     c.appendChild(r);
   });
 }
+
 
 function doneTask(id){
   var t=DB.tasks.find(function(x){return x.id===id;});
@@ -1881,22 +2270,33 @@ function renderAllChallenges(){
     var bd=f.sev==='critical'?'bR':f.sev==='major'?'bO':f.sev==='positive'?'bG':'bB';
     var pc=f.progress>=75?'var(--green)':f.progress>=40?'var(--orange)':'var(--red)';
     var d=el('div','fc '+cls);d.style.marginBottom='12px';
-    d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="fct">'+f.id+' — '+f.title+'</div>'+
-      '<div class="fcm">Project: '+f.proj+' · Department: <b>'+f.dept+'</b> · Location: '+f.loc+' · Date: '+dt(f.date)+' · Source: '+f.src+'</div></div>'+
-      '<span class="bdg '+bd+'">'+f.sev.toUpperCase()+' — '+f.status+'</span></div>'+
+    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="fct">'+f.id+' \u2014 '+f.title+'</div>'+
+      '<div class="fcm">Project: '+f.proj+' \u00b7 Department: <b>'+f.dept+'</b> \u00b7 Location: '+f.loc+' \u00b7 Date: '+dt(f.date)+' \u00b7 Source: '+f.src+'</div></div>'+
+      '<span class="bdg '+bd+'">'+f.sev.toUpperCase()+' \u2014 '+f.status+'</span></div>'+
       '<div class="fcb">'+f.desc+'</div>'+
       '<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px">'+
       '<div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:5px">Actions Taken &amp; Required</div>'+
       '<div style="font-size:11.5px;color:var(--g600);line-height:1.6">'+(f.act||'No action recorded')+'</div>'+
-      '<div style="font-size:11px;color:var(--g500);margin-top:7px"><b>Owner:</b> '+f.assign+' &nbsp;·&nbsp; <b>Due:</b> '+dt(f.due)+' &nbsp;·&nbsp; <b>Status:</b> '+f.status+'</div></div>'+
+      '<div style="font-size:11px;color:var(--g500);margin-top:7px"><b>Owner:</b> '+f.assign+' &nbsp;\u00b7&nbsp; <b>Due:</b> '+dt(f.due)+' &nbsp;\u00b7&nbsp; <b>Status:</b> '+f.status+'</div></div>'+
       '<div style="margin-top:9px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--g500)">Resolution Progress</span><b style="color:'+pc+'">'+f.progress+'%</b></div>'+
       '<div class="pw"><div class="pb" style="width:'+f.progress+'%;background:'+pc+'"></div></div></div>';
+    if(f.feedback&&f.feedback.length){
+      h+='<div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--g100)"><div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:5px">Director Feedback</div>';
+      f.feedback.forEach(function(fb){
+        h+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+fb.note+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+fb.by+' \u00b7 '+fb.date+'</div></div>';
+      });
+      h+='</div>';
+    }
+    if(SES.role==='executive'){
+      h+='<div class="wfa"><button class="b bo bs" data-feedback="'+f.id+'">Give Feedback</button></div>';
+    }
+    d.innerHTML=h;
     b.appendChild(d);
   });
   card.appendChild(b);c.appendChild(card);
 }
 
-// ============ MEAL ============
+
 function renderMealHome(){
   var inds=DB.indicators.filter(function(i){return i.proj==='GPE-STG';});
   var on=0,risk=0,off=0;
@@ -2066,15 +2466,28 @@ function renderDept(cid,dept){
 
 function renderDeptTasks(cid,dept){
   var c=$(cid);if(!c)return;c.innerHTML='';
-  var ts=DB.tasks.filter(function(t){return t.dept===dept&&!t.done;});
+  var ts=DB.tasks.filter(function(t){return t.dept===dept&&t.status!=='completed'&&!t.done;});
   if(!ts.length){c.innerHTML='<div class="empty">No pending tasks</div>';return;}
+  var statusLabel={'not-started':'Not Started','in-progress':'In Progress','blocked':'Blocked'};
+  var statusBadge={'not-started':'bY','in-progress':'bB','blocked':'bR'};
   ts.forEach(function(t){
     var r=el('div','tk');
-    var ck=el('div','tkc');ck.setAttribute('data-task',t.id);
-    var i=el('div');i.style.flex='1';
-    i.innerHTML='<div class="tkt">'+t.title+'</div><div class="tkd'+(overdue(t.due)?' od':'')+'">Due '+dt(t.due)+(overdue(t.due)?' — OVERDUE':'')+(t.assign?' · '+t.assign:'')+'</div>';
-    var b=el('span','bdg '+(t.prio==='high'?'bR':t.prio==='medium'?'bO':'bB'),t.prio);
-    r.appendChild(ck);r.appendChild(i);r.appendChild(b);
+    if(t.roadmap){
+      var i=el('div');i.style.flex='1';
+      var projTag=t.proj?('<span class="bdg bN" style="margin-right:5px">'+t.proj+'</span>'):'';
+      var phaseTag=t.phaseName?('<span class="bdg bD" style="margin-right:5px">'+t.phaseName+'</span>'):'';
+      i.innerHTML='<div style="margin-bottom:4px">'+projTag+phaseTag+'</div><div class="tkt">'+t.title+'</div><div class="tkd'+(overdue(t.due)&&t.status!=='blocked'?' od':'')+'">Due '+dt(t.due)+(overdue(t.due)&&t.status!=='blocked'?' \u2014 OVERDUE':'')+'</div>'+(t.status==='blocked'&&t.blockReason?'<div style="font-size:11px;color:var(--red);margin-top:3px">Blocked: '+t.blockReason+'</div>':'');
+      var statusBtn=el('button','bdg '+(statusBadge[t.status]||'bY')+' clk',statusLabel[t.status]||'Not Started');
+      statusBtn.style.cssText+='border:none;cursor:pointer;font-family:inherit';
+      statusBtn.setAttribute('data-taskstatus',t.id);
+      r.appendChild(i);r.appendChild(statusBtn);
+    } else {
+      var ck=el('div','tkc');ck.setAttribute('data-task',t.id);
+      var i2=el('div');i2.style.flex='1';
+      i2.innerHTML='<div class="tkt">'+t.title+'</div><div class="tkd'+(overdue(t.due)?' od':'')+'">Due '+dt(t.due)+(overdue(t.due)?' \u2014 OVERDUE':'')+(t.assign?' \u00b7 '+t.assign:'')+'</div>';
+      var b=el('span','bdg '+(t.prio==='high'?'bR':t.prio==='medium'?'bO':'bB'),t.prio);
+      r.appendChild(ck);r.appendChild(i2);r.appendChild(b);
+    }
     c.appendChild(r);
   });
 }
@@ -2370,6 +2783,8 @@ function renderWF(){
         '<button class="b bo bs" data-wf="'+w.id+'" data-act="reject">Reject</button>'+
         '<button class="b bo bs" data-wf="'+w.id+'" data-act="sendback">Send Back</button>'+
         '<button class="b bo bs" data-wf="'+w.id+'" data-act="comment">Comment</button></div>';
+    } else {
+      h+='<div class="wfa"><button class="b bo bs" data-signwf="'+w.id+'">Generate Signed Document</button></div>';
     }
     card.innerHTML=h;
     c.appendChild(card);
@@ -2548,16 +2963,168 @@ function saveIncident(){
   refreshAll();
 }
 
+DB.pendingProjects=[];
+
+var PROJECT_SELECT_IDS=[
+  {id:'pr-project',all:false,core:true},
+  {id:'fin-p',all:false,core:false},
+  {id:'de-proj',all:false,core:false},
+  {id:'ac-proj',all:false,core:false},
+  {id:'acf-proj',all:true,core:false},
+  {id:'bn-proj',all:false,core:false},
+  {id:'bf-proj',all:true,core:false},
+  {id:'i-proj',all:false,core:false},
+  {id:'c-proj',all:false,core:false},
+  {id:'fn-proj',all:false,core:false},
+  {id:'r-proj',all:true,core:false},
+  {id:'w-proj',all:true,core:false},
+  {id:'if-proj',all:true,core:false},
+  {id:'a-proj',all:false,core:true}
+];
+
+function refreshAllProjectDropdowns(){
+  var keys=Object.keys(PROJ);
+  PROJECT_SELECT_IDS.forEach(function(cfg){
+    var sel=$(cfg.id);
+    if(!sel)return;
+    var cur=sel.value;
+    var html='';
+    if(cfg.core)html+='<option>Core/Admin</option>';
+    if(cfg.all)html+='<option>All Projects</option>';
+    keys.forEach(function(k){html+='<option>'+k+'</option>';});
+    sel.innerHTML=html;
+    if(cur && Array.from(sel.options).some(function(o){return o.value===cur;})) sel.value=cur;
+  });
+}
+
+function renderProjectAddBtn(){
+  var btnBox=$('project-add-btn');
+  if(!btnBox)return;
+  if(SES.role==='programs'){
+    btnBox.innerHTML='<button class="b bn bs" onclick="openM(\'m-project\')">+ Add Project (sent for Executive approval)</button>';
+  } else {
+    btnBox.innerHTML='';
+  }
+  renderPendingProjects();
+}
+
+function renderPendingProjects(){
+  var box=$('pending-projects-card'),list=$('pending-projects-list');
+  if(!box||!list)return;
+  var pending=DB.pendingProjects.filter(function(p){return p.status==='pending';});
+  if(!pending.length){box.style.display='none';return;}
+  if(SES.role!=='executive' && SES.role!=='programs' && SES.role!=='meal'){box.style.display='none';return;}
+  box.style.display='block';
+  list.innerHTML='';
+  pending.forEach(function(p){
+    var d=el('div','cd');d.style.marginBottom='10px';
+    var edBdg = p.edApproved ? '<span class="bdg bG">Executive: Approved</span>' : '<span class="bdg bO">Executive: Pending</span>';
+    var mealBdg = p.mealApproved ? '<span class="bdg bG">MEAL: Approved</span>' : '<span class="bdg bO">MEAL: Pending Review</span>';
+    var body='<div class="cdb"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">'+
+      '<div><b>'+p.name+'</b> ('+p.code+')<div style="font-size:11px;color:var(--g500);margin-top:3px">Donor: '+p.donor+' \u00b7 '+p.sector+' \u00b7 Budget: $'+p.budget.toLocaleString()+' \u00b7 Created by '+p.createdBy+'</div></div>'+
+      '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+edBdg+mealBdg+'</div></div>';
+    body+='<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px">'+
+      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">GOAL</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+(p.goal||'Not provided')+'</div>'+
+      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">IMPACT</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+(p.impact||'Not provided')+'</div>'+
+      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">DRAFT INDICATORS</div><div style="font-size:12px;color:var(--g700);white-space:pre-line">'+(p.indicators||'Not provided')+'</div></div>';
+    if(p.mealComments && p.mealComments.length){
+      body+='<div style="margin-top:9px"><div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:5px">MEAL Comments</div>';
+      p.mealComments.forEach(function(c){
+        body+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+c.note+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+c.by+' \u00b7 '+c.date+'</div></div>';
+      });
+      body+='</div>';
+    }
+    body+='<div class="wfa">';
+    if(SES.role==='executive' && !p.edApproved){
+      body+='<button class="b bn bs" data-pjaction="approve-ed" data-pjid="'+p.code+'">Approve (Executive)</button><button class="b bo bs" data-pjaction="reject" data-pjid="'+p.code+'">Reject</button>';
+    }
+    if(SES.role==='meal' && !p.mealApproved){
+      body+='<button class="b bn bs" data-pjaction="approve-meal" data-pjid="'+p.code+'">Approve M&amp;E Design</button><button class="b bo bs" data-pjaction="comment" data-pjid="'+p.code+'">Request Changes</button>';
+    }
+    body+='</div></div>';
+    d.innerHTML=body;
+    list.appendChild(d);
+  });
+}
+
 function saveProject(){
   var n=$('pj-name');
   if(!n||!n.value.trim()){alert('Please enter project name.');return;}
   var code=$('pj-code').value.trim()||n.value.trim().slice(0,10);
-  PROJ[code]={name:n.value.trim(),donor:$('pj-donor').value,sector:$('pj-sector').value,
+  var data={code:code,name:n.value.trim(),donor:$('pj-donor').value,sector:$('pj-sector').value,
     budget:parseInt($('pj-budget').value)||0,spent:0,benef:parseInt($('pj-benef').value)||0,
     prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:$('pj-loc').value,
-    mgr:SES.name,meal:'Kamil Sanzar',status:'Active',color:'var(--teal)'};
-  closeM('m-project');n.value='';renderProjectCards();refreshAll();
+    mgr:SES.name,meal:'Kamil Sanzar',status:'pending',color:'var(--teal)',
+    goal:$('pj-goal').value.trim(),impact:$('pj-impact').value.trim(),indicators:$('pj-indicators').value.trim(),
+    edApproved:false,mealApproved:false,mealComments:[],
+    createdBy:SES.name,createdRole:SES.role};
+  DB.pendingProjects.push(data);
+  closeM('m-project');n.value='';$('pj-goal').value='';$('pj-impact').value='';$('pj-indicators').value='';
+  renderPendingProjects();
+  alert('Project submitted. It requires approval from BOTH the Executive Director and the MEAL Head before it goes live.');
 }
+
+function maybeActivateProject(code){
+  var p=DB.pendingProjects.find(function(x){return x.code===code;});
+  if(!p||!p.edApproved||!p.mealApproved)return;
+  p.status='approved';
+  PROJ[code]={name:p.name,donor:p.donor,sector:p.sector,budget:p.budget,spent:0,benef:p.benef,
+    prog:0,start:p.start,end:p.end,loc:p.loc,mgr:p.mgr,meal:p.meal,status:'Active',color:'var(--teal)',
+    goal:p.goal||('Improve outcomes for beneficiaries through '+p.sector.toLowerCase()+' programming in '+p.loc+'.'),
+    impact:p.impact||('Measurable improvement in '+p.sector.toLowerCase()+' outcomes for '+fmt(p.benef)+' beneficiaries.')};
+  generateRoadmapTasks(code,p.start,p.end);
+  refreshAllProjectDropdowns();
+  renderProjectCards();
+  refreshAll();
+  alert('Project fully approved by both Executive Director and MEAL. It is now live for all departments.');
+}
+
+function approveProjectED(code){
+  var p=DB.pendingProjects.find(function(x){return x.code===code;});
+  if(!p)return;
+  p.edApproved=true;
+  renderPendingProjects();
+  maybeActivateProject(code);
+}
+
+function approveProjectMEAL(code){
+  var p=DB.pendingProjects.find(function(x){return x.code===code;});
+  if(!p)return;
+  p.mealApproved=true;
+  renderPendingProjects();
+  maybeActivateProject(code);
+}
+
+var curCommentProject=null;
+function openProjectComment(code){
+  var p=DB.pendingProjects.find(function(x){return x.code===code;});
+  if(!p)return;
+  curCommentProject=code;
+  $('pc-ctx').innerHTML='<b>'+p.name+'</b> ('+p.code+')';
+  $('pc-note').value='';
+  openM('m-project-comment');
+}
+function saveProjectComment(){
+  if(!curCommentProject)return;
+  var p=DB.pendingProjects.find(function(x){return x.code===curCommentProject;});
+  if(!p)return;
+  var note=$('pc-note').value.trim();
+  if(!note){alert('Please write a comment.');return;}
+  if(!p.mealComments)p.mealComments=[];
+  p.mealComments.push({by:SES.name,note:note,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
+  closeM('m-project-comment');
+  renderPendingProjects();
+  alert('Comment sent to '+p.createdBy+'.');
+}
+
+function rejectProject(code){
+  var reason=window.prompt('Reason for rejecting this project (optional):','');
+  var idx=DB.pendingProjects.findIndex(function(x){return x.code===code;});
+  if(idx>=0)DB.pendingProjects.splice(idx,1);
+  renderPendingProjects();
+  alert('Project rejected'+(reason?': '+reason:'.'));
+}
+
 
 function saveWF(){
   var t=$('w-title');
@@ -2677,6 +3244,553 @@ function showBriefDoc(){
   $('dv-full-box').style.display='none';
 }
 
+
+function openTaskStatus(id){
+  var t=DB.tasks.find(function(x){return x.id===id;});
+  if(!t)return;
+  curTaskStatus=id;
+  $('ts-ctx').innerHTML='<b>'+(t.proj?t.proj+' \u2014 ':'')+(t.phaseName?t.phaseName+'</b><br>':'</b><br>')+t.title;
+  $('ts-status').value=t.status||'not-started';
+  $('ts-reason').value=t.blockReason||'';
+  toggleBlockReason();
+  openM('m-task-status');
+}
+function toggleBlockReason(){
+  $('ts-reason-box').style.display = $('ts-status').value==='blocked'?'block':'none';
+}
+var curTaskStatus=null;
+function saveTaskStatus(){
+  if(!curTaskStatus)return;
+  var t=DB.tasks.find(function(x){return x.id===curTaskStatus;});
+  if(t){
+    t.status=$('ts-status').value;
+    t.blockReason=t.status==='blocked'?$('ts-reason').value.trim():'';
+    t.done=(t.status==='completed');
+  }
+  closeM('m-task-status');
+  refreshAll();
+  var rmPg=document.getElementById('p-roadmap');
+  if(rmPg&&rmPg.classList.contains('on'))renderRoadmap();
+  var curPage=document.querySelector('.pg.on');
+  if(curPage&&SES.role!=='executive'){
+    var pid=curPage.id.replace('p-','');
+    var myDept=DEPTNAME[SES.role];
+    if(myDept)renderDeptTasks(pid+'-tasks',myDept);
+  }
+}
+
+
+// ============ PURCHASE REQUEST SYSTEM ============
+DB.pr = [];
+
+function prTrack(dept){
+  return dept==='Operations' ? 'ops' : 'shared';
+}
+
+function prQuotesRequired(amount){
+  if(amount < 1000) return '2 phone quotes';
+  if(amount < 10000) return '3 written quotations';
+  return 'Formal tender / 3+ written quotations';
+}
+
+function prFinalStep(track,amount){
+  if(track==='ops'){
+    if(amount<5000) return {role:'operations',label:'Operations approves'};
+    if(amount<50000) return {role:'deputy',label:'Deputy / Country Director approves'};
+    return {role:'executive',label:'Executive Director / Board approves'};
+  } else {
+    if(amount<9999) return {role:'operations',label:'Operations approves'};
+    if(amount<50000) return {role:'progdeputy',label:'Program Deputy Director approves'};
+    return {role:'executive',label:'Executive Director / Board approves'};
+  }
+}
+
+var PR_DEPT_ROLE={'MEAL':'meal','Finance':'finance','HR':'hr','Programs':'programs','Admin':'admin','Safeguarding':'safeguarding','Supply Chain':'supply','Operations':'operations'};
+
+function buildPRChain(track,amount,dept,isHead){
+  var chain=[];
+  if(track==='ops'){
+    chain.push({role:'supply',label:'Supply Chain reviews',status:'active'});
+    chain.push({role:'finance',label:'Finance verifies',status:'pending'});
+  } else {
+    var deptRole=PR_DEPT_ROLE[dept]||SES.role;
+    var firstActive=true;
+    if(isHead==='no'){
+      chain.push({role:deptRole,label:'Department Head approves',status:'active'});
+      firstActive=false;
+    }
+    if(dept!=='Programs'){
+      chain.push({role:'programs',label:'Program Manager (Budget Holder) approves',status:firstActive?'active':'pending'});
+      firstActive=false;
+    }
+    chain.push({role:'finance',label:'Finance reviews and verifies',status:firstActive?'active':'pending'});
+  }
+  var fin=prFinalStep(track,amount);
+  chain.push({role:fin.role,label:fin.label,status:'pending'});
+  return chain;
+}
+
+function updatePRForm(){
+  var dept=$('pr-dept-select').value;
+  var note=$('pr-track-note');
+  if(!dept){note.style.display='none';return;}
+  var track=prTrack(dept);
+  note.style.display='block';
+  if(track==='ops'){
+    note.style.cssText+='background:#ccfbf1;color:#0d9488;';
+    note.innerHTML='<b>Operations Track:</b> Supply Chain then Finance then Operations under $5,000, Deputy Director $5,000-49,999, Executive Director $50,000 and above.';
+  } else {
+    note.style.cssText+='background:#dbeafe;color:#2563eb;';
+    var midStep = dept==='Programs' ? '' : 'Program Manager, then ';
+    note.innerHTML='<b>Standard Track:</b> Department Head (if you are not the head), then '+midStep+'Finance, then Operations under $9,999, Program Deputy Director $9,999-49,999, Executive Director $50,000 and above.';
+  }
+  updatePRTotal();
+}
+
+function initRaisePR(){
+  var deptMap={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',admin:'Admin',safeguarding:'Safeguarding',supply:'Supply Chain',operations:'Operations'};
+  var dept=deptMap[SES.role]||'Programs';
+  $('pr-dept-select').innerHTML='<option value="'+dept+'" selected>'+dept+'</option>';
+  $('pr-dept-display').textContent=dept;
+  var position=SES.position||'Staff';
+  $('pr-position-display').textContent=position;
+  var isHead=/head/i.test(position)?'yes':'no';
+  $('pr-ishead').innerHTML='<option value="'+isHead+'" selected>'+isHead+'</option>';
+  var hs=$('pr-head-status');
+  if(isHead==='yes'){
+    hs.style.cssText='background:#dcfce7;color:#16a34a;padding:9px 12px;border-radius:7px;';
+    hs.innerHTML='You are the Department Head. No prior approval needed \u2014 your PR goes directly into the review chain.';
+  } else {
+    hs.style.cssText='background:#ffedd5;color:#ea580c;padding:9px 12px;border-radius:7px;';
+    hs.innerHTML='You are staff, not the Department Head. Your PR will first require approval from the '+dept+' Department Head.';
+  }
+  $('pr-requesteddate').value=dt(today());
+  var pjSel=$('pr-project');
+  pjSel.innerHTML='<option>Core/Admin</option>'+Object.keys(PROJ).map(function(k){return '<option>'+k+'</option>';}).join('');
+  $('pr-prf-display').textContent=nextPRFNumber(pjSel.value);
+  pjSel.onchange=function(){ $('pr-prf-display').textContent=nextPRFNumber(pjSel.value); };
+  $('pr-items-body').innerHTML='';
+  addPRItemRow();
+  $('pr-form-box').style.display='block';
+  updatePRForm();
+}
+
+var prfCounters={};
+function nextPRFNumber(projCode){
+  var prefix = projCode && projCode!=='Core/Admin' ? projCode.replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,6) : 'GEN';
+  if(!prfCounters[prefix])prfCounters[prefix]=DB.pr.filter(function(p){return p.prf&&p.prf.indexOf('PR-'+prefix)===0;}).length;
+  prfCounters[prefix]++;
+  return 'PR-'+prefix+String(prfCounters[prefix]).padStart(3,'0');
+}
+
+var prItemSeq=0;
+function addPRItemRow(){
+  prItemSeq++;
+  var tbody=$('pr-items-body');
+  var sn=tbody.children.length+1;
+  var tr=el('tr');
+  tr.setAttribute('data-itemrow',prItemSeq);
+  tr.innerHTML=
+    '<td style="text-align:center">'+sn+'</td>'+
+    '<td><input type="text" class="pri-desc" style="width:150px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="Item description"></td>'+
+    '<td><input type="number" class="pri-qty" value="1" min="1" style="width:55px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" onchange="recalcPRTotals()"></td>'+
+    '<td><input type="text" class="pri-unit" style="width:60px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="Each"></td>'+
+    '<td><input type="text" class="pri-projcode" style="width:75px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="0040011"></td>'+
+    '<td><input type="text" class="pri-budgetcode" style="width:65px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="2.1.11"></td>'+
+    '<td><input type="text" class="pri-deacode" style="width:55px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="-"></td>'+
+    '<td><input type="text" class="pri-budgetline" style="width:100px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="e.g. Office Rent"></td>'+
+    '<td><input type="number" class="pri-unitprice" style="width:75px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="0" onchange="recalcPRTotals()"></td>'+
+    '<td class="pri-total" style="font-weight:700;color:var(--navy);white-space:nowrap">$0</td>'+
+    '<td><input type="text" class="pri-remark" style="width:80px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="Optional"></td>'+
+    '<td><button class="b bo bs" onclick="removePRItemRow(this)">Remove</button></td>';
+  tbody.appendChild(tr);
+}
+function removePRItemRow(btn){
+  var tbody=$('pr-items-body');
+  if(tbody.children.length<=1){alert('At least one line item is required.');return;}
+  btn.closest('tr').remove();
+  Array.from(tbody.children).forEach(function(tr,i){tr.firstElementChild.textContent=i+1;});
+  recalcPRTotals();
+}
+function recalcPRTotals(){
+  var rows=Array.from($('pr-items-body').children);
+  var grand=0;
+  rows.forEach(function(tr){
+    var qty=parseFloat(tr.querySelector('.pri-qty').value)||0;
+    var up=parseFloat(tr.querySelector('.pri-unitprice').value)||0;
+    var tot=qty*up;
+    tr.querySelector('.pri-total').textContent='$'+tot.toLocaleString();
+    grand+=tot;
+  });
+  $('pr-grandtotal').textContent='$'+grand.toLocaleString();
+  $('pr-quotesreq').value=prQuotesRequired(grand);
+  updatePRChainPreview(grand);
+  return grand;
+}
+
+function collectPRItems(){
+  return Array.from($('pr-items-body').children).map(function(tr,i){
+    var qty=parseFloat(tr.querySelector('.pri-qty').value)||0;
+    var up=parseFloat(tr.querySelector('.pri-unitprice').value)||0;
+    return {
+      sn:i+1,
+      desc:tr.querySelector('.pri-desc').value.trim(),
+      qty:qty,
+      unit:tr.querySelector('.pri-unit').value.trim()||'Each',
+      projCode:tr.querySelector('.pri-projcode').value.trim(),
+      budgetCode:tr.querySelector('.pri-budgetcode').value.trim(),
+      deaCode:tr.querySelector('.pri-deacode').value.trim(),
+      budgetLine:tr.querySelector('.pri-budgetline').value.trim(),
+      unitPrice:up,
+      total:qty*up,
+      remark:tr.querySelector('.pri-remark').value.trim()
+    };
+  });
+}
+
+function updatePRForm(){
+  var dept=$('pr-dept-select').value;
+  var note=$('pr-track-note');
+  if(!dept){note.style.display='none';return;}
+  var track=prTrack(dept);
+  note.style.display='block';
+  if(track==='ops'){
+    note.style.cssText+='background:#ccfbf1;color:#0d9488;';
+    note.innerHTML='<b>Operations Track:</b> Supply Chain then Finance then Operations under $5,000, Deputy Director $5,000-49,999, Executive Director $50,000 and above.';
+  } else {
+    note.style.cssText+='background:#dbeafe;color:#2563eb;';
+    var midStep = dept==='Programs' ? '' : 'Program Manager, then ';
+    note.innerHTML='<b>Standard Track:</b> Department Head (if you are not the head), then '+midStep+'Finance, then Operations under $9,999, Program Deputy Director $9,999-49,999, Executive Director $50,000 and above.';
+  }
+  recalcPRTotals();
+}
+
+function updatePRChainPreview(total){
+  var dept=$('pr-dept-select').value;
+  if(!dept)return;
+  var track=prTrack(dept);
+  var isHead=track==='ops'?'yes':($('pr-ishead')?$('pr-ishead').value:'yes');
+  var chain=buildPRChain(track,total,dept,isHead);
+  var lbl={operations:'Operations',deputy:'Deputy Director',progdeputy:'Program Deputy Director',executive:'Executive Director / Board',supply:'Supply Chain',finance:'Verified By (Finance)',meal:'MEAL Head',hr:'HR Head',admin:'Admin Head',safeguarding:'Safeguarding Head',programs:'Program Manager'};
+  var stepsHtml=chain.map(function(c){return '<span class="bdg bY" style="margin-right:5px">'+(lbl[c.role]||c.role)+'</span>';}).join('<span style="color:var(--g400)">&rarr;</span> ');
+  $('pr-chain-preview').innerHTML='<div style="font-size:11px;color:var(--g500);font-weight:700;margin-bottom:6px">FULL APPROVAL CHAIN FOR THIS AMOUNT</div><div style="line-height:2.2">'+stepsHtml+'</div>';
+}
+
+function updatePRTotal(){ recalcPRTotals(); }
+
+function submitPR(){
+  var items=collectPRItems();
+  var validItems=items.filter(function(i){return i.desc && i.qty>0;});
+  if(!validItems.length){alert('Please enter at least one item with a description and quantity.');return;}
+  var dept=$('pr-dept-select').value;
+  if(!dept){alert('Please select a department.');return;}
+  if(!$('pr-justification').value.trim()){alert('Please enter a justification.');return;}
+  if(!$('pr-dateneeded').value){alert('Please enter the required date.');return;}
+  var total=validItems.reduce(function(s,i){return s+i.total;},0);
+  var track=prTrack(dept);
+  var isHead=track==='ops'?'yes':($('pr-ishead')?$('pr-ishead').value:'yes');
+  var chain=buildPRChain(track,total,dept,isHead);
+  var prf=$('pr-prf-display').textContent;
+  var pr={
+    id:nid('PR'),prf:prf,dept:dept,track:track,items:validItems,total:total,
+    project:$('pr-project').value,donor:$('pr-donor').value.trim(),
+    address:$('pr-address').value.trim(),instructions:$('pr-instructions').value.trim(),
+    expenseType:$('pr-expensetype').value,
+    dateRequested:today(),dateNeeded:$('pr-dateneeded').value,urgency:$('pr-urgency').value,
+    justification:$('pr-justification').value.trim(),notes:$('pr-notes').value.trim(),
+    quotesRequired:prQuotesRequired(total),
+    requestedBy:SES.name,requestedByPosition:SES.position||'',requestedByRole:SES.role,
+    chain:chain,step:track==='ops'?0:1,
+    status:'progress',created:today(),
+    hist:[{a:'Created',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'PR submitted for '+dept,position:SES.position}]
+  };
+  DB.pr.unshift(pr);
+  ['pr-address','pr-instructions','pr-donor','pr-justification','pr-notes'].forEach(function(id){$(id).value='';});
+  $('pr-items-body').innerHTML='';
+  addPRItemRow();
+  $('pr-prf-display').textContent=nextPRFNumber($('pr-project').value);
+  renderMyPRs();
+  alert('Purchase Request '+pr.prf+' submitted. Routed to: '+chain[track==='ops'?0:1].label);
+}
+
+
+var prStatusLbl={active:'In Progress',pending:'Waiting',done:'Approved',rejected:'Rejected'};
+var prStatusBdg={active:'bB',pending:'bY',done:'bG',rejected:'bR'};
+
+function renderPRCard(pr,showActions){
+  var card=el('div','cd');
+  var itemsRows='';
+  pr.items.forEach(function(it){
+    itemsRows+='<tr><td>'+it.sn+'</td><td>'+it.desc+'</td><td>'+it.qty+'</td><td>'+it.unit+'</td><td>'+(it.projCode||'-')+'</td><td>'+(it.budgetCode||'-')+'</td><td>'+(it.budgetLine||'-')+'</td><td>$'+it.unitPrice.toLocaleString()+'</td><td style="font-weight:700">$'+it.total.toLocaleString()+'</td></tr>';
+  });
+  var body='<div class="cdb">';
+  body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
+  body+='<div><b>'+pr.prf+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+pr.dept+' \u00b7 '+pr.project+' \u00b7 '+pr.expenseType+' \u00b7 $'+pr.total.toLocaleString()+' \u00b7 Requested by '+pr.requestedBy+(pr.requestedByPosition?' ('+pr.requestedByPosition+')':'')+' \u00b7 '+dt(pr.created)+'</div></div>';
+  body+='<span class="bdg '+(pr.status==='complete'?'bG':pr.status==='cancelled'?'bY':pr.status==='rejected'?'bR':'bO')+'">'+(pr.status==='complete'?'Approved':pr.status==='cancelled'?'Cancelled':pr.status==='rejected'?'Rejected':'In Progress')+'</span>';
+  body+='</div>';
+  body+='<div class="tw"><table style="margin-bottom:8px"><thead><tr><th>S/N</th><th>Description</th><th>Qty</th><th>Unit</th><th>Proj Code</th><th>Budget Code</th><th>Budget Line</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>'+itemsRows+'</tbody></table></div>';
+  body+='<div style="font-size:11.5px;color:var(--g600);margin-bottom:6px"><b>Justification:</b> '+pr.justification+'</div>';
+  if(pr.address)body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:3px"><b>Delivery:</b> '+pr.address+'</div>';
+  if(pr.donor)body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:3px"><b>Donor Source:</b> '+pr.donor+'</div>';
+  body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:8px"><b>Required Date:</b> '+dt(pr.dateNeeded)+' \u00b7 <b>Quotes required:</b> '+pr.quotesRequired+'</div>';
+  body+='<div class="wfp">';
+  pr.chain.forEach(function(c,i){
+    var st = c.status==='done'?'done':c.status==='active'?'active':c.status==='rejected'?'rejected':'pending';
+    body+='<div class="pn '+st+'">'+c.label.split(' ').slice(0,2).join(' ')+'</div>';
+    if(i<pr.chain.length-1)body+='<div class="par '+(c.status==='done'?'done':'')+'"></div>';
+  });
+  body+='</div>';
+  if(pr.hist.length){
+    var l=pr.hist[pr.hist.length-1];
+    body+='<div style="font-size:10.5px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-top:8px">'+l.dt+' \u2014 '+l.a+' by '+l.by+(l.n?': '+l.n:'')+'</div>';
+  }
+  if(showActions && pr.status==='progress'){
+    body+='<div class="wfa">';
+    body+='<button class="b bn bs" data-prid="'+pr.id+'" data-praction="approve">Approve</button>';
+    body+='<button class="b bo bs" data-prid="'+pr.id+'" data-praction="reject">Reject</button>';
+    body+='<button class="b bo bs" data-prid="'+pr.id+'" data-praction="comment">Comment</button>';
+    body+='</div>';
+  }
+  if(pr.status==='progress' && pr.requestedByRole===SES.role){
+    body+='<div class="wfa"><button class="b bo bs" data-prcancel="'+pr.id+'">Cancel Request</button></div>';
+  }
+  if(pr.status==='complete'){
+    body+='<div class="wfa"><button class="b bo bs" data-signpr="'+pr.id+'">Generate Signed Document</button></div>';
+  }
+  body+='</div>';
+  card.innerHTML=body;
+  return card;
+}
+
+
+function renderMyPRs(){
+  var c=$('my-pr-list');if(!c)return;c.innerHTML='';
+  var mine=DB.pr.filter(function(p){return p.requestedByRole===SES.role;});
+  if(!mine.length){c.innerHTML='<div class="empty">You have not raised any PRs yet.</div>';return;}
+  mine.forEach(function(p){c.appendChild(renderPRCard(p,false));});
+}
+
+function renderPRApprovals(){
+  var myTurn=$('pr-my-turn'),allList=$('pr-all-list');
+  if(!myTurn)return;
+  myTurn.innerHTML='';allList.innerHTML='';
+  var mine=DB.pr.filter(function(p){return p.status==='progress' && p.chain[p.step] && p.chain[p.step].role===SES.role;});
+  var total=DB.pr.filter(function(p){return p.status==='progress';}).length;
+  var done=DB.pr.filter(function(p){return p.status==='complete';}).length;
+  if($('pra-mine'))$('pra-mine').textContent=mine.length;
+  if($('pra-total'))$('pra-total').textContent=total;
+  if($('pra-done'))$('pra-done').textContent=done;
+  if(!mine.length){myTurn.innerHTML='<div class="empty">Nothing awaiting your approval right now.</div>';}
+  else mine.forEach(function(p){myTurn.appendChild(renderPRCard(p,true));});
+  if(!DB.pr.length){allList.innerHTML='<div class="empty">No purchase requests yet.</div>';}
+  else DB.pr.forEach(function(p){allList.appendChild(renderPRCard(p,false));});
+}
+
+function cancelPR(id){
+  var p=DB.pr.find(function(x){return x.id===id;});
+  if(!p)return;
+  if(!confirm('Cancel this Purchase Request? This cannot be undone.'))return;
+  p.status='cancelled';
+  p.hist.push({a:'Cancelled',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Cancelled by requester'});
+  renderMyPRs();
+  renderPRApprovals();
+}
+
+var curPR=null;
+function openPRAction(id,act){
+  curPR={id:id,act:act};
+  var p=DB.pr.find(function(x){return x.id===id;});
+  var t={approve:'Approve Purchase Request',reject:'Reject Purchase Request',comment:'Add Comment'};
+  $('m-pr-action').querySelector('h3').textContent=t[act]||'Action';
+  $('pra-ctx').innerHTML='<b>'+id+'</b> \\u2014 '+(p?p.item+' ($'+p.total.toLocaleString()+')':'');
+  $('pra-note').value='';
+  openM('m-pr-action');
+}
+
+function confirmPRAction(){
+  if(!curPR)return;
+  var p=DB.pr.find(function(x){return x.id===curPR.id;});
+  if(p){
+    var note=$('pra-note').value;
+    var lbl={approve:'Approved',reject:'Rejected',comment:'Comment'};
+    p.hist.push({a:lbl[curPR.act],by:SES.name,position:SES.position||'',dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:note||'No comment'});
+    if(curPR.act==='approve'){
+      p.chain[p.step].status='done';
+      if(p.step<p.chain.length-1){p.step++;p.chain[p.step].status='active';}
+      else{p.status='complete';}
+    } else if(curPR.act==='reject'){
+      p.chain[p.step].status='rejected';p.status='rejected';
+    }
+  }
+  closeM('m-pr-action');
+  renderPRApprovals();
+}
+
+
+
+// ============ USER MANAGEMENT SYSTEM ============
+DB.users=[];
+
+var ROLE_TEMPLATE_LABEL={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations',progdeputy:'Program Deputy Director',deputy:'Deputy Director'};
+
+function findLoginUser(username,pass){
+  var extra=DB.users.find(function(u){return u.username===username && u.password===pass && u.status==='Active';});
+  if(extra)return {role:extra.roleTemplate,n:extra.name,r:ROLE_TEMPLATE_LABEL[extra.roleTemplate]||extra.roleTemplate};
+  for(var key in CRED){
+    if(CRED[key].u===username && CRED[key].p===pass) return {role:key,n:CRED[key].n,r:CRED[key].r};
+  }
+  return null;
+}
+
+function saveNewUser(){
+  var name=$('nu-name'),user=$('nu-username'),pass=$('nu-password');
+  if(!name.value.trim()||!user.value.trim()||!pass.value.trim()){alert('Please fill in name, username, and password.');return;}
+  var dup=DB.users.some(function(u){return u.username===user.value.trim();}) || Object.keys(CRED).some(function(k){return CRED[k].u===user.value.trim();});
+  if(dup){alert('This username already exists. Please choose another.');return;}
+  var projSel=$('nu-projects');
+  var projects=Array.from(projSel.selectedOptions).map(function(o){return o.value;});
+  DB.users.push({
+    id:nid('U'),name:name.value.trim(),username:user.value.trim(),password:pass.value.trim(),
+    roleTemplate:$('nu-role').value,position:$('nu-position').value.trim(),
+    projects:projects.length?projects:['All'],status:$('nu-status').value,
+    createdBy:SES.name,created:today()
+  });
+  closeM('m-add-user');
+  name.value='';user.value='';pass.value='';$('nu-position').value='';
+  renderUserMgmt();
+  alert('User created successfully. They can now log in with the credentials provided.');
+}
+
+function editUser(id){
+  var u=DB.users.find(function(x){return x.id===id;});if(!u)return;
+  $('eu-id').value=u.id;$('eu-name').value=u.name;$('eu-password').value=u.password;$('eu-status').value=u.status;
+  openM('m-edit-user');
+}
+
+function saveEditUser(){
+  var id=$('eu-id').value;
+  var u=DB.users.find(function(x){return x.id===id;});
+  if(u){u.name=$('eu-name').value.trim();u.password=$('eu-password').value.trim();u.status=$('eu-status').value;}
+  closeM('m-edit-user');renderUserMgmt();
+}
+
+function renderUserMgmt(){
+  var extraBody=$('users-extra-body');
+  if(!extraBody)return;
+  extraBody.innerHTML='';
+  if(!DB.users.length){extraBody.innerHTML='<tr><td colspan="7" class="empty">No additional users created yet.</td></tr>';}
+  DB.users.forEach(function(u){
+    var r=el('tr');
+    var sb=u.status==='Active'?'bG':'bY';
+    r.innerHTML='<td><b>'+u.name+'</b>'+(u.position?'<div style="font-size:10px;color:var(--g400)">'+u.position+'</div>':'')+'</td>'+
+      '<td><code style="background:var(--g100);padding:2px 6px;border-radius:4px;font-size:11px">'+u.username+'</code></td>'+
+      '<td><span class="bdg bN">'+(ROLE_TEMPLATE_LABEL[u.roleTemplate]||u.roleTemplate)+'</span></td>'+
+      '<td>'+u.projects.join(', ')+'</td>'+
+      '<td><span class="bdg '+sb+'">'+u.status+'</span></td>'+
+      '<td>'+dt(u.created)+'</td>'+
+      '<td><button class="b bo bs" data-edituser="'+u.id+'">Edit</button></td>';
+    extraBody.appendChild(r);
+  });
+  var totalCred=Object.keys(CRED).length;
+  if($('um-total'))$('um-total').textContent=totalCred+DB.users.length;
+  if($('um-active'))$('um-active').textContent=totalCred+DB.users.filter(function(u){return u.status==='Active';}).length;
+  if($('um-inactive'))$('um-inactive').textContent=DB.users.filter(function(u){return u.status==='Inactive';}).length;
+}
+
+
+
+// ============ SIGNED DOCUMENT GENERATOR ============
+function generateSignedDoc(type,id){
+  var rec,title,sub,details,chain;
+  if(type==='pr'){
+    rec=DB.pr.find(function(x){return x.id===id;});
+    if(!rec)return;
+    title='Purchase Request Form - '+rec.prf;
+    sub=rec.dept+' Department - '+rec.project+' - '+rec.expenseType;
+    var itemsList=rec.items.map(function(it){return it.sn+'. '+it.desc+' (Qty '+it.qty+' '+it.unit+' x $'+it.unitPrice.toLocaleString()+' = $'+it.total.toLocaleString()+')';}).join('\n');
+    details=[
+      ['Requested Date',dt(rec.dateRequested)],
+      ['Required Date',dt(rec.dateNeeded)],
+      ['Delivery Address',rec.address||'-'],
+      ['Donor Source',rec.donor||'-'],
+      ['Special Instructions',rec.instructions||'-'],
+      ['Line Items',itemsList],
+      ['Grand Total','$'+rec.total.toLocaleString()],
+      ['Justification',rec.justification],
+      ['Notes',rec.notes||'-'],
+      ['Quotes Required',rec.quotesRequired]
+    ];
+    chain=rec.chain;
+  } else {
+    rec=DB.wf.find(function(x){return x.id===id;});
+    if(!rec)return;
+    title='Workflow '+rec.id;
+    sub=rec.proj+' \\u2014 '+rec.title;
+    details=[
+      ['Activity',rec.title],
+      ['Project',rec.proj],
+      ['Description',rec.desc],
+      ['Due Date',dt(rec.due)]
+    ];
+    chain=rec.chain.map(function(c){return {role:null,label:c.d,status:c.s};});
+  }
+
+  $('pd-gendate').textContent=new Date().toLocaleString('en-GB');
+  $('pd-doctitle').textContent=title;
+  $('pd-docsub').textContent=sub;
+
+  var dt2='';
+  details.forEach(function(d){
+    dt2+='<tr><td style="padding:6px 10px;font-weight:700;color:#1A3A6B;width:180px;border-bottom:1px solid #e2e8f0;font-size:12px;vertical-align:top">'+d[0]+'</td><td style="padding:6px 10px;border-bottom:1px solid #e2e8f0;font-size:12px;white-space:pre-line">'+d[1]+'</td></tr>';
+  });
+  $('pd-detailstable').innerHTML=dt2;
+
+  var sigRows='';
+  var hist = rec.hist||[];
+  chain.forEach(function(c,i){
+    var histEntry = hist.find(function(hh){return c.label && hh.a && (c.status==='done'||c.status==='rejected') && hist.indexOf(hh)===i;}) || hist[i+ (type==='wf'?0:0)];
+    var matchHist = hist[i] || null;
+    var decision = c.status==='done'?'Approved':c.status==='rejected'?'Rejected':c.status==='active'?'Pending':'Not Reached';
+    var approverName = matchHist ? matchHist.by : (c.status==='done'||c.status==='rejected' ? 'Recorded' : '\\u2014');
+    var dateStr = matchHist ? matchHist.dt : '\\u2014';
+    var comment = matchHist ? matchHist.n : '';
+    var sigMark = (c.status==='done') ? '<span style="font-family:cursive;font-size:14px;color:#1A3A6B">'+(matchHist?matchHist.by:'Signed')+'</span>' : (c.status==='rejected'?'\\u2014':'Pending');
+    sigRows+='<tr><td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+c.label+'</td>'+
+      '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+approverName+'</td>'+
+      '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+decision+'</td>'+
+      '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+dateStr+'</td>'+
+      '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+comment+'</td>'+
+      '<td style="padding:8px;border:1px solid #cbd5e1">'+sigMark+'</td></tr>';
+  });
+  $('pd-sigbody').innerHTML=sigRows;
+
+  setTimeout(function(){ window.print(); }, 150);
+}
+
+
+
+var curFeedbackFinding=null;
+function openFindingFeedback(id){
+  var f=DB.findings.find(function(x){return x.id===id;});
+  if(!f)return;
+  curFeedbackFinding=id;
+  $('ff-ctx').innerHTML='<b>'+f.id+' \u2014 '+f.title+'</b><br><span style="font-size:11px;color:var(--g500)">Department: '+f.dept+'</span>';
+  $('ff-note').value='';
+  openM('m-finding-feedback');
+}
+function saveFindingFeedback(){
+  if(!curFeedbackFinding)return;
+  var f=DB.findings.find(function(x){return x.id===curFeedbackFinding;});
+  if(!f)return;
+  var note=$('ff-note').value.trim();
+  if(!note){alert('Please write feedback before sending.');return;}
+  if(!f.feedback)f.feedback=[];
+  f.feedback.push({by:SES.name,note:note,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
+  closeM('m-finding-feedback');
+  renderAllChallenges();
+  alert('Feedback sent to '+f.dept+' department.');
+}
+
 // ============ EVENT DELEGATION ============
 document.addEventListener('click',function(e){
   var t=e.target;
@@ -2688,9 +3802,29 @@ document.addEventListener('click',function(e){
   if((v=t.getAttribute('data-proj'))){openProject(v);return;}
   if((v=t.getAttribute('data-goto'))){go(v);return;}
   if((v=t.getAttribute('data-task'))){doneTask(v);return;}
+  if((v=t.getAttribute('data-taskstatus'))){openTaskStatus(v);return;}
   if((v=t.getAttribute('data-asset'))){editAsset(v);return;}
   if((v=t.getAttribute('data-vehicle'))){editVehicle(v);return;}
   if((v=t.getAttribute('data-wf'))){openWF(v,t.getAttribute('data-act'));return;}
+  if((v=t.getAttribute('data-prid'))){openPRAction(v,t.getAttribute('data-praction'));return;}
+  if((v=t.getAttribute('data-edituser'))){editUser(v);return;}
+  if((v=t.getAttribute('data-signpr'))){generateSignedDoc('pr',v);return;}
+  if((v=t.getAttribute('data-prcancel'))){cancelPR(v);return;}
+  if((v=t.getAttribute('data-signwf'))){generateSignedDoc('wf',v);return;}
+  var sf=t.closest('[data-taskfilter]');
+  if(sf){setTaskFilter(sf.getAttribute('data-taskfilter'));return;}
+  var dl=t.closest('[data-deadlinetask]');
+  if(dl){openDeadlineAction(dl.getAttribute('data-deadlinetask'));return;}
+  if((v=t.getAttribute('data-feedback'))){openFindingFeedback(v);return;}
+  var pjBtn=t.closest('[data-pjaction]');
+  if(pjBtn){
+    var pjid=pjBtn.getAttribute('data-pjid'),pjact=pjBtn.getAttribute('data-pjaction');
+    if(pjact==='approve-ed')approveProjectED(pjid);
+    else if(pjact==='approve-meal')approveProjectMEAL(pjid);
+    else if(pjact==='comment')openProjectComment(pjid);
+    else if(pjact==='reject')rejectProject(pjid);
+    return;
+  }
   var dc=t.closest('[data-doc]');
   if(dc){var dv=dc.getAttribute('data-doc');if(dv){openDoc(dv);return;}}
   if((v=t.getAttribute('data-proc'))){
@@ -2730,6 +3864,150 @@ document.addEventListener('keydown',function(e){
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="window.print()">Print</button><button class="b bn" onclick="closeM('m-doc-view')">Close</button></div>
+</div></div>
+
+
+<div class="mb" id="m-task-status"><div class="md">
+<div class="mh"><h3>Update Task Status</h3><button class="mx" onclick="closeM('m-task-status')">&times;</button></div>
+<div class="mbd">
+  <div id="ts-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fg"><label>Status</label>
+    <select id="ts-status" onchange="toggleBlockReason()">
+      <option value="not-started">Not Started</option>
+      <option value="in-progress">In Progress</option>
+      <option value="completed">Completed</option>
+      <option value="blocked">Blocked</option>
+    </select>
+  </div>
+  <div class="fg" id="ts-reason-box" style="display:none">
+    <label>Reason it is blocked</label>
+    <textarea rows="3" id="ts-reason" placeholder="Explain what is blocking this activity..."></textarea>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-task-status')">Cancel</button><button class="b bn" onclick="saveTaskStatus()">Save Status</button></div>
+</div></div>
+
+
+<div class="mb" id="m-pr-action"><div class="md">
+<div class="mh"><h3>PR Action</h3><button class="mx" onclick="closeM('m-pr-action')">&times;</button></div>
+<div class="mbd">
+  <div id="pra-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fg"><label>Comment / Reason</label><textarea rows="4" id="pra-note" placeholder="Add your reason or comment..."></textarea></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-pr-action')">Cancel</button><button class="b bn" onclick="confirmPRAction()">Confirm</button></div>
+</div></div>
+
+
+<div class="mb" id="m-add-user"><div class="md" style="max-width:620px">
+<div class="mh"><h3>Add New User</h3><button class="mx" onclick="closeM('m-add-user')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Full Name *</label><input type="text" id="nu-name" placeholder="e.g. Zahara Ali Zada"></div>
+    <div class="fg"><label>Username *</label><input type="text" id="nu-username" placeholder="e.g. zahara.alizada"></div>
+    <div class="fg"><label>Password *</label><input type="text" id="nu-password" placeholder="e.g. Field@sgoa26"></div>
+    <div class="fg ff">
+      <label>Role Template (defines what this user can do)</label>
+      <select id="nu-role">
+        <option value="meal">MEAL &mdash; full MEAL section access</option>
+        <option value="finance">Finance &mdash; full Finance section access</option>
+        <option value="hr">HR &mdash; full HR section access</option>
+        <option value="programs">Programs &mdash; full Programs section access</option>
+        <option value="supply">Supply Chain &mdash; full Supply Chain section access</option>
+        <option value="admin">Admin &mdash; full Admin section access</option>
+        <option value="safeguarding">Safeguarding &mdash; full Safeguarding section access</option>
+        <option value="operations">Operations &mdash; full Operations section access</option>
+        <option value="progdeputy">Program Deputy Director &mdash; PR approvals only</option>
+        <option value="deputy">Deputy Director &mdash; PR approvals only</option>
+      </select>
+    </div>
+    <div class="fg ff">
+      <label>Linked Projects (which projects this user can see data for)</label>
+      <select id="nu-projects" multiple size="4" style="height:auto">
+        <option value="All" selected>All Projects</option>
+        <option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option>
+      </select>
+      <div style="font-size:10px;color:var(--g500);margin-top:3px">Hold Ctrl to select multiple, or leave "All Projects" selected</div>
+    </div>
+    <div class="fg"><label>Position / Title</label><input type="text" id="nu-position" placeholder="e.g. Field Officer"></div>
+    <div class="fg"><label>Status</label><select id="nu-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+  </div>
+  <div style="background:var(--g50);padding:10px;border-radius:7px;font-size:11.5px;color:var(--g600);margin-top:10px">
+    This user will have the same sidebar, pages, and permissions as the selected Role Template. To restrict them further, contact the platform administrator.
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-add-user')">Cancel</button><button class="b bn" onclick="saveNewUser()">Create User</button></div>
+</div></div>
+
+<div class="mb" id="m-edit-user"><div class="md">
+<div class="mh"><h3>Edit User</h3><button class="mx" onclick="closeM('m-edit-user')">&times;</button></div>
+<div class="mbd">
+  <input type="hidden" id="eu-id">
+  <div class="fr">
+    <div class="fg ff"><label>Full Name</label><input type="text" id="eu-name"></div>
+    <div class="fg"><label>Password</label><input type="text" id="eu-password"></div>
+    <div class="fg"><label>Status</label><select id="eu-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-edit-user')">Cancel</button><button class="b bn" onclick="saveEditUser()">Save Changes</button></div>
+</div></div>
+
+
+<div id="print-doc">
+  <div style="border-bottom:3px solid #1A3A6B;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:20px;font-weight:800;color:#1A3A6B">SGOA</div>
+      <div style="font-size:11px;color:#64748b">Sustainable Goals Organization for Afghanistan</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#64748b">Generated: <span id="pd-gendate"></span></div>
+  </div>
+  <div style="font-size:16px;font-weight:700;color:#1A3A6B;margin-bottom:4px" id="pd-doctitle"></div>
+  <div style="font-size:12px;color:#64748b;margin-bottom:18px" id="pd-docsub"></div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:18px" id="pd-detailstable"></table>
+  <div style="font-size:13px;font-weight:700;color:#1A3A6B;margin-bottom:10px">Approval Signatures</div>
+  <table style="width:100%;border-collapse:collapse;border:1px solid #cbd5e1">
+    <thead><tr style="background:#f1f5f9">
+      <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;font-size:11px">Step</th>
+      <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;font-size:11px">Approver</th>
+      <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;font-size:11px">Decision</th>
+      <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;font-size:11px">Date</th>
+      <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;font-size:11px">Comment</th>
+      <th style="padding:8px;border:1px solid #cbd5e1;text-align:left;font-size:11px">Signature</th>
+    </tr></thead>
+    <tbody id="pd-sigbody"></tbody>
+  </table>
+  <div style="margin-top:24px;padding-top:14px;border-top:1px solid #cbd5e1;font-size:10px;color:#94a3b8">
+    This document was generated electronically by the SGOA Organizational Management Platform. Each approval recorded above corresponds to a unique, password-authenticated login action, time-stamped at the moment of decision. This constitutes a valid electronic signature record for audit purposes.
+  </div>
+</div>
+
+
+<div class="mb" id="m-deadline-action"><div class="md">
+<div class="mh"><h3>Task Reminder / Comment</h3><button class="mx" onclick="closeM('m-deadline-action')">&times;</button></div>
+<div class="mbd">
+  <div id="dl-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fg"><label>Comment or reminder message to the department</label><textarea rows="4" id="dl-note" placeholder="e.g. Please prioritize this task, deadline is approaching..."></textarea></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-deadline-action')">Cancel</button><button class="b bn" onclick="sendDeadlineReminder()">Send Reminder</button></div>
+</div></div>
+
+
+<div class="mb" id="m-finding-feedback"><div class="md">
+<div class="mh"><h3>Give Feedback on Finding</h3><button class="mx" onclick="closeM('m-finding-feedback')">&times;</button></div>
+<div class="mbd">
+  <div id="ff-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fg"><label>Your Feedback</label><textarea rows="4" id="ff-note" placeholder="Write your feedback for the responsible department..."></textarea></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-finding-feedback')">Cancel</button><button class="b bn" onclick="saveFindingFeedback()">Send Feedback</button></div>
+</div></div>
+
+
+<div class="mb" id="m-project-comment"><div class="md">
+<div class="mh"><h3>MEAL Comment / Request Changes</h3><button class="mx" onclick="closeM('m-project-comment')">&times;</button></div>
+<div class="mbd">
+  <div id="pc-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fg"><label>Your Comment</label><textarea rows="4" id="pc-note" placeholder="What needs to change in the goal, impact, or indicators?"></textarea></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-project-comment')">Cancel</button><button class="b bn" onclick="saveProjectComment()">Send Comment</button></div>
 </div></div>
 
 </body>
