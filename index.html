@@ -287,7 +287,7 @@ tbody tr:hover td{background:var(--g50);}
 </style>
 <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
-<!-- DEMO MODE: Supabase removed for offline use -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <!-- PUBLIC CFRM INTAKE (no login required) -->
@@ -1578,211 +1578,6 @@ DB.benef=[];
 
 DB.staff=[];
 
-// ============ DEMO DATA — FOR PRESENTATION ONLY ============
-// Remove this block after the meeting and re-upload the clean version.
-
-// PROJECTS
-PROJ['GPE-STG']={name:'Girls Primary Education Strengthening',donor:'GPE / Save the Children',sector:'Education',budget:850000,spent:312000,benef:4200,prog:42,status:'Active',loc:'Kandahar, Helmand',start:'2025-01-01',end:'2026-12-31',color:'#2563eb',
-  goal:'Improve access to quality primary education for girls in southern Afghanistan by strengthening school infrastructure, training teachers, and engaging communities.',
-  impact:'4,200 girls enrolled in safe learning environments with trained teachers and community support structures in place across 14 districts.'};
-PROJ['Sponsorship']={name:'Child Sponsorship & Welfare Program',donor:'World Vision',sector:'Child Welfare',budget:420000,spent:187000,benef:1850,prog:55,status:'Active',loc:'Kabul, Nangarhar',start:'2025-03-01',end:'2026-08-31',color:'#7c3aed',
-  goal:'Provide holistic support to vulnerable children including nutrition, education, psychosocial support, and family strengthening.',
-  impact:'1,850 children receiving monthly sponsorship support with measurable improvements in school attendance and nutritional status.'};
-PROJ['GLTTA']={name:'Kandahar Livelihood & Trade Training',donor:'USAID',sector:'Livelihoods',budget:560000,spent:198000,benef:2300,prog:38,status:'Active',loc:'Kandahar',start:'2025-06-01',end:'2027-05-31',color:'#C8922A',
-  goal:'Strengthen vocational skills and market linkages for unemployed youth and women in Kandahar through targeted trade and livelihood training.',
-  impact:'2,300 youth and women trained in vocational skills with 60% job placement rate expected by project end.'};
-PROJ['GPE-AE']={name:'Adult Education & Literacy Program',donor:'GPE / UNICEF',sector:'Education',budget:310000,spent:89000,benef:3100,prog:29,status:'Active',loc:'Herat, Farah',start:'2025-09-01',end:'2026-12-31',color:'#0d9488',
-  goal:'Expand adult literacy and functional education access for women and girls aged 15+ in western Afghanistan.',
-  impact:'3,100 women and girls completing literacy cycles with verified reading and writing competencies.'};
-
-// ACTIVITIES
-DB.activities=[
-  {id:'AC001',name:'Teacher Training Workshop — Batch 1',proj:'GPE-STG',type:'Training',loc:'Kandahar City',target:120,actual:118,start:'2025-02-01',end:'2025-02-28',status:'Complete',createdBy:'Hamid Agha'},
-  {id:'AC002',name:'School Infrastructure Assessment',proj:'GPE-STG',type:'Assessment',loc:'Kandahar & Helmand',target:30,actual:30,start:'2025-03-01',end:'2025-03-31',status:'Complete',createdBy:'Hamid Agha'},
-  {id:'AC003',name:'Community Awareness Sessions on Girls Education',proj:'GPE-STG',type:'Awareness',loc:'14 Districts',target:200,actual:162,start:'2025-04-01',end:'2025-07-31',status:'In Progress',createdBy:'Hamid Agha'},
-  {id:'AC004',name:'Teacher Training Workshop — Batch 2',proj:'GPE-STG',type:'Training',loc:'Helmand',target:80,actual:0,start:'2026-01-01',end:'2026-01-31',status:'Not Started',createdBy:'Hamid Agha'},
-  {id:'AC005',name:'Monthly Child Support Distribution',proj:'Sponsorship',type:'Distribution',loc:'Kabul',target:900,actual:900,start:'2025-04-01',end:'2025-04-30',status:'Complete',createdBy:'Hamid Agha'},
-  {id:'AC006',name:'Psychosocial Support Sessions',proj:'Sponsorship',type:'PSS',loc:'Nangarhar',target:400,actual:312,start:'2025-05-01',end:'2025-09-30',status:'In Progress',createdBy:'Hamid Agha'},
-  {id:'AC007',name:'Vocational Skills Training — Tailoring',proj:'GLTTA',type:'Training',loc:'Kandahar City',target:150,actual:148,start:'2025-07-01',end:'2025-09-30',status:'Complete',createdBy:'Hamid Agha'},
-  {id:'AC008',name:'Market Linkage & Business Development',proj:'GLTTA',type:'Livelihoods',loc:'Kandahar',target:200,actual:87,start:'2025-10-01',end:'2026-03-31',status:'In Progress',createdBy:'Hamid Agha'},
-  {id:'AC009',name:'Literacy Class — Cohort 1',proj:'GPE-AE',type:'Education',loc:'Herat City',target:300,actual:291,start:'2025-10-01',end:'2025-12-31',status:'Complete',createdBy:'Hamid Agha'},
-  {id:'AC010',name:'Literacy Class — Cohort 2',proj:'GPE-AE',type:'Education',loc:'Farah',target:280,actual:140,start:'2026-01-01',end:'2026-06-30',status:'In Progress',createdBy:'Hamid Agha'}
-];
-
-// INDICATORS
-DB.indicators=[
-  {id:'IN001',name:'# girls enrolled in supported schools',proj:'GPE-STG',baseline:0,target:4200,current:1760,unit:'beneficiaries',status:'On Track',createdBy:'Kamil Sanzar'},
-  {id:'IN002',name:'# teachers trained (female)',proj:'GPE-STG',baseline:0,target:200,current:118,unit:'persons',status:'On Track',createdBy:'Kamil Sanzar'},
-  {id:'IN003',name:'# schools rehabilitated',proj:'GPE-STG',baseline:0,target:14,current:6,unit:'schools',status:'On Track',createdBy:'Kamil Sanzar'},
-  {id:'IN004',name:'# children receiving sponsorship',proj:'Sponsorship',baseline:0,target:1850,current:1200,unit:'children',status:'On Track',createdBy:'Kamil Sanzar'},
-  {id:'IN005',name:'% children with improved nutrition score',proj:'Sponsorship',baseline:0,target:70,current:54,unit:'%',status:'On Track',createdBy:'Kamil Sanzar'},
-  {id:'IN006',name:'# youth trained in vocational skills',proj:'GLTTA',baseline:0,target:2300,current:875,unit:'persons',status:'On Track',createdBy:'Kamil Sanzar'},
-  {id:'IN007',name:'% trainees placed in employment',proj:'GLTTA',baseline:0,target:60,current:38,unit:'%',status:'On Track',createdBy:'Kamil Sanzar'},
-  {id:'IN008',name:'# women completing literacy cycle',proj:'GPE-AE',baseline:0,target:3100,current:891,unit:'persons',status:'On Track',createdBy:'Kamil Sanzar'},
-  {id:'IN009',name:'% learners passing literacy assessment',proj:'GPE-AE',baseline:0,target:80,current:76,unit:'%',status:'On Track',createdBy:'Kamil Sanzar'}
-];
-
-// TASKS
-DB.tasks=[
-  {id:'T001',title:'Submit GPE-STG Q3 Donor Report',desc:'Compile and submit quarterly progress report to Save the Children',dept:'MEAL',proj:'GPE-STG',due:'2026-08-30',prio:'high',done:false,assign:'Kamil Sanzar',createdBy:'Kamil Sanzar'},
-  {id:'T002',title:'Procure school furniture — 14 schools',desc:'Complete purchase request and delivery of desks and chairs',dept:'Supply Chain',proj:'GPE-STG',due:'2026-09-15',prio:'high',done:false,assign:'Samiullah Sami',createdBy:'Samiullah Sami'},
-  {id:'T003',title:'Process September payroll',desc:'Finance to process salaries for all 47 staff',dept:'Finance',proj:'',due:'2026-08-28',prio:'high',done:true,assign:'Aminullah Amin',createdBy:'Aminullah Amin'},
-  {id:'T004',title:'Renew Arzo Hotak contract',desc:'HR to prepare and circulate renewal contract for Safeguarding Head',dept:'HR',proj:'',due:'2026-09-01',prio:'medium',done:false,assign:'Tufa Rahimi',createdBy:'Tufa Rahimi'},
-  {id:'T005',title:'GLTTA beneficiary verification',desc:'Field visit to verify 875 registered beneficiaries in Kandahar',dept:'MEAL',proj:'GLTTA',due:'2026-09-10',prio:'medium',done:false,assign:'Kamil Sanzar',createdBy:'Kamil Sanzar'},
-  {id:'T006',title:'Prepare board presentation — Q2 results',desc:'Executive to prepare slide deck for board meeting',dept:'Operations',proj:'',due:'2026-08-27',prio:'high',done:false,assign:'Eng Abdul Habiab',createdBy:'Eng Abdul Habiab'},
-  {id:'T007',title:'IT server backup verification',desc:'IT to confirm Supabase backup and server health',dept:'IT Support',proj:'',due:'2026-08-25',prio:'medium',done:false,assign:'Toryalia Rahimi',createdBy:'Toryalia Rahimi'},
-  {id:'T008',title:'Fleet maintenance — 3 vehicles',desc:'Schedule maintenance for Toyota Hilux fleet vehicles',dept:'Access Department',proj:'',due:'2026-09-05',prio:'low',done:false,assign:'Zabihullah Sarwari',createdBy:'Zabihullah Sarwari'},
-  {id:'T009',title:'Update CFRM register — August cases',desc:'Log and update all August community feedback cases',dept:'MEAL',proj:'',due:'2026-08-31',prio:'medium',done:false,assign:'Kamil Sanzar',createdBy:'Kamil Sanzar'},
-  {id:'T010',title:'Sponsorship child data entry — Cohort 3',desc:'Enter 650 new child profiles into the system',dept:'Programs',proj:'Sponsorship',due:'2026-09-12',prio:'medium',done:false,assign:'Hamid Agha',createdBy:'Hamid Agha'}
-];
-
-// MILESTONES
-DB.milestones=[
-  {id:'MS001',proj:'GPE-STG',name:'Phase 1: School Assessment Complete',status:'Achieved',due:'2025-03-31',notes:'All 30 target schools assessed on time'},
-  {id:'MS002',proj:'GPE-STG',name:'Phase 2: Teacher Training Round 1 Complete',status:'Achieved',due:'2025-02-28',notes:'118 of 120 teachers trained'},
-  {id:'MS003',proj:'GPE-STG',name:'Phase 3: School Rehabilitation Mid-point',status:'In Progress',due:'2026-06-30',notes:'6 of 14 schools completed'},
-  {id:'MS004',proj:'GPE-STG',name:'Phase 4: Full Enrolment Target',status:'Not Started',due:'2026-10-01',notes:''},
-  {id:'MS005',proj:'Sponsorship',name:'Beneficiary Registration Complete',status:'In Progress',due:'2025-12-31',notes:'1,200 of 1,850 children registered'},
-  {id:'MS006',proj:'GLTTA',name:'First Training Cohort Graduated',status:'Achieved',due:'2025-09-30',notes:'148 trainees completed tailoring course'},
-  {id:'MS007',proj:'GLTTA',name:'Market Linkage Partnerships Signed',status:'In Progress',due:'2026-01-31',notes:'3 of 8 MoUs signed with local businesses'},
-  {id:'MS008',proj:'GPE-AE',name:'Cohort 1 Literacy Assessment',status:'Achieved',due:'2025-12-31',notes:'291 learners passed literacy test'},
-  {id:'MS009',proj:'GPE-AE',name:'Cohort 2 Mid-point Review',status:'In Progress',due:'2026-04-30',notes:'140 of 280 learners enrolled'}
-];
-
-// EXPENDITURES
-DB.expenditures=[
-  {id:'EX001',date:'2026-07-05',proj:'GPE-STG',cat:'Personnel',desc:'July salaries — GPE-STG field staff (12 persons)',paidto:'Staff',method:'Bank Transfer',amount:28500,createdBy:'Aminullah Amin'},
-  {id:'EX002',date:'2026-07-12',proj:'GPE-STG',cat:'Activities',desc:'Teacher training venue and materials — Batch 1',paidto:'Kandahar Training Center',method:'Cash',amount:14200,createdBy:'Aminullah Amin'},
-  {id:'EX003',date:'2026-07-18',proj:'GLTTA',cat:'Activities',desc:'Vocational training equipment — tailoring machines',paidto:'Kandahar Supplies Co.',method:'Bank Transfer',amount:22000,createdBy:'Aminullah Amin'},
-  {id:'EX004',date:'2026-07-25',proj:'Sponsorship',cat:'Supplies',desc:'Child nutrition kits — 900 children July distribution',paidto:'Kabul Medical Supplies',method:'Bank Transfer',amount:18900,createdBy:'Aminullah Amin'},
-  {id:'EX005',date:'2026-08-03',proj:'GPE-AE',cat:'Activities',desc:'Literacy class materials — Cohort 2 (Herat & Farah)',paidto:'Herat Stationery Store',method:'Cash',amount:8400,createdBy:'Aminullah Amin'},
-  {id:'EX006',date:'2026-08-10',proj:'GPE-STG',cat:'Travel',desc:'Field monitoring visit — Helmand province (3 staff)',paidto:'Staff per diem',method:'Cash',amount:4200,createdBy:'Kamil Sanzar'},
-  {id:'EX007',date:'2026-08-15',proj:'GLTTA',cat:'Personnel',desc:'August salaries — GLTTA project staff (8 persons)',paidto:'Staff',method:'Bank Transfer',amount:19200,createdBy:'Aminullah Amin'},
-  {id:'EX008',date:'2026-08-18',proj:'Sponsorship',cat:'Operations',desc:'Office rent — Nangarhar field office (August)',paidto:'Property Owner',method:'Bank Transfer',amount:3500,createdBy:'Aminullah Amin'},
-  {id:'EX009',date:'2026-08-20',proj:'GPE-AE',cat:'Personnel',desc:'August salaries — GPE-AE literacy facilitators (6 persons)',paidto:'Staff',method:'Bank Transfer',amount:12600,createdBy:'Aminullah Amin'},
-  {id:'EX010',date:'2026-08-22',proj:'GPE-STG',cat:'Supplies',desc:'School furniture procurement — 6 schools (desks, chairs)',paidto:'Kandahar Furniture Factory',method:'Bank Transfer',amount:31000,createdBy:'Samiullah Sami'}
-];
-
-// PURCHASE REQUESTS
-DB.pr=[
-  {id:'PR001',prf:'PR-GPE001',dept:'Programs',track:'standard',status:'complete',project:'GPE-STG',expenseType:'Goods',total:31000,
-   items:[{sn:1,desc:'Student desks (wooden)',qty:420,unit:'Pcs',projCode:'GPE-STG',budgetCode:'BC-001',budgetLine:'Supplies & Equipment',unitPrice:55,total:23100},{sn:2,desc:'Student chairs',qty:420,unit:'Pcs',projCode:'GPE-STG',budgetCode:'BC-001',budgetLine:'Supplies & Equipment',unitPrice:18.8,total:7900}],
-   justification:'School furniture required for 6 rehabilitated schools in Kandahar to be ready before school year starts.',
-   donor:'GPE',address:'Kandahar Education Hub',quotesRequired:'3 quotes required',dateNeeded:'2026-09-01',urgency:'urgent',
-   requestedBy:'Hamid Agha',requestedByPosition:'Programs Head',requestedByRole:'programs',
-   created:'2026-08-10',hist:[{dt:'2026-08-10',a:'Submitted',by:'Hamid Agha',n:''},{dt:'2026-08-12',a:'Approved',by:'Aminullah Amin',n:'Budget confirmed'},{dt:'2026-08-14',a:'Approved',by:'Gull Mohammad Aryan',n:'Final approval granted'}],
-   chain:[{role:'finance',label:'Finance',status:'done'},{role:'executive',label:'Executive Director',status:'done'}],step:2},
-  {id:'PR002',prf:'PR-GLTTA001',dept:'Programs',track:'standard',status:'progress',project:'GLTTA',expenseType:'Services',total:15600,
-   items:[{sn:1,desc:'Vocational training facilitators (3 months)',qty:4,unit:'Persons',projCode:'GLTTA',budgetCode:'BC-002',budgetLine:'Personnel & Training',unitPrice:3900,total:15600}],
-   justification:'4 skilled vocational trainers needed for tailoring and carpentry courses starting October 2026.',
-   donor:'USAID',address:'Kandahar Training Center',quotesRequired:'3 quotes required',dateNeeded:'2026-10-01',urgency:'normal',
-   requestedBy:'Hamid Agha',requestedByPosition:'Programs Head',requestedByRole:'programs',
-   created:'2026-08-20',hist:[{dt:'2026-08-20',a:'Submitted',by:'Hamid Agha',n:''},{dt:'2026-08-22',a:'Approved',by:'Aminullah Amin',n:'Budget available'}],
-   chain:[{role:'finance',label:'Finance',status:'done'},{role:'progdeputy',label:'Program Deputy Director',status:'active'},{role:'executive',label:'Executive Director',status:'pending'}],step:2},
-  {id:'PR003',prf:'PR-ADMIN001',dept:'Admin',track:'ops',status:'progress',project:'Core/Admin',expenseType:'Services',total:4200,
-   items:[{sn:1,desc:'Office stationery and printing supplies',qty:1,unit:'Lot',projCode:'',budgetCode:'BC-ADM',budgetLine:'Operations & Office',unitPrice:4200,total:4200}],
-   justification:'Monthly office supplies for all Kabul departments.',
-   donor:'',address:'SGOA Kabul HQ',quotesRequired:'2 quotes required',dateNeeded:'2026-09-01',urgency:'normal',
-   requestedBy:'Malali Safi',requestedByPosition:'Administration Head',requestedByRole:'admin',
-   created:'2026-08-21',hist:[{dt:'2026-08-21',a:'Submitted',by:'Malali Safi',n:''}],
-   chain:[{role:'supply',label:'Supply Chain',status:'active'},{role:'finance',label:'Finance',status:'pending'},{role:'operations',label:'Operations',status:'pending'}],step:0}
-];
-
-// RISKS
-DB.risks=[
-  {id:'RK001',proj:'GPE-STG',title:'Security deterioration in Helmand affecting field access',likelihood:'Medium',impact:'High',rating:'High',mitigation:'Regular security assessment; field teams use remote monitoring when access denied.',status:'Open',createdBy:'Kamil Sanzar',date:'2026-07-01'},
-  {id:'RK002',proj:'GLTTA',title:'Market absorption limited — trainees unable to find employment',likelihood:'Medium',impact:'Medium',rating:'Medium',mitigation:'MoU with 8 local businesses for preferential hiring; business development support.',status:'Open',createdBy:'Kamil Sanzar',date:'2026-07-15'},
-  {id:'RK003',proj:'GPE-AE',title:'Low female attendance due to social/family restrictions',likelihood:'Low',impact:'High',rating:'Medium',mitigation:'Community engagement sessions; male family member orientation conducted.',status:'Mitigated',createdBy:'Kamil Sanzar',date:'2026-08-01'}
-];
-
-// FINDINGS
-DB.findings=[
-  {id:'FD001',proj:'GPE-STG',title:'4 schools lack access to clean water — affects girls attendance',severity:'High',status:'Verified & Closed',dept:'Operations',action:'Water points installed in 4 schools in coordination with WASH partner.',raisedBy:'Kamil Sanzar',date:'2026-06-15',closedDate:'2026-07-30'},
-  {id:'FD002',proj:'GLTTA',title:'Training attendance tracking not consistent across sites',severity:'Medium',status:'Action Submitted',dept:'Programs',action:'Attendance registers introduced; digital tracking system set up.',raisedBy:'Kamil Sanzar',date:'2026-08-05',closedDate:''},
-  {id:'FD003',proj:'Sponsorship',title:'3 children in Nangarhar have outdated contact information',severity:'Low',status:'Open',dept:'Programs',action:'',raisedBy:'Kamil Sanzar',date:'2026-08-18',closedDate:''}
-];
-
-// CFRM
-DB.cfrm=[
-  {id:'CF001',proj:'GPE-STG',date:'2026-07-20',name:'Community Elder — Panjwai District',gender:'Male',type:'Complaint',channel:'In Person',desc:'Distribution of school materials was delayed by 2 weeks causing disruption.',status:'Resolved',response:'Apologized and confirmed accelerated delivery schedule. Materials delivered.',createdBy:'Kamil Sanzar'},
-  {id:'CF002',proj:'GLTTA',date:'2026-08-10',name:'Anonymous',gender:'Unknown',type:'Feedback',channel:'Phone',desc:'Positive feedback on quality of tailoring training course.',status:'Acknowledged',response:'Feedback shared with training team.',createdBy:'Kamil Sanzar'},
-  {id:'CF003',proj:'Sponsorship',date:'2026-08-19',name:'Mother of sponsored child — Kabul',gender:'Female',type:'Request',channel:'In Person',desc:'Requesting additional nutritional support for child with chronic health condition.',status:'Under Review',response:'',createdBy:'Kamil Sanzar'}
-];
-
-// FIELD VISITS
-DB.visits=[
-  {id:'VIS001',proj:'GPE-STG',date:'2026-07-28',location:'Kandahar City — 3 schools',purpose:'Routine monitoring',team:'Kamil Sanzar, Hamid Agha',findings:'Schools 1-3 fully operational. Attendance averaging 87%. Furniture delivered.',status:'Completed',createdBy:'Kamil Sanzar'},
-  {id:'VIS002',proj:'GLTTA',date:'2026-08-12',location:'Kandahar — Training Center',purpose:'Activity verification',team:'Kamil Sanzar',findings:'148 trainees graduated. Equipment in good condition. Business linkage meetings ongoing.',status:'Completed',createdBy:'Kamil Sanzar'},
-  {id:'VIS003',proj:'GPE-AE',date:'2026-09-05',location:'Herat & Farah',purpose:'Cohort 2 monitoring',team:'Kamil Sanzar, Field Officer',findings:'',status:'Planned',createdBy:'Kamil Sanzar'}
-];
-
-// STAFF
-DB.staff=[
-  {id:'ST001',name:'Kamil Sanzar',position:'MEAL Head',dept:'MEAL',province:'Kabul',phone:'+93 700 111 001',email:'kamil@sgoa-af.org',status:'Active',projects:['GPE-STG','GLTTA','Sponsorship','GPE-AE']},
-  {id:'ST002',name:'Aminullah Amin',position:'Finance Head',dept:'Finance',province:'Kabul',phone:'+93 700 111 002',email:'aminullah@sgoa-af.org',status:'Active',projects:['GPE-STG','GLTTA']},
-  {id:'ST003',name:'Hamid Agha',position:'Programs Head',dept:'Programs',province:'Kabul',phone:'+93 700 111 003',email:'hamid@sgoa-af.org',status:'Active',projects:['GPE-STG','Sponsorship','GLTTA','GPE-AE']},
-  {id:'ST004',name:'Tufa Rahimi',position:'HR Head',dept:'HR',province:'Kabul',phone:'+93 700 111 004',email:'tufa@sgoa-af.org',status:'Active',projects:[]},
-  {id:'ST005',name:'Samiullah Sami',position:'Supply Chain Head',dept:'Supply Chain',province:'Kabul',phone:'+93 700 111 005',email:'samiullah@sgoa-af.org',status:'Active',projects:['GPE-STG','GLTTA']},
-  {id:'ST006',name:'Malali Safi',position:'Administration Head',dept:'Admin',province:'Kabul',phone:'+93 700 111 006',email:'malali@sgoa-af.org',status:'Active',projects:[]},
-  {id:'ST007',name:'Arzo Hotak',position:'Safeguarding Head',dept:'Safeguarding',province:'Kabul',phone:'+93 700 111 007',email:'arzo@sgoa-af.org',status:'Active',projects:[]},
-  {id:'ST008',name:'Eng Abdul Habiab',position:'Operations Head',dept:'Operations',province:'Kabul',phone:'+93 700 111 008',email:'habiab@sgoa-af.org',status:'Active',projects:[]},
-  {id:'ST009',name:'Toryalia Rahimi',position:'IT Support Officer',dept:'IT Support',province:'Kabul',phone:'+93 700 111 009',email:'toryalia@sgoa-af.org',status:'Active',projects:[]},
-  {id:'ST010',name:'Zabihullah Sarwari',position:'Access & Movement Officer',dept:'Access Department',province:'Kabul',phone:'+93 700 111 010',email:'zabihullah@sgoa-af.org',status:'Active',projects:[]}
-];
-
-// HR — LEAVE REQUESTS
-DB.leaveRequests=[
-  {id:'LV001',staff:'Field Officer — Ahmad Wali',dept:'Programs',type:'Annual Leave',from:'2026-09-01',to:'2026-09-07',days:7,reason:'Family occasion',status:'Approved',approvedBy:'Tufa Rahimi',createdBy:'Hamid Agha'},
-  {id:'LV002',staff:'Finance Officer — Najib Rahimi',dept:'Finance',type:'Sick Leave',from:'2026-08-22',to:'2026-08-24',days:3,reason:'Medical',status:'Approved',approvedBy:'Tufa Rahimi',createdBy:'Aminullah Amin'},
-  {id:'LV003',staff:'MEAL Officer — Freshta Noori',dept:'MEAL',type:'Annual Leave',from:'2026-09-10',to:'2026-09-14',days:5,reason:'Personal',status:'Pending',approvedBy:'',createdBy:'Kamil Sanzar'}
-];
-
-// CONTRACTS
-DB.contracts=[
-  {id:'CON001',staff:'Kamil Sanzar',position:'MEAL Head',dept:'MEAL',type:'Fixed Term',start:'2025-01-01',end:'2026-12-31',salary:1800,status:'Active',notes:''},
-  {id:'CON002',staff:'Hamid Agha',position:'Programs Head',dept:'Programs',type:'Fixed Term',start:'2025-01-01',end:'2026-12-31',salary:1700,status:'Active',notes:''},
-  {id:'CON003',staff:'Arzo Hotak',position:'Safeguarding Head',dept:'Safeguarding',type:'Fixed Term',start:'2025-10-01',end:'2026-09-30',salary:1500,status:'Active',notes:'Expiring in 37 days — renewal due'}
-];
-
-// IT TICKETS
-DB.itTickets=[
-  {id:'IT001',title:'Internet connection unstable — Finance office',dept:'Finance',priority:'High',status:'Resolved',desc:'Finance team reported frequent disconnections affecting Supabase sync.',resolution:'Router replaced and fiber cable re-terminated.',raisedBy:'Aminullah Amin',assignedTo:'Toryalia Rahimi',date:'2026-08-15',resolvedDate:'2026-08-16',verified:true},
-  {id:'IT002',title:'Platform not loading on Chrome — HR laptop',dept:'HR',priority:'Medium',status:'In Progress',desc:'HR Head unable to open platform on her office laptop.',resolution:'',raisedBy:'Tufa Rahimi',assignedTo:'Toryalia Rahimi',date:'2026-08-21',resolvedDate:'',verified:false},
-  {id:'IT003',title:'Printer offline — Admin department',dept:'Admin',priority:'Low',status:'Open',desc:'Admin printer not connecting to network.',resolution:'',raisedBy:'Malali Safi',assignedTo:'Toryalia Rahimi',date:'2026-08-23',resolvedDate:'',verified:false}
-];
-
-// FLEET / VEHICLES
-DB.fleet=[
-  {id:'FL001',reg:'KDR-1042',type:'Toyota Hilux 4x4',province:'Kandahar',status:'Active',driver:'Ahmad Shah',lastService:'2026-07-01',nextService:'2026-10-01',notes:'Field operations vehicle'},
-  {id:'FL002',reg:'KBL-2211',type:'Toyota Corolla',province:'Kabul',status:'Active',driver:'Noor Mohammad',lastService:'2026-06-15',nextService:'2026-09-15',notes:'HQ staff transport'},
-  {id:'FL003',reg:'HRT-0891',type:'Toyota Land Cruiser',province:'Herat',status:'Maintenance',driver:'',lastService:'2026-08-01',nextService:'2026-09-01',notes:'Under maintenance — brake system'}
-];
-
-// TRAVEL AUTHORIZATIONS
-DB.tars=[
-  {id:'TAR001',requestedBy:'Kamil Sanzar',dept:'MEAL',destination:'Kandahar',purpose:'GPE-STG monitoring visit — 3 schools',dateFrom:'2026-08-28',dateTo:'2026-08-30',vehicle:'FL001',status:'Approved',approvedBy:'Zabihullah Sarwari',notes:'Security clearance confirmed'},
-  {id:'TAR002',requestedBy:'Hamid Agha',dept:'Programs',destination:'Herat',purpose:'GPE-AE cohort 2 supervision',dateFrom:'2026-09-05',dateTo:'2026-09-07',vehicle:'FL003',status:'Pending',approvedBy:'',notes:'Vehicle FL003 under maintenance — alternative needed'},
-  {id:'TAR003',requestedBy:'Samiullah Sami',dept:'Supply Chain',destination:'Kandahar',purpose:'School furniture delivery supervision',dateFrom:'2026-09-12',dateTo:'2026-09-13',vehicle:'FL001',status:'Approved',approvedBy:'Zabihullah Sarwari',notes:''}
-];
-
-// SAFEGUARDING CASES
-DB.sgCases=[
-  {id:'SG001',date:'2026-07-10',type:'Child Protection',status:'Closed',confidential:true,intake:'Concern raised by community member regarding child safety at distribution point.',investigation:'Investigation conducted by Safeguarding Head with HR support. Allegation unsubstantiated.',outcome:'Case closed. Staff refresher training on child safeguarding conducted.',raisedBy:'Arzo Hotak'},
-  {id:'SG002',date:'2026-08-14',type:'PSEAH',status:'Under Investigation',confidential:true,intake:'Anonymous complaint received via CFRM channel.',investigation:'Initial assessment completed. Investigation ongoing.',outcome:'',raisedBy:'Arzo Hotak'}
-];
-
-// DONOR DEADLINES
-DB.donorDeadlines=[
-  {id:'DD001',proj:'GPE-STG',donor:'Save the Children',report:'Q3 Progress Report',due:'2026-08-30',status:'Pending',notes:'Narrative + financial report required'},
-  {id:'DD002',proj:'GLTTA',donor:'USAID',report:'Semi-Annual Report',due:'2026-09-30',status:'Pending',notes:'Full M&E data required'},
-  {id:'DD003',proj:'Sponsorship',donor:'World Vision',report:'Monthly Beneficiary Update',due:'2026-08-31',status:'Pending',notes:'Child-level data with photos'},
-  {id:'DD004',proj:'GPE-AE',donor:'UNICEF',report:'Q2 Progress Report',due:'2026-07-31',status:'Submitted',notes:'Submitted on time'}
-];
-
-// ============ END DEMO DATA ============
-
-
-
 DB.proc=[];
 
 DB.dist=[];
@@ -1814,7 +1609,7 @@ try{
   }
 }catch(e){ console.warn('Supabase client failed to init', e); }
 
-var cloudSyncEnabled = false; // DEMO MODE — offline, no cloud sync
+var cloudSyncEnabled = !!supa;
 var cloudSaveTimer = null;
 var cloudStatus = 'idle';
 
