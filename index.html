@@ -1828,6 +1828,7 @@ function pollCloudRefresh(){
     if(result==='ok'){
       if(currentPageId)render(currentPageId);
       refreshAll();
+      if(SES.role)checkDeadlineAlerts();
     }
   });
 }
@@ -2903,7 +2904,7 @@ function renderAllTasks(){
 
 function doneTask(id){
   var t=DB.tasks.find(function(x){return x.id===id;});
-  if(t){t.done=!t.done;renderAllTasks();renderExecTasks();renderExecDepts();refreshAll();queueCloudSave();}
+  if(t){t.done=!t.done;renderAllTasks();renderExecTasks();renderExecDepts();refreshAll();checkDeadlineAlerts();queueCloudSave();}
 }
 
 // ============ ALL CHALLENGES ============
@@ -3749,6 +3750,7 @@ function saveTask(){
   closeM('m-task');
   t.value='';$('t-desc').value='';$('t-assign').value='';
   refreshAll();
+  checkDeadlineAlerts();
   queueCloudSave();
 }
 
@@ -3928,7 +3930,9 @@ var PROJECT_SELECT_IDS=[
   {id:'pr-proj',all:false,core:true},
   {id:'ex-proj',all:false,core:true},
   {id:'f-proj',all:true,core:false},
-  {id:'pcf-proj',all:false,core:false,none:true,noneLabel:'Not sure / General'}
+  {id:'pcf-proj',all:false,core:false,none:true,noneLabel:'Not sure / General'},
+  {id:'tar-proj',all:false,core:false,none:true,noneLabel:'Not project-specific'},
+  {id:'nu-projects',all:true,core:false}
 ];
 
 function refreshAllProjectDropdowns(){
@@ -5026,30 +5030,56 @@ function renderProgramAnalysisFull(){
 
 
 
+// Signature of whichever tasks were on-screen the last time the user dismissed the banner \u2014
+// lets us stay hidden for that exact situation but pop back up the moment anything about it
+// changes (a new task assigned to you, a dismissed one going overdue, etc.), instead of the
+// old behavior where a single dismiss silenced the banner for the rest of the session even as
+// new deadlines/assignments piled up.
+var deadlineDismissedSig=null;
 function checkDeadlineAlerts(){
   var banner=$('deadline-banner');
   if(!banner)return;
+  var mine = DB.tasks.filter(function(t){ return !t.done && t.assign===SES.name; });
+  var mineOverdue = mine.filter(function(t){return overdue(t.due);}).length;
+  var mineDueSoon = mine.filter(function(t){
+    if(overdue(t.due))return false;
+    var daysLeft=(new Date(t.due)-new Date())/86400000;
+    return daysLeft<=3;
+  }).length;
+
   var myDept = (SES.role==='executive'||SES.role==='progdeputy'||SES.role==='deputy') ? null : DEPTNAME[SES.role];
-  var relevant = DB.tasks.filter(function(t){
-    if(t.done)return false;
+  var deptRelevant = DB.tasks.filter(function(t){
+    if(t.done || t.assign===SES.name)return false;
     if(myDept && t.dept!==myDept)return false;
     var daysLeft=(new Date(t.due)-new Date())/86400000;
     return daysLeft<=3;
   });
-  var overdueCount = relevant.filter(function(t){return overdue(t.due);}).length;
-  var nearCount = relevant.length-overdueCount;
-  if(!relevant.length){banner.style.display='none';return;}
-  var msg = '\uD83D\uDD14 ';
-  if(overdueCount)msg += overdueCount+' task'+(overdueCount>1?'s':'')+' overdue';
-  if(overdueCount && nearCount)msg += ', ';
-  if(nearCount)msg += nearCount+' task'+(nearCount>1?'s':'')+' due within 3 days';
-  msg += '. <a href="#" onclick="go(\'all-tasks\');return false;" style="color:#92400e;font-weight:700;text-decoration:underline">View tasks</a> &nbsp; <a href="#" onclick="dismissDeadlineBanner();return false;" style="color:#92400e;text-decoration:underline">Dismiss</a>';
-  banner.innerHTML=msg;
+  var deptOverdue = deptRelevant.filter(function(t){return overdue(t.due);}).length;
+  var deptNear = deptRelevant.length-deptOverdue;
+
+  var sig = mine.map(function(t){return t.id;}).concat(deptRelevant.map(function(t){return t.id;})).sort().join(',');
+  if(!sig){banner.style.display='none';deadlineDismissedSig=null;return;}
+  if(sig===deadlineDismissedSig){banner.style.display='none';return;}
+
+  var parts=[];
+  if(mine.length){
+    var sub=[];
+    if(mineOverdue)sub.push(mineOverdue+' overdue');
+    if(mineDueSoon)sub.push(mineDueSoon+' due within 3 days');
+    parts.push('<b>'+mine.length+' task'+(mine.length>1?'s':'')+' assigned to you'+(sub.length?' ('+sub.join(', ')+')':'')+'</b>');
+  }
+  if(deptOverdue)parts.push(deptOverdue+' other department task'+(deptOverdue>1?'s':'')+' overdue');
+  if(deptNear)parts.push(deptNear+' other department task'+(deptNear>1?'s':'')+' due within 3 days');
+
+  banner.innerHTML='\uD83D\uDD14 '+parts.join(' &middot; ')+'. <a href="#" onclick="go(\'all-tasks\');return false;" style="color:#92400e;font-weight:700;text-decoration:underline">View tasks</a> &nbsp; <a href="#" onclick="dismissDeadlineBanner();return false;" style="color:#92400e;text-decoration:underline">Dismiss</a>';
   banner.style.display='block';
+  banner.dataset.sig=sig;
 }
 function dismissDeadlineBanner(){
   var banner=$('deadline-banner');
-  if(banner)banner.style.display='none';
+  if(!banner)return;
+  deadlineDismissedSig=banner.dataset.sig||null;
+  banner.style.display='none';
 }
 
 
@@ -5695,6 +5725,7 @@ function saveEditTask(){
   closeM('m-edit-task');
   renderAllTasks();renderExecTasks();renderDeptTasks(SES.dept,SES.dept);
   refreshAll();
+  checkDeadlineAlerts();
   queueCloudSave();
   alert('Task updated successfully.');
 }
