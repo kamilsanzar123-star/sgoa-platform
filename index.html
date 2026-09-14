@@ -36,6 +36,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
 .lhint b{font-size:11px;color:var(--navy);display:block;margin-bottom:6px;}
 .lhint div{font-size:11px;color:var(--g600);margin-bottom:4px;}
 
+/* PASSWORD CHANGE MODAL */
+#pwd-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:center;justify-content:center;}
+#pwd-modal.on{display:flex;}
+.pwd-box{background:#fff;border-radius:14px;padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.pwd-box h3{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.pwd-box p{font-size:11px;color:var(--g500);margin-bottom:18px;}
+.pwd-box .fg{margin-bottom:13px;}
+.pwd-box label{display:block;font-size:11px;font-weight:700;color:var(--g600);margin-bottom:4px;}
+.pwd-box input{width:100%;padding:10px;border:1.5px solid var(--g200);border-radius:8px;font-size:13px;outline:none;font-family:inherit;}
+.pwd-box input:focus{border-color:var(--navy);}
+.pwd-row{display:flex;gap:8px;margin-top:6px;}
+.pwd-msg{font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;margin-top:10px;display:none;}
+.pwd-msg.ok{background:var(--greenL);color:var(--green);}
+.pwd-msg.err{background:var(--redL);color:var(--red);}
+
 /* APP SHELL */
 #app{display:none;}
 #app.on{display:block;position:fixed;top:0;left:0;right:0;bottom:0;}
@@ -351,7 +366,8 @@ tbody tr:hover td{background:var(--g50);}
       <div class="nuser"><div class="nav-av" id="uav">KS</div><div><div class="nuname" id="unm">Kamil Sanzar</div><div class="nurole" id="url">Head of MEAL</div></div></div>
       <span id="cloud-status" style="font-size:11px;color:#94a3b8;margin-right:10px"></span>
       <button class="nlogout" id="nb-back" style="display:none" onclick="goBack()">&larr; Back</button>
-      <button class="nlogout" onclick="doLogout()">Sign Out</button>
+      <button class="nlogout" onclick="openPwdModal()" style="background:rgba(255,255,255,.06)">🔒 Password</button>
+<button class="nlogout" onclick="doLogout()">Sign Out</button>
     </div>
   </nav>
   <div class="lay">
@@ -1168,6 +1184,75 @@ tbody tr:hover td{background:var(--g50);}
   </div>
 </div>
 
+
+<!-- TIMESHEET PAGE -->
+<div class="pg" id="p-timesheet">
+  <div class="wb" style="background:linear-gradient(135deg,#1A3A6B,#0F2347)">
+    <div><div class="wbt">⏱ My Timesheet</div><div class="wbs">Monthly timesheet — Fri & Sat are weekends. Enter 8 for a full working day.</div></div>
+    <div class="wbi">📋</div>
+  </div>
+  <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+    <div class="st nv"><div class="stl">Total Hours</div><div class="stv" id="ts-hrs">0h</div><div class="sts" id="ts-exp">of 0h expected</div></div>
+    <div class="st gr"><div class="stl">Approved</div><div class="stv" id="ts-appr">0</div></div>
+    <div class="st og"><div class="stl">Pending HR</div><div class="stv" id="ts-pend">0</div></div>
+    <div class="st rd"><div class="stl">Rejected</div><div class="stv" id="ts-rej">0</div></div>
+  </div>
+  <div id="ts-container" style="padding:4px 0"></div>
+</div>
+
+<!-- TIMESHEET APPROVAL PAGE -->
+<div class="pg" id="p-timesheet-approve">
+  <div class="wb" style="background:linear-gradient(135deg,#4c1d95,#7c3aed)">
+    <div><div class="wbt">✓ Timesheet Approvals</div><div class="wbs">Review and approve staff monthly timesheets</div></div>
+    <div class="wbi">✅</div>
+  </div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="st og"><div class="stl">Pending</div><div class="stv" id="tsa-pend">0</div></div>
+    <div class="st gr"><div class="stl">Approved</div><div class="stv" id="tsa-appr">0</div></div>
+    <div class="st rd"><div class="stl">Rejected</div><div class="stv" id="tsa-rej">0</div></div>
+  </div>
+  <div id="tsa-container"></div>
+</div>
+<!-- MY SETTINGS PAGE -->
+<div class="pg" id="p-my-settings">
+<div class="ph"><div><h1>⚙️ My Settings</h1><p>Manage your profile and preferences</p></div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px">
+<div style="grid-column:1/-1;background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+<h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px">👤 My Profile</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div class="fg"><label>Email</label><input type="email" id="ms-email" placeholder="email@sgoa.org"></div>
+<div class="fg"><label>Phone</label><input type="text" id="ms-phone" placeholder="+93..."></div>
+</div
+<button class="btn" onclick="saveMyProfile()">💾 Save Profile</button>
+<span id="ms-profile-msg" style="margin-left:10px;font-size:12px;color:var(--green)"></span>
+</div>
+<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+<h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px">🔒 Change Password</h3>
+<div class="fg"><label>Current Password</label><input type="password" id="ms-cur"></div>
+<div class="fg"><label>New Password</label><input type="password" id="ms-new"></div>
+<div class="fg"><label>Confirm New</label><input type="password" id="ms-cfm"></div>
+<button class="btn" onclick="saveMyPassword()">🔒 Update Password</button>
+<div id="ms-pwd-msg" style="margin-top:8px;font-size:12px"></div>
+</div>
+<div class="card">
+<h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px">🔔 Notifications</h3>
+<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" id="ms-notif-tasks"> Task alerts</label>
+<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" id="ms-notif-pr"> PR notifications</label>
+<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" id="ms-notif-leave"> Leave updates</label>
+<label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="ms-notif-wf"> Workflow alerts</label>
+<button class="btn" style="margin-top:14px" onclick="saveMyPrefs()">💾 Save</button>
+<span id="ms-prefs-msg" style="margin-left:10px;font-size:12px;color:var(--green)"></span>
+</div>
+<div class="card" style="grid-column:1/-1">
+<h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px">🏢 Account Info</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+<div><div style="font-size:11px;color:var(--g500);margin-bottom:3px">NAME</div><div id="ms-info-name" style="font-weight:600;color:var(--navy)">-</div></div>
+<div><div style="font-size:11px;color:var(--g500);margin-bottom:3px">ROLE</div><div id="ms-info-role" style="font-weight:600;color:var(--navy)">-</div></div>
+<div><div style="font-size:11px;color:var(--g500);margin-bottom:3px">USERNAME</div><div id="ms-info-user" style="font-weight:600;color:var(--navy)">-</div></div>
+</div>
+</div>
+</div>
+</div>
     </main>
   </div>
 </div>
@@ -1481,53 +1566,63 @@ var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
 'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
-'admin','safeguarding','operations','ops-assets','ops-fleet','it','access','tar-request','leave-request'],
-meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request'],
-finance:['finance','projects','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request'],
-hr:['hr','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request'],
-programs:['programs','prog-activities','prog-benef','prog-analysis','projects','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request'],
-supply:['supply','supply-proc','supply-dist','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request'],
-admin:['admin','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request'],
-safeguarding:['safeguarding','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request'],
-operations:['operations','ops-assets','ops-fleet','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request'],
+'admin','safeguarding','operations','ops-assets','ops-fleet','it','access','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+finance:['finance','projects','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+hr:['hr','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+programs:['programs','prog-activities','prog-benef','prog-analysis','projects','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+supply:['supply','supply-proc','supply-dist','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+admin:['admin','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+safeguarding:['safeguarding','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+operations:['operations','ops-assets','ops-fleet','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
-  'admin','safeguarding','operations','ops-assets','ops-fleet','denied'],
+  'admin','safeguarding','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
-  'admin','safeguarding','operations','ops-assets','ops-fleet','denied'],
-it:['it','all-tasks','workflow','denied','leave-request'],
-access:['access','all-tasks','workflow','denied','leave-request']
+  'admin','safeguarding','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
+it:['it','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
+access:['access','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
 };
 
 var SIDEBAR={
 executive:[
-{l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
-{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]}],
+{l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
+{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
-{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'}]},
-{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-dist',n:'Distribution'}]},
-{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
+{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 operations:[{l:'OPERATIONS',i:[{p:'operations',n:'Operations Home'},{p:'ops-assets',n:'Asset Register'},{p:'ops-fleet',n:'Fleet Management'}]},
-{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-progdeputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'}]},
+{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+progdeputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
-{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]}],
-deputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'}]},
+{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+deputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
-{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'}]}],
-it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'}]},{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}],
-access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'}]},{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]}]
+{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'}]},
+{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
 };
-
 var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations',progdeputy:'pr-approvals',deputy:'pr-approvals',it:'it',access:'access'};
 
 var SES={role:null,name:'',init:''};
@@ -1567,7 +1662,8 @@ sgCases:[],
 contracts:[],
 leaveRequests:[],
 attendance:[],
-expenditures:[]
+expenditures:[],
+timesheets:[]
 };
 
 DB.visits=[];
@@ -1880,8 +1976,97 @@ function doLogin(){
   checkDeadlineAlerts();
   go(HOME[effRole]||'exec');
 }
-
-
+// MY SETTINGS PAGE
+function renderMySettings(){
+  var u=DB.users.find(function(x){return x.name===SES.name;});
+  // profile fields
+  document.getElementById('ms-name').value=SES.name||'';
+  document.getElementById('ms-pos').value=(u&&u.position)||SES.position||'';
+  document.getElementById('ms-email').value=(u&&u.email)||'';
+  document.getElementById('ms-phone').value=(u&&u.phone)||'';
+  // prefs
+  var prefs=(u&&u.prefs)||{};
+  document.getElementById('ms-notif-tasks').checked=prefs.tasks||false;
+  document.getElementById('ms-notif-pr').checked=prefs.pr||false;
+  document.getElementById('ms-notif-leave').checked=prefs.leave||false;
+  document.getElementById('ms-notif-wf').checked=prefs.wf||false;
+  // account info
+  document.getElementById('ms-info-name').textContent=SES.name||'-';
+  document.getElementById('ms-info-role').textContent=SES.position||'-';
+  document.getElementById('ms-info-user').textContent=(u&&u.username)||'-';
+}
+function saveMyProfile(){
+  var u=DB.users.find(function(x){return x.name===SES.name;});
+  if(u){
+    u.email=document.getElementById('ms-email').value.trim();
+    u.phone=document.getElementById('ms-phone').value.trim();
+    queueCloudSave();
+  }
+  var m=document.getElementById('ms-profile-msg');
+  m.textContent='✅ Saved!'; setTimeout(function(){m.textContent='';},2500);
+}
+function saveMyPassword(){
+  var cur=document.getElementById('ms-cur').value.trim();
+  var nw=document.getElementById('ms-new').value.trim();
+  var cf=document.getElementById('ms-cfm').value.trim();
+  var msg=document.getElementById('ms-pwd-msg');
+  function show(t,c){msg.textContent=t;msg.style.color=c;setTimeout(function(){msg.textContent='';},3500);}
+  var u=DB.users.find(function(x){return x.name===SES.name;});
+  var k=null; for(var i in CRED){if(CRED[i].n===SES.name){k=i;break;}}
+  if(!(u&&u.password===cur)&&!(k&&CRED[k].p===cur)){show('Current password incorrect.','var(--red)');return;}
+  if(nw.length<6){show('Min 6 characters.','var(--red)');return;}
+  if(nw!==cf){show('Passwords do not match.','var(--red)');return;}
+  if(u)u.password=nw;
+  if(k)CRED[k].p=nw;
+  queueCloudSave();
+  show('✅ Password updated!','var(--green)');
+}
+function saveMyPrefs(){
+  var u=DB.users.find(function(x){return x.name===SES.name;});
+  if(u){
+    u.prefs={
+      tasks:document.getElementById('ms-notif-tasks').checked,
+      pr:document.getElementById('ms-notif-pr').checked,
+      leave:document.getElementById('ms-notif-leave').checked,
+      wf:document.getElementById('ms-notif-wf').checked
+    };
+    queueCloudSave();
+  }
+  var m=document.getElementById('ms-prefs-msg');
+  m.textContent='✅ Saved!'; setTimeout(function(){m.textContent='';},2500);
+}
+function openPwdModal(){
+  document.getElementById('pwd-current').value='';
+  document.getElementById('pwd-new').value='';
+  document.getElementById('pwd-confirm').value='';
+  document.getElementById('pwd-msg').style.display='none';
+  document.getElementById('pwd-username-label').textContent='Account: '+SES.name;
+  document.getElementById('pwd-modal').classList.add('on');
+}
+function closePwdModal(){
+  document.getElementById('pwd-modal').classList.remove('on');
+}
+function doChangePassword(){
+  var cur=document.getElementById('pwd-current').value.trim();
+  var nw=document.getElementById('pwd-new').value.trim();
+  var cf=document.getElementById('pwd-confirm').value.trim();
+  var msg=document.getElementById('pwd-msg');
+  function showMsg(t,type){msg.textContent=t;msg.className='pwd-msg '+type;msg.style.display='block';setTimeout(function(){msg.style.display='none';},3500);}
+  var dbUser=DB.users.find(function(u){return u.name===SES.name;});
+  var credKey=null;
+  for(var k in CRED){if(CRED[k].n===SES.name){credKey=k;break;}}
+  var currentOk=false;
+  if(dbUser && dbUser.password===cur) currentOk=true;
+  if(credKey && CRED[credKey].p===cur) currentOk=true;
+  if(!currentOk){showMsg('Current password is incorrect.','err');return;}
+  if(nw.length<6){showMsg('New password must be at least 6 characters.','err');return;}
+  if(nw!==cf){showMsg('New passwords do not match.','err');return;}
+  if(dbUser) dbUser.password=nw;
+  if(credKey) CRED[credKey].p=nw;
+  queueCloudSave();
+  showMsg('✅ Password updated successfully!','ok');
+  setTimeout(closePwdModal,2000);
+}
 function doLogout(){
   SES={role:null,name:'',init:''};
   pageHistory=[];currentPageId=null;
@@ -1979,7 +2164,10 @@ function render(pg){
       else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();}
       else if(pg==='ops-assets'){renderAssets();}
       else if(pg==='ops-fleet'){renderFleet();}
-    }catch(e){console.log('render error:',pg,e);}
+      else if(pg==='timesheet'){setTimeout(renderMyTimesheet,100);}
+      else if(pg==='timesheet-approve'){setTimeout(renderTimesheetApprovals,100);}
+      else if(pg==='my-settings'){renderMySettings();}
+    }catch(e){console.error('render error:',pg,e.message,e.stack);}
   },30);
 }
 
@@ -5684,5 +5872,715 @@ if(document.getElementById('afg-map')) initMap();
 <div class="mf"><button class="b bo" onclick="closeM('m-expenditure')">Cancel</button><button class="b bn" onclick="saveExpenditure()">Record Expenditure</button></div>
 </div></div>
 
-</body>
-</html>
+
+<script>
+// ====== TIMESHEET MODULE ======
+var TS_TARGET = null;
+
+function tsInit(){
+  if(!DB.timesheets) DB.timesheets = [];
+  if(!DB.holidays) DB.holidays = [];
+}
+
+function tsGetMonth(){
+  var el = document.getElementById('ts-month-input');
+  if(el && el.value) return el.value;
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function tsDays(month){
+  var parts = month.split('-');
+  var y = parseInt(parts[0]), m = parseInt(parts[1]) - 1;
+  var result = [], d = new Date(y, m, 1);
+  var names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  while(d.getMonth() === m){
+    var dow = d.getDay();
+    result.push({ n: d.getDate(), name: names[dow], weekend: dow===5||dow===6 });
+    d.setDate(d.getDate()+1);
+  }
+  return result;
+}
+
+function tsGetRecord(staff, month){
+  tsInit();
+  var rec = DB.timesheets.find(function(r){ return r.staff===staff && r.month===month; });
+  if(!rec){
+    rec = {
+      staff: staff,
+      dept: (SES&&SES.role) ? (DEPTNAME[SES.role]||SES.role) : '',
+      month: month,
+      location: 'Kabul',
+      status: 'Draft',
+      submitted: null,
+      approvedBy: null,
+      hrNote: '',
+      rows: [],
+      leave: {}, holiday: {}, absence: {}
+    };
+    DB.timesheets.push(rec);
+  }
+  if(!rec.rows) rec.rows = [];
+  if(!rec.leave) rec.leave = {};
+  if(!rec.holiday) rec.holiday = {};
+  if(!rec.absence) rec.absence = {};
+  return rec;
+}
+
+function renderMyTimesheet(){
+  tsInit();
+  var con = document.getElementById('ts-container');
+  if(!con){ return; }
+
+  var staff = SES && SES.name ? SES.name : 'Staff';
+  var month = tsGetMonth();
+  var days = tsDays(month);
+  var workDays = days.filter(function(d){ return !d.weekend; }).length;
+  var rec = tsGetRecord(staff, month);
+
+  // Default rows if empty
+  if(rec.rows.length === 0){
+    var projKeys = Object.keys(PROJ||{});
+    if(projKeys.length){
+      projKeys.slice(0,5).forEach(function(k){
+        rec.rows.push({proj: PROJ[k].name||k, code: k, hours:{}});
+      });
+    } else {
+      rec.rows.push({proj:'SCI GPE AL P2', code:'40011', hours:{}});
+      rec.rows.push({proj:'Core / Admin', code:'Core', hours:{}});
+    }
+  }
+
+  var canEdit = rec.status==='Draft' || rec.status==='Rejected';
+  var mine = DB.timesheets.filter(function(r){ return r.staff===staff; });
+
+  // Update stat cards
+  var allHours = 0;
+  rec.rows.forEach(function(row){
+    Object.values(row.hours||{}).forEach(function(v){ allHours += parseFloat(v)||0; });
+  });
+  var h = document.getElementById('ts-hrs'); if(h) h.textContent = allHours+'h';
+  var e = document.getElementById('ts-exp'); if(e) e.textContent = 'of '+(workDays*8)+'h expected';
+  var a = document.getElementById('ts-appr'); if(a) a.textContent = mine.filter(function(r){return r.status==='Approved';}).length;
+  var p = document.getElementById('ts-pend'); if(p) p.textContent = mine.filter(function(r){return r.status==='Submitted';}).length;
+  var rj = document.getElementById('ts-rej'); if(rj) rj.textContent = mine.filter(function(r){return r.status==='Rejected';}).length;
+
+  // Clear and rebuild container
+  while(con.firstChild) con.removeChild(con.firstChild);
+
+  // ---- CONTROLS BAR ----
+  var bar = document.createElement('div');
+  bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:12px';
+
+  var left = document.createElement('div');
+  left.style.cssText = 'display:flex;align-items:center;gap:10px';
+  var lbl = document.createElement('span');
+  lbl.style.cssText = 'font-size:12px;font-weight:700;color:#1A3A6B';
+  lbl.textContent = 'Month:';
+  var mInput = document.createElement('input');
+  mInput.type = 'month';
+  mInput.id = 'ts-month-input';
+  mInput.value = month;
+  mInput.style.cssText = 'padding:5px 10px;border:1.5px solid #1A3A6B;border-radius:7px;font-size:13px;font-weight:600;color:#1A3A6B;font-family:inherit;outline:none';
+  mInput.addEventListener('change', renderMyTimesheet);
+  left.appendChild(lbl);
+  left.appendChild(mInput);
+
+  var right = document.createElement('div');
+  right.style.cssText = 'display:flex;gap:8px;align-items:center';
+  var badge = document.createElement('span');
+  var badgeColors = {Draft:'background:#f1f5f9;color:#64748b', Submitted:'background:#fef3c7;color:#92400e', Approved:'background:#dcfce7;color:#15803d', Rejected:'background:#fee2e2;color:#dc2626'};
+  badge.style.cssText = 'padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;' + (badgeColors[rec.status]||'');
+  badge.textContent = rec.status;
+  right.appendChild(badge);
+
+  if(canEdit){
+    var addBtn = document.createElement('button');
+    addBtn.className = 'b bo';
+    addBtn.textContent = '+ Add Row';
+    addBtn.style.fontSize = '11px';
+    addBtn.addEventListener('click', function(){ tsAddRow(staff, month); });
+    right.appendChild(addBtn);
+
+    var subBtn = document.createElement('button');
+    subBtn.className = 'b bn';
+    subBtn.textContent = 'Submit to HR ▶';
+    subBtn.style.fontSize = '11px';
+    subBtn.addEventListener('click', function(){ tsSubmit(staff, month); });
+    right.appendChild(subBtn);
+  }
+
+  bar.appendChild(left);
+  bar.appendChild(right);
+  con.appendChild(bar);
+
+  // ---- NOTICE ----
+  var notice = document.createElement('div');
+  var noticeStyle = {
+    Draft: 'background:#eff6ff;border:1px solid #2563eb;color:#1e40af',
+    Submitted: 'background:#fef3c7;border:1px solid #f59e0b;color:#92400e',
+    Approved: 'background:#dcfce7;border:1px solid #16a34a;color:#14532d',
+    Rejected: 'background:#fee2e2;border:1px solid #dc2626;color:#7f1d1d'
+  };
+  var noticeText = {
+    Draft: '📝 Draft — enter 8 for a full working day. Fri and Sat are weekends (shaded). Click Submit to HR when the month is complete.',
+    Submitted: '⏳ Submitted to HR — awaiting approval. You cannot edit this timesheet.',
+    Approved: '✅ Approved by HR.' + (rec.hrNote ? ' Note: ' + rec.hrNote : ''),
+    Rejected: '❌ Returned by HR. Please correct and resubmit. Reason: ' + (rec.hrNote||'—')
+  };
+  notice.style.cssText = 'padding:9px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;' + (noticeStyle[rec.status]||'');
+  notice.textContent = noticeText[rec.status]||'';
+  con.appendChild(notice);
+
+  // ---- HEADER INFO BOX ----
+  var hdrBox = document.createElement('div');
+  hdrBox.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:12px';
+
+  var hdrTitle = document.createElement('div');
+  hdrTitle.style.cssText = 'text-align:center;font-weight:800;font-size:14px;color:#1A3A6B;border-bottom:2px solid #c5962e;padding-bottom:8px;margin-bottom:14px';
+  hdrTitle.textContent = 'Sustainable Goals Organization for Afghanistan (SGOA)';
+  var sub = document.createElement('div');
+  sub.style.cssText = 'font-size:11px;font-weight:400;color:#888;margin-top:3px';
+  sub.textContent = 'Monthly Timesheet — ' + month;
+  hdrTitle.appendChild(sub);
+  hdrBox.appendChild(hdrTitle);
+
+  var infoGrid = document.createElement('div');
+  infoGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 24px';
+
+  function makeInfoField(label, value, editable, callback){
+    var wrap = document.createElement('div');
+    var lbl2 = document.createElement('div');
+    lbl2.style.cssText = 'font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;margin-bottom:3px';
+    lbl2.textContent = label;
+    wrap.appendChild(lbl2);
+    if(editable){
+      var inp = document.createElement('input');
+      inp.value = value||'';
+      inp.style.cssText = 'border:none;border-bottom:1.5px solid #1A3A6B;background:transparent;font-size:12px;font-weight:600;color:#1A3A6B;width:100%;outline:none;font-family:inherit;padding-bottom:2px';
+      if(callback) inp.addEventListener('change', function(){ callback(this.value); });
+      wrap.appendChild(inp);
+    } else {
+      var val = document.createElement('div');
+      val.style.cssText = 'border-bottom:1.5px solid #1A3A6B;font-size:12px;font-weight:600;color:#1A3A6B;padding-bottom:2px';
+      val.textContent = value;
+      wrap.appendChild(val);
+    }
+    return wrap;
+  }
+
+  var dept = (SES&&SES.role) ? (DEPTNAME[SES.role]||SES.role) : '';
+  if(!rec.empName) rec.empName = staff;
+  if(!rec.empDept) rec.empDept = dept;
+  if(!rec.supervisor) rec.supervisor = 'Gul Mohammad ARYAN';
+  if(!rec.empPos) rec.empPos = '';
+  infoGrid.appendChild(makeInfoField('Employee Name', rec.empName, true, function(v){ rec.empName=v; queueCloudSave(); var el=document.getElementById('ts-sig-emp'); if(el) el.textContent=v; }));
+  infoGrid.appendChild(makeInfoField('Department', rec.empDept, true, function(v){ rec.empDept=v; queueCloudSave(); }));
+  infoGrid.appendChild(makeInfoField('Job Location', rec.location||'Kabul', true, function(v){ rec.location=v; queueCloudSave(); }));
+  infoGrid.appendChild(makeInfoField('Position / Title', rec.empPos||'', true, function(v){ rec.empPos=v; queueCloudSave(); }));
+  infoGrid.appendChild(makeInfoField('Supervisor', rec.supervisor, true, function(v){ rec.supervisor=v; queueCloudSave(); var el=document.getElementById('ts-sig-sup'); if(el) el.textContent=v; }));
+  infoGrid.appendChild(makeInfoField('Report Month', month, false, null));
+  hdrBox.appendChild(infoGrid);
+  con.appendChild(hdrBox);
+
+  // ---- GRID TABLE ----
+  var tableWrap = document.createElement('div');
+  tableWrap.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;overflow-x:auto';
+
+  var table = document.createElement('table');
+  table.style.cssText = 'border-collapse:collapse;min-width:800px';
+
+  // Header row
+  var thead = table.createTHead();
+  var hrow = thead.insertRow();
+  hrow.style.cssText = 'background:#1A3A6B;color:#fff';
+
+  function th(text, minW, align){
+    var cell = document.createElement('th');
+    cell.style.cssText = 'padding:5px 6px;font-size:10px;min-width:'+(minW||30)+'px;text-align:'+(align||'center');
+    cell.textContent = text;
+    hrow.appendChild(cell);
+    return cell;
+  }
+  th('PROJECT NAME', 160, 'left');
+  th('CODE', 55, 'center');
+  th('TOTAL', 45, 'center');
+  days.forEach(function(d){
+    var cell = document.createElement('th');
+    cell.style.cssText = 'padding:3px 2px;font-size:9px;min-width:30px;text-align:center' + (d.weekend ? ';background:#7f1d1d' : '');
+    cell.innerHTML = d.n + '<br><span style="font-weight:400">' + d.name + '</span>';
+    hrow.appendChild(cell);
+  });
+  if(canEdit){ th('', 24); }
+
+  // Body
+  var tbody = table.createTBody();
+
+  function addDataRow(row, ri){
+    var tr = tbody.insertRow();
+    tr.style.background = ri%2 ? '#f8fafc' : '#fff';
+
+    // Project name
+    var tdProj = tr.insertCell();
+    tdProj.style.cssText = 'padding:3px 7px';
+    var projInp = document.createElement('input');
+    projInp.value = row.proj||'';
+    projInp.style.cssText = 'border:none;background:transparent;font-family:inherit;font-size:11px;font-weight:600;color:#1A3A6B;width:100%;outline:none';
+    projInp.addEventListener('change', function(){ row.proj = this.value; queueCloudSave(); });
+    tdProj.appendChild(projInp);
+
+    // Code
+    var tdCode = tr.insertCell();
+    tdCode.style.cssText = 'padding:3px;text-align:center';
+    var codeInp = document.createElement('input');
+    codeInp.value = row.code||'';
+    codeInp.style.cssText = 'border:none;background:transparent;font-family:inherit;font-size:10px;color:#888;width:100%;text-align:center;outline:none';
+    codeInp.addEventListener('change', function(){ row.code = this.value; queueCloudSave(); });
+    tdCode.appendChild(codeInp);
+
+    // Row total
+    var tdTotal = tr.insertCell();
+    tdTotal.id = 'ts-rt-' + ri;
+    var rowTotal = days.reduce(function(s,d){ return s + (parseFloat((row.hours||{})[d.n])||0); }, 0);
+    tdTotal.style.cssText = 'text-align:center;font-weight:700;font-size:11px;background:#dbeafe;color:#1A3A6B;min-width:40px';
+    tdTotal.textContent = rowTotal;
+
+    // Day cells
+    days.forEach(function(d){
+      var td = tr.insertCell();
+      if(d.weekend){
+        td.style.cssText = 'background:#fde8d0;text-align:center;font-size:9px;color:#9a3412;font-weight:600';
+        td.textContent = 'W/E';
+      } else if(canEdit){
+        td.style.cssText = 'padding:1px;text-align:center';
+        var inp = document.createElement('input');
+        inp.type = 'number';
+        inp.min = '0';
+        inp.max = '8';
+        inp.value = (row.hours||{})[d.n] || '';
+        inp.placeholder = '-';
+        inp.style.cssText = 'width:26px;text-align:center;border:1px solid #e2e8f0;border-radius:3px;font-size:11px;padding:1px;color:#1A3A6B;font-family:inherit;background:#fff';
+        (function(day, rowRef, rowIdx){
+          inp.addEventListener('input', function(){
+            var v = parseFloat(this.value)||0;
+            if(v < 0) v = 0;
+            if(v > 8) v = 8;
+            if(v > 0) rowRef.hours[day] = v;
+            else delete rowRef.hours[day];
+            // Update row total
+            var rt = days.reduce(function(s,dx){ return s+(parseFloat((rowRef.hours||{})[dx.n])||0); }, 0);
+            var rtEl = document.getElementById('ts-rt-'+rowIdx);
+            if(rtEl) rtEl.textContent = rt;
+            // Update grand total card
+            tsUpdateTotals(rec);
+            queueCloudSave();
+          });
+        })(d.n, row, ri);
+        td.appendChild(inp);
+      } else {
+        td.style.cssText = 'text-align:center;font-size:11px;color:#1A3A6B';
+        td.textContent = (row.hours||{})[d.n] || '-';
+      }
+    });
+
+    // Delete button
+    if(canEdit){
+      var tdDel = tr.insertCell();
+      tdDel.style.textAlign = 'center';
+      var delBtn = document.createElement('button');
+      delBtn.textContent = '×';
+      delBtn.title = 'Remove row';
+      delBtn.style.cssText = 'border:none;background:none;color:#ef4444;cursor:pointer;font-size:18px;line-height:1;padding:0';
+      (function(idx){ delBtn.addEventListener('click', function(){ tsDelRow(staff, month, idx); }); })(ri);
+      tdDel.appendChild(delBtn);
+    }
+  }
+
+  rec.rows.forEach(function(row, ri){ addDataRow(row, ri); });
+
+  // Special rows
+  function addSpecialRow(label, key, bgColor){
+    var tr = tbody.insertRow();
+    tr.style.background = bgColor;
+    var td1 = tr.insertCell();
+    td1.style.cssText = 'padding:3px 7px;font-size:11px;font-weight:600;color:#555';
+    td1.textContent = label;
+    var td2 = tr.insertCell();
+    td2.style.cssText = 'text-align:center;font-size:10px;color:#aaa';
+    td2.textContent = '—';
+    var specTotal = days.reduce(function(s,d){ return s+(parseFloat((rec[key]||{})[d.n])||0); }, 0);
+    var tdT = tr.insertCell();
+    tdT.style.cssText = 'text-align:center;font-weight:700;font-size:11px;background:#dbeafe;color:#1A3A6B';
+    tdT.textContent = specTotal;
+    days.forEach(function(d){
+      var td = tr.insertCell();
+      if(d.weekend){
+        td.style.cssText = 'background:#fde8d0;text-align:center;font-size:9px;color:#9a3412;font-weight:600';
+        td.textContent = 'W/E';
+      } else if(canEdit){
+        td.style.cssText = 'background:'+bgColor+';padding:1px;text-align:center';
+        var inp = document.createElement('input');
+        inp.type = 'number'; inp.min = '0'; inp.max = '8'; inp.step = '0.5';
+        inp.value = (rec[key]||{})[d.n]||''; inp.placeholder = '-';
+        inp.style.cssText = 'width:26px;text-align:center;border:1px solid #e2e8f0;border-radius:3px;font-size:11px;padding:1px;font-family:inherit;background:'+bgColor;
+        (function(day, k){ inp.addEventListener('input', function(){
+          var v = parseFloat(this.value)||0;
+          if(!rec[k]) rec[k]={};
+          if(v>0) rec[k][day]=v; else delete rec[k][day];
+          tsUpdateTotals(rec);
+          queueCloudSave();
+        }); })(d.n, key);
+        td.appendChild(inp);
+      } else {
+        td.style.cssText = 'text-align:center;font-size:11px;background:'+bgColor;
+        td.textContent = (rec[key]||{})[d.n]||'-';
+      }
+    });
+    if(canEdit){ tr.insertCell(); }
+  }
+
+  function addHolidayRow(){
+    // Get holidays for this month
+    var monthHols = (DB.holidays||[]).filter(function(h){ return h.month===month; });
+    var bg = '#dcfce7';
+    var tr = tbody.insertRow();
+    tr.style.background = bg;
+    var td1 = tr.insertCell();
+    td1.style.cssText = 'padding:3px 7px;font-size:11px;font-weight:600;color:#15803d';
+    td1.textContent = 'Public Holiday';
+    var td2 = tr.insertCell();
+    td2.style.cssText = 'text-align:center;font-size:10px;color:#aaa';
+    td2.textContent = '—';
+    var holTotal = monthHols.length * 8;
+    var tdT = tr.insertCell();
+    tdT.style.cssText = 'text-align:center;font-weight:700;font-size:11px;background:#dbeafe;color:#1A3A6B';
+    tdT.textContent = holTotal;
+    days.forEach(function(d){
+      var td = tr.insertCell();
+      var hol = monthHols.find(function(h){ return parseInt(h.date.split('-')[2])===d.n; });
+      if(d.weekend){
+        td.style.cssText = 'background:#fde8d0;text-align:center;font-size:9px;color:#9a3412;font-weight:600';
+        td.textContent = 'W/E';
+      } else if(hol){
+        td.style.cssText = 'background:#16a34a;text-align:center;padding:2px 1px';
+        var lbl = document.createElement('div');
+        lbl.style.cssText = 'font-size:8px;color:#fff;font-weight:700;line-height:1.2';
+        lbl.textContent = '8';
+        var nm = document.createElement('div');
+        nm.style.cssText = 'font-size:7px;color:#bbf7d0;line-height:1.1;max-width:28px;overflow:hidden;white-space:nowrap';
+        nm.title = hol.name;
+        nm.textContent = hol.name;
+        td.appendChild(lbl); td.appendChild(nm);
+      } else {
+        td.style.cssText = 'background:'+bg+';text-align:center;font-size:11px;color:#aaa';
+        td.textContent = '-';
+      }
+    });
+    if(canEdit){ tr.insertCell(); }
+  }
+
+  // Sync HR-managed holidays into this record
+  if(!DB.holidays) DB.holidays=[];
+  DB.holidays.forEach(function(h){
+    if(h.month===month){
+      var day=parseInt(h.date.split('-')[2]);
+      rec.holiday[day]=8;
+    }
+  });
+
+  addSpecialRow('Annual Leave', 'leave', '#fef9c3');
+  addHolidayRow();
+  addSpecialRow('Absence', 'absence', '#fee2e2');
+
+  // Grand total row
+  var trGrand = tbody.insertRow();
+  trGrand.style.cssText = 'background:#1A3A6B;color:#fff;font-weight:700';
+  var tg1 = trGrand.insertCell(); tg1.style.cssText = 'padding:5px 8px;font-size:11px'; tg1.textContent = 'TOTAL HOURS';
+  var tg2 = trGrand.insertCell(); tg2.textContent = '';
+  var grandTotal = 0;
+  rec.rows.forEach(function(row){
+    days.forEach(function(d){ grandTotal += parseFloat((row.hours||{})[d.n])||0; });
+  });
+  var tg3 = trGrand.insertCell(); tg3.style.cssText = 'text-align:center;font-size:12px;font-weight:800;background:#2563eb'; tg3.textContent = grandTotal;
+  days.forEach(function(d){
+    var colTotal = 0;
+    rec.rows.forEach(function(row){ colTotal += parseFloat((row.hours||{})[d.n])||0; });
+    colTotal += (parseFloat((rec.leave||{})[d.n])||0) + (parseFloat((rec.holiday||{})[d.n])||0) + (parseFloat((rec.absence||{})[d.n])||0);
+    var td = trGrand.insertCell();
+    td.style.cssText = 'text-align:center;font-size:11px;background:' + (d.weekend ? '#7f1d1d' : (colTotal>0?'#2563eb':'#1A3A6B'));
+    td.textContent = colTotal||'';
+  });
+  if(canEdit){ var tgx = trGrand.insertCell(); tgx.style.background='#1A3A6B'; }
+
+  tableWrap.appendChild(table);
+  con.appendChild(tableWrap);
+
+  // ---- SIGNATURES ----
+  var sigBox = document.createElement('div');
+  sigBox.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px 30px;margin-bottom:12px';
+  var sigTitle = document.createElement('div');
+  sigTitle.style.cssText = 'font-size:11px;font-weight:700;color:#1A3A6B;margin-bottom:16px;border-bottom:1px solid #e2e8f0;padding-bottom:8px';
+  sigTitle.textContent = 'Certification & Signatures';
+  sigBox.appendChild(sigTitle);
+  var sigNote = document.createElement('div');
+  sigNote.style.cssText = 'font-size:11px;color:#555;margin-bottom:18px;font-style:italic';
+  sigNote.textContent = 'I certify that the hours recorded above are true and accurate to the best of my knowledge.';
+  sigBox.appendChild(sigNote);
+  var sigGrid = document.createElement('div');
+  sigGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:30px';
+  function makeSig(title, name, sigId){
+    var d = document.createElement('div');
+    var t = document.createElement('div'); t.style.cssText='font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;margin-bottom:4px'; t.textContent=title; d.appendChild(t);
+    var line = document.createElement('div'); line.style.cssText='border-bottom:2px solid #1A3A6B;height:36px;margin-bottom:6px'; d.appendChild(line);
+    var nm = document.createElement('div'); if(sigId) nm.id=sigId; nm.style.cssText='font-size:11px;font-weight:600;color:#1A3A6B'; nm.textContent=name; d.appendChild(nm);
+    var dt = document.createElement('div'); dt.style.cssText='font-size:10px;color:#aaa;margin-top:3px'; dt.textContent='Date: _____ / _____ / _______'; d.appendChild(dt);
+    return d;
+  }
+  sigGrid.appendChild(makeSig('Employee Signature', rec.empName||staff, 'ts-sig-emp'));
+  sigGrid.appendChild(makeSig('Supervisor / HR Approval', rec.supervisor||'Gul Mohammad ARYAN', 'ts-sig-sup'));
+  sigBox.appendChild(sigGrid);
+  con.appendChild(sigBox);
+
+  // ---- HISTORY TABLE ----
+  var histBox = document.createElement('div'); histBox.className='cd';
+  var histH = document.createElement('div'); histH.className='cdh';
+  var histTitle = document.createElement('div'); histTitle.className='cdt'; histTitle.textContent='My Timesheet History';
+  histH.appendChild(histTitle); histBox.appendChild(histH);
+  var histBody = document.createElement('div'); histBody.className='cdb tw';
+  var htbl = document.createElement('table');
+  var hhd = htbl.createTHead(); var hhr = hhd.insertRow();
+  ['Month','Total Hours','Projects','Submitted','Status','HR Note'].forEach(function(t){ var th2=document.createElement('th'); th2.textContent=t; hhr.appendChild(th2); });
+  var htbd = htbl.createTBody();
+  if(!mine.length){
+    var etr=htbd.insertRow(); var etd=etr.insertCell(); etd.colSpan=6;
+    etd.style.cssText='padding:14px;text-align:center;color:#aaa';
+    etd.textContent='No submitted timesheets yet.';
+  } else {
+    mine.slice().sort(function(a,b){return a.month<b.month?1:-1;}).forEach(function(r){
+      var h=0; (r.rows||[]).forEach(function(row){ Object.values(row.hours||{}).forEach(function(v){h+=parseFloat(v)||0;}); });
+      var p=(r.rows||[]).map(function(row){return row.code||row.proj;}).filter(Boolean).join(', ');
+      var sb={Draft:'bY',Submitted:'bO',Approved:'bG',Rejected:'bR'};
+      var tr2=htbd.insertRow();
+      tr2.innerHTML='<td><b>'+r.month+'</b></td><td><b>'+h+'h</b></td><td style="font-size:11px">'+p+'</td><td style="font-size:11px">'+(r.submitted?r.submitted:'—')+'</td><td><span class="bdg '+(sb[r.status]||'bY')+'">'+r.status+'</span></td><td style="font-size:11px;color:#888">'+(r.hrNote||'—')+'</td>';
+    });
+  }
+  histBody.appendChild(htbl); histBox.appendChild(histBody); con.appendChild(histBox);
+}
+
+function tsUpdateTotals(rec){
+  var total = 0;
+  (rec.rows||[]).forEach(function(row){
+    Object.values(row.hours||{}).forEach(function(v){ total += parseFloat(v)||0; });
+  });
+  Object.values(rec.leave||{}).forEach(function(v){ total += parseFloat(v)||0; });
+  Object.values(rec.holiday||{}).forEach(function(v){ total += parseFloat(v)||0; });
+  Object.values(rec.absence||{}).forEach(function(v){ total += parseFloat(v)||0; });
+  var el = document.getElementById('ts-hrs');
+  if(el) el.textContent = total + 'h';
+}
+
+function tsAddRow(staff, month){
+  var rec = tsGetRecord(staff, month);
+  rec.rows.push({proj:'New Project', code:'', hours:{}});
+  queueCloudSave();
+  renderMyTimesheet();
+}
+
+function tsDelRow(staff, month, ri){
+  var rec = tsGetRecord(staff, month);
+  if(!confirm('Remove this row?')) return;
+  rec.rows.splice(ri, 1);
+  queueCloudSave();
+  renderMyTimesheet();
+}
+
+function tsSubmit(staff, month){
+  var rec = tsGetRecord(staff, month);
+  var total = 0;
+  rec.rows.forEach(function(row){ Object.values(row.hours||{}).forEach(function(v){total+=parseFloat(v)||0;}); });
+  if(!total){ alert('Please fill in your hours before submitting.'); return; }
+  if(!confirm('Submit timesheet for '+month+' to HR?\nTotal: '+total+'h\n\nYou cannot edit after submission.')) return;
+  rec.status = 'Submitted';
+  rec.submitted = new Date().toISOString().split('T')[0];
+  queueCloudSave();
+  renderMyTimesheet();
+  alert('Submitted to HR successfully.');
+}
+
+function renderTimesheetApprovals(){
+  tsInit();
+  if(!DB.holidays) DB.holidays=[];
+  var con = document.getElementById('tsa-container');
+  if(!con) return;
+  var all = DB.timesheets || [];
+  var p1=document.getElementById('tsa-pend'); if(p1) p1.textContent=all.filter(function(r){return r.status==='Submitted';}).length;
+  var p2=document.getElementById('tsa-appr'); if(p2) p2.textContent=all.filter(function(r){return r.status==='Approved';}).length;
+  var p3=document.getElementById('tsa-rej'); if(p3) p3.textContent=all.filter(function(r){return r.status==='Rejected';}).length;
+  while(con.firstChild) con.removeChild(con.firstChild);
+
+  // ---- HOLIDAY MANAGEMENT ----
+  var holBox = document.createElement('div'); holBox.className='cd'; holBox.style.marginBottom='16px';
+  var holH = document.createElement('div'); holH.className='cdh';
+  var holT = document.createElement('div'); holT.className='cdt'; holT.textContent='📅 Public Holiday Management';
+  var holDesc = document.createElement('div'); holDesc.style.cssText='font-size:11px;color:#888;margin-top:2px'; holDesc.textContent='Holidays added here auto-appear in ALL staff timesheets for that month.';
+  var holTitleWrap = document.createElement('div'); holTitleWrap.appendChild(holT); holTitleWrap.appendChild(holDesc);
+  holH.appendChild(holTitleWrap);
+  holBox.appendChild(holH);
+  var holBody = document.createElement('div'); holBody.className='cdb';
+
+  // Add holiday form
+  var holForm = document.createElement('div');
+  holForm.style.cssText='display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:12px;background:#f0fdf4;border-radius:8px;margin-bottom:14px;border:1px solid #bbf7d0';
+  function fld(lbl,type,id,ph){
+    var w=document.createElement('div');w.style.cssText='display:flex;flex-direction:column;gap:3px';
+    var l=document.createElement('label');l.style.cssText='font-size:10px;font-weight:700;color:#15803d;text-transform:uppercase';l.textContent=lbl;
+    var i=document.createElement('input');i.type=type;i.id=id;i.placeholder=ph||'';
+    i.style.cssText='padding:5px 9px;border:1.5px solid #16a34a;border-radius:6px;font-family:inherit;font-size:12px;outline:none;min-width:130px';
+    w.appendChild(l);w.appendChild(i);return w;
+  }
+  holForm.appendChild(fld('Holiday Date','date','hol-date',''));
+  holForm.appendChild(fld('Holiday Name','text','hol-name','e.g. Eid Al-Fitr'));
+  var addHolBtn=document.createElement('button');
+  addHolBtn.className='b bn';addHolBtn.textContent='+ Add Holiday';
+  addHolBtn.style.cssText='font-size:11px;margin-bottom:0;align-self:flex-end;padding:6px 14px';
+  addHolBtn.addEventListener('click', function(){
+    var d=document.getElementById('hol-date'),n=document.getElementById('hol-name');
+    if(!d.value||!n.value.trim()){alert('Please enter both date and name.');return;}
+    var month=d.value.substring(0,7);
+    // Check duplicate
+    var dup=DB.holidays.find(function(h){return h.date===d.value;});
+    if(dup){alert('A holiday already exists on '+d.value+' ('+dup.name+')');return;}
+    DB.holidays.push({id:nid('HOL'),date:d.value,month:month,name:n.value.trim(),addedBy:SES.name,addedOn:today()});
+    queueCloudSave();
+    d.value='';n.value='';
+    renderTimesheetApprovals();
+    alert('Holiday added. It will appear in all staff timesheets for '+month+'.');
+  });
+  holForm.appendChild(addHolBtn);
+  holBody.appendChild(holForm);
+
+  // Holiday list table
+  if(!DB.holidays.length){
+    var noHol=document.createElement('div');noHol.style.cssText='padding:12px;text-align:center;color:#aaa;font-size:12px';noHol.textContent='No holidays added yet.';holBody.appendChild(noHol);
+  } else {
+    var htbl=document.createElement('table');htbl.style.width='100%';htbl.style.borderCollapse='collapse';
+    var hthead=htbl.createTHead();var htr=hthead.insertRow();
+    ['Date','Holiday Name','Month','Added By','Added On',''].forEach(function(t){
+      var th=document.createElement('th');th.textContent=t;th.style.cssText='padding:6px 10px;font-size:10px;font-weight:700;text-align:left;background:#f0fdf4;color:#15803d;border-bottom:1px solid #bbf7d0';htr.appendChild(th);
+    });
+    var htbody=htbl.createTBody();
+    DB.holidays.slice().sort(function(a,b){return a.date<b.date?-1:1;}).forEach(function(h){
+      var tr2=htbody.insertRow();
+      tr2.innerHTML='<td style="padding:6px 10px;font-size:12px;font-weight:700;color:#15803d">'+h.date+'</td>'+
+        '<td style="padding:6px 10px;font-size:12px">'+h.name+'</td>'+
+        '<td style="padding:6px 10px;font-size:11px;color:#888">'+h.month+'</td>'+
+        '<td style="padding:6px 10px;font-size:11px;color:#888">'+(h.addedBy||'—')+'</td>'+
+        '<td style="padding:6px 10px;font-size:11px;color:#888">'+(h.addedOn||'—')+'</td>'+
+        '<td style="padding:6px 10px;text-align:center"></td>';
+      var delBtn=document.createElement('button');
+      delBtn.style.cssText='border:none;background:none;color:#ef4444;cursor:pointer;font-size:13px';
+      delBtn.textContent='×'; delBtn.title='Delete holiday';
+      (function(hid){delBtn.addEventListener('click',function(){
+        if(!confirm('Delete this holiday? It will be removed from all timesheets.'))return;
+        DB.holidays=DB.holidays.filter(function(x){return x.id!==hid;});
+        queueCloudSave();renderTimesheetApprovals();
+      });})(h.id);
+      tr2.cells[5].appendChild(delBtn);
+    });
+    htbl.appendChild(htbody);holBody.appendChild(htbl);
+  }
+  holBox.appendChild(holBody);con.appendChild(holBox);
+
+  var pending = all.filter(function(r){return r.status==='Submitted';});
+  if(!pending.length){
+    var msg = document.createElement('div');
+    msg.style.cssText='padding:20px;text-align:center;color:#aaa;background:#fff;border-radius:10px;border:1px solid #e2e8f0';
+    msg.textContent='No timesheets pending approval.';
+    con.appendChild(msg);
+  } else {
+    pending.forEach(function(rec){
+      var card = document.createElement('div'); card.className='cd'; card.style.marginBottom='14px';
+      var hdr = document.createElement('div'); hdr.className='cdh';
+      var info = document.createElement('div');
+      var t = document.createElement('div'); t.className='cdt'; t.textContent=rec.staff+' — '+rec.month;
+      var s = document.createElement('div'); s.style.cssText='font-size:11px;color:#888;margin-top:2px';
+      var h=0; (rec.rows||[]).forEach(function(r){Object.values(r.hours||{}).forEach(function(v){h+=parseFloat(v)||0;});});
+      s.textContent=rec.dept+' · '+h+'h total · Submitted: '+(rec.submitted||'—');
+      info.appendChild(t); info.appendChild(s);
+      var btns = document.createElement('div'); btns.style.cssText='display:flex;gap:8px';
+      var rejBtn=document.createElement('button'); rejBtn.className='b'; rejBtn.style.cssText='background:#dc2626;color:#fff;font-size:11px'; rejBtn.textContent='Return ✕';
+      var appBtn=document.createElement('button'); appBtn.className='b bn'; appBtn.style.cssText='font-size:11px'; appBtn.textContent='Approve ✓';
+      (function(r){
+        rejBtn.addEventListener('click', function(){ openTSApprove(r,'Rejected'); });
+        appBtn.addEventListener('click', function(){ openTSApprove(r,'Approved'); });
+      })(rec);
+      btns.appendChild(rejBtn); btns.appendChild(appBtn);
+      hdr.appendChild(info); hdr.appendChild(btns); card.appendChild(hdr);
+      con.appendChild(card);
+    });
+  }
+  // All records table
+  var tblBox = document.createElement('div'); tblBox.className='cd';
+  var tblH = document.createElement('div'); tblH.className='cdh';
+  var tblT = document.createElement('div'); tblT.className='cdt'; tblT.textContent='All Staff Timesheets';
+  tblH.appendChild(tblT); tblBox.appendChild(tblH);
+  var tblB = document.createElement('div'); tblB.className='cdb tw';
+  var tbl = document.createElement('table');
+  var thead2 = tbl.createTHead(); var thr = thead2.insertRow();
+  ['Staff','Dept','Month','Hours','Submitted','Status','Action'].forEach(function(t){var th2=document.createElement('th');th2.textContent=t;thr.appendChild(th2);});
+  var tbdy = tbl.createTBody();
+  if(!all.length){
+    var etr=tbdy.insertRow();var etd=etr.insertCell();etd.colSpan=7;etd.style.cssText='padding:14px;text-align:center;color:#aaa';etd.textContent='No timesheets yet.';
+  } else {
+    var sb2={Draft:'bY',Submitted:'bO',Approved:'bG',Rejected:'bR'};
+    all.slice().sort(function(a,b){return a.month<b.month?1:-1;}).forEach(function(r){
+      var h=0;(r.rows||[]).forEach(function(row){Object.values(row.hours||{}).forEach(function(v){h+=parseFloat(v)||0;});});
+      var tr3=tbdy.insertRow();
+      var canAct=r.status==='Submitted';
+      tr3.innerHTML='<td><b>'+r.staff+'</b></td><td>'+r.dept+'</td><td>'+r.month+'</td><td><b>'+h+'h</b></td><td style="font-size:11px">'+(r.submitted||'—')+'</td><td><span class="bdg '+(sb2[r.status]||'bY')+'">'+r.status+'</span></td><td></td>';
+      if(canAct){
+        var actBtn=document.createElement('button');actBtn.className='b bn bs';actBtn.style.fontSize='10px';actBtn.textContent='Review';
+        (function(rec2){actBtn.addEventListener('click',function(){openTSApprove(rec2,'Approved');});})(r);
+        tr3.cells[6].appendChild(actBtn);
+      }
+    });
+  }
+  tblB.appendChild(tbl);tblBox.appendChild(tblB);con.appendChild(tblBox);
+}
+
+function openTSApprove(rec, defaultAction){
+  TS_TARGET = rec;
+  var t=document.getElementById('m-ts-title');if(t) t.textContent=(defaultAction==='Approved'?'Approve':'Return')+' Timesheet — '+rec.staff;
+  var h=0;(rec.rows||[]).forEach(function(r){Object.values(r.hours||{}).forEach(function(v){h+=parseFloat(v)||0;});});
+  var info=document.getElementById('m-ts-info');
+  if(info) info.innerHTML='<b>Staff:</b> '+rec.staff+'<br><b>Month:</b> '+rec.month+'<br><b>Department:</b> '+rec.dept+'<br><b>Total Hours:</b> '+h+'h';
+  var note=document.getElementById('m-ts-note');if(note) note.value='';
+  openM('m-ts-approve');
+}
+
+function doTSDecision(decision){
+  if(!TS_TARGET) return;
+  TS_TARGET.status = decision;
+  TS_TARGET.approvedBy = SES.name;
+  TS_TARGET.hrNote = document.getElementById('m-ts-note').value||'';
+  queueCloudSave();
+  closeM('m-ts-approve');
+  renderTimesheetApprovals();
+  alert(decision==='Approved' ? 'Timesheet approved.' : 'Timesheet returned to staff.');
+}
+</script>
+<!-- PASSWORD CHANGE MODAL -->
+<div id="pwd-modal">
+  <div class="pwd-box">
+    <h3>🔒 Change My Password</h3>
+    <p id="pwd-username-label">Changing password for your account</p>
+    <div class="fg"><label>Current Password</label><input type="password" id="pwd-current" placeholder="Enter current password"></div>
+    <div class="fg"><label>New Password</label><input type="password" id="pwd-new" placeholder="Min 6 characters"></div>
+    <div class="fg"><label>Confirm New Password</label><input type="password" id="pwd-confirm" placeholder="Repeat new password"></div>
+    <div class="pwd-row">
+      <button class="lbtn" style="background:var(--g400)" onclick="closePwdModal()">Cancel</button>
+      <button class="lbtn" onclick="doChangePassword()">Update Password</button>
+    </div>
+    <div class="pwd-msg" id="pwd-msg"></div>
+  </div>
+
