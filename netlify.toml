@@ -1,6 +1,18 @@
+# NOTE for IT: this file only takes effect when the site is actually served BY Netlify.
+# If sgoa-af.org is deployed by uploading index.html elsewhere, these headers must be
+# configured on whatever web server/CDN actually serves that domain instead.
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;"
+    # Tightened from "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;" (equivalent
+    # to no policy at all) to only what the page actually needs: scripts from this origin
+    # and unpkg.com (d3/topojson/supabase-js), and network calls only to this origin and
+    # the Supabase project. 'unsafe-inline' remains required for style/script attributes
+    # used throughout the page (onclick=, style=) and 'unsafe-eval' has been removed since
+    # nothing in the app uses eval()/new Function(). This narrows, but does not replace,
+    # the need to fix unescaped output (see esc() usage) — it's a second layer, not the fix.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://inznquztqyglxyoppdxs.supabase.co; object-src 'none'; base-uri 'none'; frame-ancestors 'self';"
     X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"

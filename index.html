@@ -323,7 +323,8 @@ tbody tr:hover td{background:var(--g50);}
         <div class="fg"><label>Which SGOA project is this about?</label><select id="pcf-proj"><option value="">Not sure / General</option><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
         <div class="fg"><label>Type of Feedback *</label><select id="pcf-type"><option>General Feedback</option><option>Service Complaint</option><option>Staff Conduct</option><option>Safeguarding Concern</option><option>Suggestion</option></select></div>
         <div class="fg"><label>Please describe your concern or feedback *</label><textarea rows="5" id="pcf-desc" placeholder="Write in as much detail as you are comfortable sharing"></textarea></div>
-        <button class="lbtn" style="width:100%" onclick="submitPublicCFRM()">Submit</button>
+        <input type="text" id="pcf-hp" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
+        <button class="lbtn" style="width:100%" id="pcf-submit-btn" onclick="submitPublicCFRM()">Submit</button>
         <div style="font-size:11px;color:#94a3b8;margin-top:12px;text-align:center">This feedback is reviewed by SGOA's MEAL team. Serious concerns are treated confidentially.</div>
       </div>
     </div>
@@ -5444,8 +5445,17 @@ function rejectLeave(id){
 
 function submitPublicCFRM(){
   var loc=$('pcf-loc'),desc=$('pcf-desc');
+  // Basic abuse mitigations for this unauthenticated, public-facing form. A hidden field
+  // real visitors never fill in catches simple bots; the button cooldown stops rapid
+  // repeat submissions from one browser. Neither stops a script hitting the database
+  // API directly — closing that gap needs a server-side rate limit (see the security
+  // notes for this platform), which isn't something a page-level change can provide.
+  if($('pcf-hp') && $('pcf-hp').value){return;}
+  var btn=$('pcf-submit-btn');
+  if(btn && btn.disabled){return;}
   if(!loc.value.trim()){alert('Please enter your province or district.');return;}
   if(!desc.value.trim()){alert('Please describe your concern.');return;}
+  if(btn){btn.disabled=true;setTimeout(function(){btn.disabled=false;},15000);}
   DB.cfrm.push({
     id:nid('CF'),date:today(),chan:'Public Portal',
     dist:loc.value.trim(),proj:$('pcf-proj').value,type:$('pcf-type').value,
