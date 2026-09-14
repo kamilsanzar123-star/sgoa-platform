@@ -1662,6 +1662,7 @@ leaveRequests:[],
 attendance:[],
 expenditures:[],
 timesheets:[],
+deletionLog:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -2527,6 +2528,7 @@ function sendDeadlineReminder(){
   if(!t.reminders)t.reminders=[];
   t.reminders.push({by:SES.name,note:note||'Please complete this task as soon as possible.',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
   closeM('m-deadline-action');
+  queueCloudSave();
   alert('Reminder sent to '+t.dept+' department: "'+(note||'Please complete this task as soon as possible.')+'"');
 }
 
@@ -2715,13 +2717,13 @@ function openProject(k){
 function updateMilestoneStatus(sel){
   var id=sel.getAttribute('data-milestoneid');
   var m=DB.milestones.find(function(x){return x.id===id;});
-  if(m){m.status=sel.value;}
+  if(m){m.status=sel.value;queueCloudSave();}
   if(curProjectCode)openProject(curProjectCode);
 }
 function updateDeliverableStatus(sel){
   var id=sel.getAttribute('data-deliverableid');
   var dl=DB.deliverables.find(function(x){return x.id===id;});
-  if(dl){dl.status=sel.value;}
+  if(dl){dl.status=sel.value;queueCloudSave();}
   if(curProjectCode)openProject(curProjectCode);
 }
 
@@ -2776,7 +2778,7 @@ function renderAllTasks(){
 
 function doneTask(id){
   var t=DB.tasks.find(function(x){return x.id===id;});
-  if(t){t.done=true;renderAllTasks();renderExecTasks();renderExecDepts();}
+  if(t){t.done=!t.done;renderAllTasks();renderExecTasks();renderExecDepts();refreshAll();queueCloudSave();}
 }
 
 // ============ ALL CHALLENGES ============
@@ -3213,6 +3215,7 @@ function submitFindingForVerification(id){
   f.verifyStatus='pending';
   f.status='In Progress';
   renderProgramsFindings();
+  queueCloudSave();
   alert('Submitted to MEAL for verification.');
 }
 
@@ -3226,6 +3229,7 @@ function verifyFinding(id){
   f.feedback.push({by:SES.name,note:'Verified and closed by MEAL.',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
   renderFindings();
   renderProgramsFindings();
+  queueCloudSave();
   alert('Finding '+f.id+' verified and marked resolved. Programs has been notified.');
 }
 
@@ -3239,6 +3243,7 @@ function rejectFindingVerification(id){
   f.feedback.push({by:SES.name,note:'Needs more work: '+reason,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
   renderFindings();
   renderProgramsFindings();
+  queueCloudSave();
   alert('Sent back to '+f.dept+' with your comment.');
 }
 
@@ -3402,8 +3407,8 @@ function editAsset(id){
 function updateAsset(){
   var id=$('ae-id').value;
   var a=DB.assets.find(function(x){return x.id===id;});
-  if(a){a.name=$('ae-name').value;a.loc=$('ae-loc').value;a.assign=$('ae-assign').value;a.cond=$('ae-cond').value;a.status=$('ae-stat').value;}
-  closeM('m-asset-edit');renderAssets();
+  if(a){a.name=$('ae-name').value;a.loc=$('ae-loc').value;a.assign=$('ae-assign').value;a.cond=$('ae-cond').value;a.status=$('ae-stat').value;a.note=$('ae-note').value;}
+  closeM('m-asset-edit');renderAssets();queueCloudSave();
 }
 
 function renderFleet(){
@@ -3453,8 +3458,8 @@ function updateVehicle(){
   var id=$('ve-id').value;
   var v=DB.fleet.find(function(x){return x.id===id;});
   if(v){v.status=$('ve-stat').value;v.driver=$('ve-driver').value;v.loc=$('ve-loc').value;
-    v.mile=$('ve-mile').value;v.last=$('ve-last').value;v.next=$('ve-next').value;}
-  closeM('m-vehicle-edit');renderFleet();
+    v.mile=$('ve-mile').value;v.last=$('ve-last').value;v.next=$('ve-next').value;v.note=$('ve-note').value;}
+  closeM('m-vehicle-edit');renderFleet();queueCloudSave();
 }
 
 // ============ WORKFLOW ============
@@ -3509,7 +3514,7 @@ function confirmWF(){
   if(w){
     var note=$('wa-note').value;
     var lbl={approve:'Approved',reject:'Rejected',sendback:'Sent Back',comment:'Comment'};
-    w.hist.push({a:lbl[curWF.act],by:CRED[SES.role]?CRED[SES.role].r:SES.role,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:note||'No comment'});
+    w.hist.push({a:lbl[curWF.act],by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:note||'No comment'});
     if(curWF.act==='approve'){
       w.chain[w.step].s='done';
       if(w.step<w.chain.length-1){w.step++;w.chain[w.step].s='active';}
@@ -3520,7 +3525,7 @@ function confirmWF(){
       w.chain[w.step].s='pending';w.step--;w.chain[w.step].s='revision';
     }
   }
-  closeM('m-wf-action');renderWF();
+  closeM('m-wf-action');renderWF();queueCloudSave();
 }
 
 // ============ USERS ============
@@ -3558,6 +3563,7 @@ function saveTask(){
   closeM('m-task');
   t.value='';$('t-desc').value='';$('t-assign').value='';
   refreshAll();
+  queueCloudSave();
 }
 
 async function saveDoc(){
@@ -3589,28 +3595,28 @@ function saveInd(){
   DB.indicators.push({id:nid('I'),name:n.value.trim(),proj:$('i-proj').value,level:$('i-level').value,
     target:parseInt($('i-target').value)||0,actual:parseInt($('i-base').value)||0,
     unit:$('i-unit').value||'#',mov:$('i-mov').value,freq:$('i-freq').value});
-  closeM('m-ind');n.value='';renderInd();
+  closeM('m-ind');n.value='';renderInd();queueCloudSave();
 }
 
 function saveCFRM(){
   var d=$('c-desc');
   if(!d||!d.value.trim()){alert('Please describe the feedback.');return;}
-  DB.cfrm.push({id:'CF'+(DB.cfrm.length+1),date:$('c-date').value||today(),chan:$('c-chan').value,
+  DB.cfrm.push({id:nid('CF'),date:$('c-date').value||today(),chan:$('c-chan').value,
     dist:$('c-dist').value,proj:$('c-proj').value,type:$('c-type').value,desc:d.value.trim(),
     prio:$('c-prio').value,assign:$('c-assign').value||SES.name,
     status:$('c-prio').value==='escalate'?'Escalated':'Open'});
-  closeM('m-cfrm');d.value='';renderCFRM();refreshAll();
+  closeM('m-cfrm');d.value='';renderCFRM();refreshAll();queueCloudSave();
 }
 
 function saveFinding(){
   var t=$('fn-title');
   if(!t||!t.value.trim()){alert('Please enter finding title.');return;}
-  DB.findings.push({id:'F'+(DB.findings.length+1),title:t.value.trim(),sev:$('fn-sev').value,
+  DB.findings.push({id:nid('F'),title:t.value.trim(),sev:$('fn-sev').value,
     proj:$('fn-proj').value,dept:$('fn-dept').value,loc:$('fn-loc').value,date:$('fn-date').value||today(),
     src:$('fn-src').value,desc:$('fn-desc').value,act:$('fn-act').value,
     assign:$('fn-assign').value||SES.name,due:$('fn-due').value||today(),status:'Open',progress:0});
   closeM('m-finding');t.value='';$('fn-desc').value='';$('fn-act').value='';
-  renderFindings();refreshAll();
+  renderFindings();refreshAll();queueCloudSave();
 }
 
 function saveRisk(){
@@ -3618,11 +3624,11 @@ function saveRisk(){
   if(!t||!t.value.trim()){alert('Please enter risk title.');return;}
   var l=parseInt($('r-like').value),i=parseInt($('r-imp').value),s=l*i;
   var lv=s>=15?'critical':s>=10?'high':s>=5?'medium':'low';
-  DB.risks.push({id:'R'+(DB.risks.length+1),title:t.value.trim(),cat:$('r-cat').value,proj:$('r-proj').value,
+  DB.risks.push({id:nid('R'),title:t.value.trim(),cat:$('r-cat').value,proj:$('r-proj').value,
     like:l,imp:i,score:s,lvl:lv,desc:$('r-desc').value,mit:$('r-mit').value,
     owner:$('r-owner').value||SES.name,status:$('r-stat').value});
   closeM('m-risk');t.value='';$('r-desc').value='';$('r-mit').value='';
-  renderRisks();
+  renderRisks();queueCloudSave();
 }
 
 function saveAsset(){
@@ -3631,7 +3637,7 @@ function saveAsset(){
   DB.assets.push({id:nid('A'),name:n.value.trim(),cat:$('a-cat').value,serial:$('a-serial').value,
     loc:$('a-loc').value,assign:$('a-assign').value,cond:$('a-cond').value,
     val:parseInt($('a-val').value)||0,pdate:$('a-pdate').value||today(),proj:$('a-proj').value,status:'Active'});
-  closeM('m-asset');n.value='';renderAssets();
+  closeM('m-asset');n.value='';renderAssets();queueCloudSave();
 }
 
 function saveVehicle(){
@@ -3640,7 +3646,7 @@ function saveVehicle(){
   DB.fleet.push({id:nid('V'),plate:p.value.trim(),model:$('v-model').value,year:$('v-year').value,
     fuel:$('v-fuel').value,assign:$('v-assign').value,driver:$('v-driver').value,
     loc:$('v-loc').value||'Kabul',mile:$('v-mile').value||'0 km',last:today(),next:'',status:'Operational'});
-  closeM('m-vehicle');p.value='';renderFleet();
+  closeM('m-vehicle');p.value='';renderFleet();queueCloudSave();
 }
 
 function saveBenef(){
@@ -3649,7 +3655,7 @@ function saveBenef(){
   DB.benef.push({id:nid('B'),name:n.value.trim(),father:$('bn-father').value,sex:$('bn-sex').value,
     age:parseInt($('bn-age').value)||0,proj:$('bn-proj').value,dist:$('bn-dist').value,
     crit:$('bn-crit').value,status:$('bn-stat').value,date:$('bn-date').value||today()});
-  closeM('m-benef');n.value='';renderBenef();
+  closeM('m-benef');n.value='';renderBenef();queueCloudSave();
 }
 
 function saveActivity(){
@@ -3660,7 +3666,7 @@ function saveActivity(){
   DB.activities.push({id:nid('AC'),name:n.value.trim(),proj:$('ac-proj').value,type:$('ac-type').value,
     loc:$('ac-loc').value,target:tg,actual:ac,start:$('ac-start').value,end:$('ac-end').value,status:st,
     createdBy:SES.name});
-  closeM('m-activity');n.value='';renderActivities();refreshAll();
+  closeM('m-activity');n.value='';renderActivities();refreshAll();queueCloudSave();
 }
 
 DB.sgCases=[];
@@ -3676,8 +3682,9 @@ function saveIncident(){
     notes:[{by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:d.value.trim()}]
   });
   closeM('m-incident');d.value='';
-  alert('Incident reported. This is a confidential case, visible only to the Safeguarding Focal Point.');
+  alert('Incident reported to the Safeguarding Focal Point.');
   renderSGCases();
+  queueCloudSave();
 }
 
 function startInvestigation(id){
@@ -3686,6 +3693,7 @@ function startInvestigation(id){
   c.stage='Under Investigation';
   c.notes.push({by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Investigation opened.'});
   renderSGCases();
+  queueCloudSave();
 }
 
 function closeSGCase(id){
@@ -3696,6 +3704,7 @@ function closeSGCase(id){
   c.stage='Closed';
   c.notes.push({by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:outcome});
   renderSGCases();
+  queueCloudSave();
 }
 
 function addSGCaseNote(id){
@@ -3706,6 +3715,7 @@ function addSGCaseNote(id){
   if(!c)return;
   c.notes.push({by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:note});
   renderSGCases();
+  queueCloudSave();
 }
 
 DB.pendingProjects=[];
@@ -3763,7 +3773,7 @@ function renderPendingProjects(){
   if(!box||!list)return;
   var pending=DB.pendingProjects.filter(function(p){return p.status==='pending';});
   if(!pending.length){box.style.display='none';return;}
-  if(SES.role!=='executive' && SES.role!=='programs' && SES.role!=='meal' && SES.role!=='finance'){box.style.display='none';return;}
+  if(['executive','programs','meal','finance','progdeputy','deputy'].indexOf(SES.role)===-1){box.style.display='none';return;}
   box.style.display='block';
   list.innerHTML='';
   pending.forEach(function(p){
@@ -3809,6 +3819,9 @@ function saveProject(){
   var n=$('pj-name');
   if(!n||!n.value.trim()){alert('Please enter project name.');return;}
   var code=$('pj-code').value.trim()||n.value.trim().slice(0,10);
+  var codeTaken = !!PROJ[code] || DB.pendingProjects.some(function(x){return x.code===code && x.status!=='rejected';});
+  if(codeTaken){alert('Project code "'+code+'" is already in use by another project. Please choose a different code — reusing one will overwrite the existing project\'s data.');return;}
+  if(!$('pj-budget').value || parseInt($('pj-budget').value)<=0){alert('Please enter a budget greater than 0.');return;}
   var data={code:code,name:n.value.trim(),donor:$('pj-donor').value,sector:$('pj-sector').value,
     budget:parseInt($('pj-budget').value)||0,spent:0,benef:parseInt($('pj-benef').value)||0,
     prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:$('pj-loc').value,
@@ -3819,6 +3832,7 @@ function saveProject(){
   DB.pendingProjects.push(data);
   closeM('m-project');n.value='';$('pj-goal').value='';$('pj-impact').value='';$('pj-indicators').value='';
   renderPendingProjects();
+  queueCloudSave();
   alert('Project submitted. It requires approval from MEAL (indicators), Finance (budget), and the Executive Director before it goes live.');
 }
 
@@ -3835,6 +3849,7 @@ function maybeActivateProject(code){
   renderProjectCards();
   refreshAll();
   if(window.SGOAMap)SGOAMap.refresh();
+  queueCloudSave();
   alert('Project fully approved by MEAL, Finance, and the Executive Director. It is now live for all departments.');
 }
 
@@ -3843,6 +3858,7 @@ function approveProjectED(code){
   if(!p)return;
   p.edApproved=true;
   renderPendingProjects();
+  queueCloudSave();
   maybeActivateProject(code);
 }
 
@@ -3851,6 +3867,7 @@ function approveProjectMEAL(code){
   if(!p)return;
   p.mealApproved=true;
   renderPendingProjects();
+  queueCloudSave();
   maybeActivateProject(code);
 }
 
@@ -3859,6 +3876,7 @@ function approveProjectFinance(code){
   if(!p)return;
   p.financeApproved=true;
   renderPendingProjects();
+  queueCloudSave();
   maybeActivateProject(code);
 }
 
@@ -3887,10 +3905,16 @@ function saveProjectComment(){
 
 function rejectProject(code){
   var reason=window.prompt('Reason for rejecting this project (optional):','');
-  var idx=DB.pendingProjects.findIndex(function(x){return x.code===code;});
-  if(idx>=0)DB.pendingProjects.splice(idx,1);
+  var p=DB.pendingProjects.find(function(x){return x.code===code;});
+  if(p){
+    p.status='rejected';
+    p.rejectReason=reason||'';
+    p.rejectedBy=SES.name;
+    p.rejectedOn=today();
+  }
   renderPendingProjects();
-  alert('Project rejected'+(reason?': '+reason:'.'));
+  queueCloudSave();
+  alert('Project rejected'+(reason?': '+reason:'.')+' The submission is kept on record and can be resubmitted as a new project if needed.');
 }
 
 
@@ -3902,11 +3926,11 @@ function saveWF(){
     if(o.value!==$('w-init').value)chain.push({d:o.value,s:'pending'});
   });}
   chain.push({d:'Executive Director',s:'pending'});
-  DB.wf.unshift({id:'WF'+(DB.wf.length+1),title:t.value.trim(),proj:$('w-proj').value,
+  DB.wf.unshift({id:nid('WF'),title:t.value.trim(),proj:$('w-proj').value,
     prio:$('w-prio').value,desc:$('w-desc').value,due:$('w-due').value||today(),
     chain:chain,hist:[{a:'Created',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Workflow launched'}],
     step:0,status:'progress'});
-  closeM('m-wf');t.value='';$('w-desc').value='';renderWF();
+  closeM('m-wf');t.value='';$('w-desc').value='';renderWF();queueCloudSave();
 }
 
 function saveStaff(){
@@ -3914,7 +3938,7 @@ function saveStaff(){
   if(!n||!n.value.trim()){alert('Please enter staff name.');return;}
   DB.staff.push({id:nid('S'),name:n.value.trim(),pos:$('s-pos').value,dept:$('s-dept').value,
     sex:$('s-sex').value,loc:$('s-loc').value||'Kabul',start:$('s-start').value||today(),status:'Active'});
-  closeM('m-staff');n.value='';renderStaff();renderHRChart();
+  closeM('m-staff');n.value='';renderStaff();renderHRChart();renderAllStaffDirectories();queueCloudSave();
 }
 
 function saveProc(){
@@ -3923,7 +3947,7 @@ function saveProc(){
   DB.proc.push({id:nid('PR'),item:i.value.trim(),proj:$('pr-proj').value,
     qty:parseInt($('pr-qty').value)||1,cost:parseInt($('pr-cost').value)||0,
     by:$('pr-by').value||SES.name,just:$('pr-just').value,status:'Pending Finance'});
-  closeM('m-proc');i.value='';renderProc();
+  closeM('m-proc');i.value='';renderProc();queueCloudSave();
 }
 
 function saveDist(){
@@ -3931,7 +3955,7 @@ function saveDist(){
   if(!i||!i.value.trim()){alert('Please enter item.');return;}
   DB.dist.push({id:nid('DS'),date:$('ds-date').value||today(),item:i.value.trim(),
     proj:$('ds-proj').value,dist:$('ds-dist').value,ben:parseInt($('ds-ben').value)||0,status:$('ds-stat').value});
-  closeM('m-dist');i.value='';renderDist();
+  closeM('m-dist');i.value='';renderDist();queueCloudSave();
 }
 
 function saveVisit(){
@@ -3940,7 +3964,7 @@ function saveVisit(){
   DB.visits.unshift({id:nid('FV'),date:$('fv-date').value||today(),proj:$('fv-proj').value,
     dist:$('fv-dist').value,sites:parseInt($('fv-sites').value)||0,by:$('fv-by').value||SES.name,
     type:$('fv-type').value,find:f.value.trim(),act:$('fv-act').value,status:'Complete'});
-  closeM('m-visit');f.value='';renderVisits();
+  closeM('m-visit');f.value='';renderVisits();queueCloudSave();
 }
 
 function submitData(){
@@ -3960,7 +3984,7 @@ function submitData(){
   });
   DB.dataSub.unshift({date:today(),proj:proj,period:$('de-period').value,dist:$('de-dist').value,by:c.value.trim()});
   if($('de-obs').value.trim()){
-    DB.findings.push({id:'F'+(DB.findings.length+1),title:'Data Entry Observation — '+$('de-dist').value,
+    DB.findings.push({id:nid('F'),title:'Data Entry Observation — '+$('de-dist').value,
       sev:'minor',proj:proj,dept:'MEAL',loc:$('de-dist').value,date:today(),src:'Data Collection',
       desc:$('de-obs').value.trim(),act:'Review and follow up',assign:SES.name,due:today(),status:'Open',progress:0});
   }
@@ -3968,19 +3992,44 @@ function submitData(){
   ['de-classes','de-teachers','de-girls','de-boys','de-gatt','de-batt','de-obs','de-collector'].forEach(function(id){
     if($(id))$(id).value='';
   });
-  renderDataHistory();refreshAll();
+  renderDataHistory();refreshAll();queueCloudSave();
 }
 
 function submitBudget(){
-  var p=$('fin-p').value,s=parseInt($('fin-s').value)||0;
-  if(!s){alert('Please enter amount spent.');return;}
-  if(PROJ[p]){PROJ[p].spent=s;}
-  alert('Budget updated for '+p+'. Executive Dashboard refreshed.');
+  // "Spent" is derived from actual expenditures and approved purchase requests (see
+  // recalcProjectSpent) — this form can no longer silently overwrite that real total.
+  // It exists only to jump to the ledger, where spend is actually recorded.
+  alert('Spend-to-date is calculated automatically from recorded Expenditures and approved Purchase Requests. Use "Add Expenditure" below to record new spending.');
   $('fin-s').value='';
-  renderFinBudget();refreshAll();
+}
+
+function recalcProjectProgress(){
+  // p.prog was set to 0 at creation and never updated anywhere — derive it from actual
+  // activity completion (same numbers already shown next to the bar) so it reflects
+  // real progress instead of being permanently stuck at 0%.
+  Object.keys(PROJ).forEach(function(k){
+    var acts=DB.activities.filter(function(a){return a.proj===k;});
+    PROJ[k].prog = acts.length ? Math.round(acts.filter(function(a){return a.status==='Complete';}).length/acts.length*100) : 0;
+  });
+}
+
+function recalcProjectSpent(){
+  // "Spent" used to be updated by three separate, disagreeing places (a manual budget
+  // form that overwrote it outright, PR approval, and expenditure entry) and could drift
+  // out of sync with the ledger. It's now always derived fresh from the two real sources
+  // of truth: approved purchase requests and recorded expenditures.
+  Object.keys(PROJ).forEach(function(k){
+    var prTotal=DB.pr.filter(function(p){return p.project===k && p.status==='complete';})
+      .reduce(function(s,p){return s+(p.total||0);},0);
+    var expTotal=DB.expenditures.filter(function(e){return e.proj===k;})
+      .reduce(function(s,e){return s+(e.amount||0);},0);
+    PROJ[k].spent = prTotal+expTotal;
+  });
 }
 
 function refreshAll(){
+  recalcProjectProgress();
+  recalcProjectSpent();
   try{if($('p-exec').classList.contains('on'))renderExec();}catch(e){}
   try{if($('p-all-tasks').classList.contains('on'))renderAllTasks();}catch(e){}
   try{if($('p-all-challenges').classList.contains('on'))renderAllChallenges();}catch(e){}
@@ -4037,6 +4086,7 @@ function saveTaskStatus(){
   }
   closeM('m-task-status');
   refreshAll();
+  queueCloudSave();
   var rmPg=document.getElementById('p-roadmap');
   if(rmPg&&rmPg.classList.contains('on'))renderRoadmap();
   var curPage=document.querySelector('.pg.on');
@@ -4383,6 +4433,7 @@ function cancelPR(id){
   p.hist.push({a:'Cancelled',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Cancelled by requester'});
   renderMyPRs();
   renderPRApprovals();
+  queueCloudSave();
 }
 
 var curPR=null;
@@ -4391,7 +4442,8 @@ function openPRAction(id,act){
   var p=DB.pr.find(function(x){return x.id===id;});
   var t={approve:'Approve Purchase Request',reject:'Reject Purchase Request',comment:'Add Comment'};
   $('m-pr-action').querySelector('h3').textContent=t[act]||'Action';
-  $('pra-ctx').innerHTML='<b>'+id+'</b> \\u2014 '+(p?p.item+' ($'+p.total.toLocaleString()+')':'');
+  var itemsDesc=(p&&p.items&&p.items.length)?p.items.map(function(x){return x.desc;}).join(', '):'';
+  $('pra-ctx').innerHTML='<b>'+id+'</b> — '+(p?itemsDesc+' ($'+p.total.toLocaleString()+')':'');
   $('pra-note').value='';
   openM('m-pr-action');
 }
@@ -4408,10 +4460,7 @@ function confirmPRAction(){
       if(p.step<p.chain.length-1){p.step++;p.chain[p.step].status='active';}
       else{
         p.status='complete';
-        if(p.project && PROJ[p.project]){
-          PROJ[p.project].spent = (PROJ[p.project].spent||0) + p.total;
-          refreshAll();
-        }
+        refreshAll();
       }
     } else if(curPR.act==='reject'){
       p.chain[p.step].status='rejected';p.status='rejected';
@@ -4419,6 +4468,7 @@ function confirmPRAction(){
   }
   closeM('m-pr-action');
   renderPRApprovals();
+  queueCloudSave();
 }
 
 
@@ -4446,20 +4496,25 @@ function saveNewUser(){
   name.value='';user.value='';pass.value='';$('nu-position').value='';$('nu-loc').value='';
   renderUserMgmt();
   renderAllStaffDirectories();
+  queueCloudSave();
   alert('User created successfully. They can now log in with the credentials provided.');
 }
 
 function editUser(id){
   var u=DB.users.find(function(x){return x.id===id;});if(!u)return;
   $('eu-id').value=u.id;$('eu-name').value=u.name;$('eu-password').value=u.password;$('eu-status').value=u.status;
+  $('eu-role').value=u.roleTemplate||'meal';$('eu-position').value=u.position||'';
   openM('m-edit-user');
 }
 
 function saveEditUser(){
   var id=$('eu-id').value;
   var u=DB.users.find(function(x){return x.id===id;});
-  if(u){u.name=$('eu-name').value.trim();u.password=$('eu-password').value.trim();u.status=$('eu-status').value;}
-  closeM('m-edit-user');renderUserMgmt();
+  if(u){
+    u.name=$('eu-name').value.trim();u.password=$('eu-password').value.trim();u.status=$('eu-status').value;
+    u.roleTemplate=$('eu-role').value;u.position=$('eu-position').value.trim();
+  }
+  closeM('m-edit-user');renderUserMgmt();queueCloudSave();
 }
 
 function renderUserMgmt(){
@@ -4576,6 +4631,7 @@ function saveFindingFeedback(){
   f.feedback.push({by:SES.name,note:note,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
   closeM('m-finding-feedback');
   renderAllChallenges();
+  queueCloudSave();
   alert('Feedback sent to '+f.dept+' department.');
 }
 
@@ -4823,6 +4879,7 @@ function submitITTicket(){
   });
   t.value='';$('itt-desc').value='';
   renderMyITTickets();
+  queueCloudSave();
   alert('Your IT ticket has been submitted. IT Support has been notified.');
 }
 
@@ -4961,6 +5018,7 @@ function submitTAR(){
   });
   purpose.value='';dest.value='';dep.value='';ret.value='';$('tar-staff').value='';$('tar-passengers').value='1';
   renderMyTARs();
+  queueCloudSave();
   alert('TAR submitted to Access Department for approval.');
 }
 
@@ -5035,6 +5093,17 @@ function renderTARQueue(){
   }
 }
 
+function isVehicleAvailable(vehicleId,depart,ret){
+  // A vehicle is busy if it's assigned to any other Approved trip whose date range
+  // overlaps this one \u2014 computed fresh each time, so a vehicle automatically becomes
+  // available again once its earlier trip's return date has passed, with no separate
+  // "release" step needed.
+  return !DB.tars.some(function(t){
+    return t.status==='Approved' && t.vehicleId===vehicleId && t.depart && t.ret &&
+      !(ret<t.depart || depart>t.ret);
+  });
+}
+
 function approveTAR(id){
   var t=DB.tars.find(function(x){return x.id===id;});
   if(!t)return;
@@ -5045,9 +5114,9 @@ function approveTAR(id){
     var v=null;
     if(t.vehicleId){
       v=DB.fleet.find(function(x){return x.id===t.vehicleId && x.status==='Operational';});
-      if(!v){alert('That vehicle is no longer available. Please pick another or leave unassigned.');return;}
+      if(!v || !isVehicleAvailable(v.id,t.depart,t.ret)){alert('That vehicle is not available for these dates (already booked on an overlapping trip, or no longer operational). Please pick another or leave unassigned.');return;}
     } else {
-      v=DB.fleet.find(function(x){return x.status==='Operational';});
+      v=DB.fleet.find(function(x){return x.status==='Operational' && isVehicleAvailable(x.id,t.depart,t.ret);});
     }
     if(v){
       t.vehicleId=v.id;
@@ -5055,12 +5124,13 @@ function approveTAR(id){
       assignedVehicleText=' Vehicle assigned: '+v.model+' ('+v.plate+').';
       renderFleet();
     } else {
-      assignedVehicleText=' No operational vehicle currently available \u2014 Access must arrange separately.';
+      assignedVehicleText=' No operational vehicle available for these dates \u2014 Access must arrange separately.';
     }
   }
   t.status='Approved';
   t.hist.push({a:'Approved',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:(note||'Approved, safe travels')+assignedVehicleText});
   renderTARQueue();
+  queueCloudSave();
   alert('TAR approved.'+assignedVehicleText+' '+t.dept+' has been notified.');
 }
 
@@ -5073,6 +5143,7 @@ function denyTAR(id){
   t.status='Denied';
   t.hist.push({a:'Denied',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:note});
   renderTARQueue();
+  queueCloudSave();
   alert('TAR denied. '+t.dept+' has been notified with your comment.');
 }
 
@@ -5097,7 +5168,7 @@ function saveContract(){
     type:$('ct-type').value,start:$('ct-start').value,end:$('ct-end').value,status:'Active'
   });
   closeM('m-contract');name.value='';$('ct-position').value='';$('ct-start').value='';$('ct-end').value='';
-  renderContracts();
+  renderContracts();queueCloudSave();
 }
 
 function renderContracts(){
@@ -5127,7 +5198,7 @@ function saveAttendance(){
   });
   closeM('m-attendance');name.value='';$('at-month').value='';
   ['at-present','at-absent','at-late','at-leave'].forEach(function(id){$(id).value='0';});
-  renderAttendance();
+  renderAttendance();queueCloudSave();
 }
 
 function renderAttendance(){
@@ -5148,6 +5219,7 @@ var lvStatusBdg={'Pending':'bO','Approved':'bG','Rejected':'bR'};
 function submitLeaveRequest(){
   var type=$('lv-type'),start=$('lv-start'),end=$('lv-end'),reason=$('lv-reason');
   if(!start.value||!end.value){alert('Please select start and end dates.');return;}
+  if(new Date(end.value)<new Date(start.value)){alert('End date must be on or after the start date.');return;}
   if(!reason.value.trim()){alert('Please enter a reason.');return;}
   var days=Math.round((new Date(end.value)-new Date(start.value))/86400000)+1;
   var dept = SES.role==='executive' ? 'Executive' : (DEPTNAME[SES.role]||SES.role);
@@ -5158,6 +5230,7 @@ function submitLeaveRequest(){
   });
   reason.value='';start.value='';end.value='';
   renderMyLeaveRequests();
+  queueCloudSave();
   alert('Leave request submitted to HR.');
 }
 
@@ -5206,6 +5279,7 @@ function approveLeave(id){
   l.status='Approved';
   l.hist.push({a:'Approved',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Enjoy your leave'});
   renderLeaveQueue();
+  queueCloudSave();
   alert('Leave approved. '+l.requestedBy+' has been notified.');
 }
 
@@ -5217,6 +5291,7 @@ function rejectLeave(id){
   l.status='Rejected';
   l.hist.push({a:'Rejected',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:reason});
   renderLeaveQueue();
+  queueCloudSave();
   alert('Leave rejected. '+l.requestedBy+' has been notified with your reason.');
 }
 
@@ -5227,7 +5302,7 @@ function submitPublicCFRM(){
   if(!loc.value.trim()){alert('Please enter your province or district.');return;}
   if(!desc.value.trim()){alert('Please describe your concern.');return;}
   DB.cfrm.push({
-    id:'CF'+(DB.cfrm.length+1),date:today(),chan:'Public Portal',
+    id:nid('CF'),date:today(),chan:'Public Portal',
     dist:loc.value.trim(),proj:$('pcf-proj').value,type:$('pcf-type').value,
     desc:(($('pcf-name').value.trim()?'Reporter: '+$('pcf-name').value.trim()+'. ':'Anonymous. ')+
       ($('pcf-contact').value.trim()?'Contact: '+$('pcf-contact').value.trim()+'. ':'')+desc.value.trim()),
@@ -5237,6 +5312,10 @@ function submitPublicCFRM(){
   });
   $('pcf-form').style.display='none';
   $('pcf-success').style.display='block';
+  // This is a public, unauthenticated form (no logged-in session) — call the save
+  // directly rather than relying on the 25s interval, so a visitor who closes the tab
+  // right after submitting doesn't lose their report before it's ever saved.
+  saveToCloud();
 }
 
 if(window.location.hash==='#public-cfrm'){
@@ -5260,13 +5339,11 @@ function saveExpenditure(){
     desc:desc.value.trim(),paidto:$('ex-paidto').value.trim(),method:$('ex-method').value,
     amount:parseFloat(amt.value),createdBy:SES.name
   });
-  if(proj && PROJ[proj]){
-    PROJ[proj].spent = (PROJ[proj].spent||0) + parseFloat(amt.value);
-  }
   closeM('m-expenditure');
   amt.value='';desc.value='';$('ex-paidto').value='';
   renderExpenditureLedger();
   refreshAll();
+  queueCloudSave();
   alert('Expenditure recorded and added to project budget spent.');
 }
 
@@ -5327,6 +5404,7 @@ function saveEditProject(){
   p.indicators=document.getElementById('ep-indicators').value.trim();
   closeM('m-edit-project');
   renderPendingProjects();
+  queueCloudSave();
   alert('Project updated successfully.');
 }
 
@@ -5359,6 +5437,7 @@ function saveEditTask(){
   closeM('m-edit-task');
   renderAllTasks();renderExecTasks();renderDeptTasks(SES.dept,SES.dept);
   refreshAll();
+  queueCloudSave();
   alert('Task updated successfully.');
 }
 
@@ -5395,6 +5474,7 @@ function saveEditActivity(){
   a.status=ac>=tg&&tg>0?'Complete':ac>0?'In Progress':'Not Started';
   closeM('m-edit-activity');
   renderActivities();refreshAll();
+  queueCloudSave();
   alert('Activity updated successfully.');
 }
 
@@ -5421,13 +5501,12 @@ function saveEditExpenditure(){
   var desc=document.getElementById('ee-desc').value.trim();
   var amt=parseFloat(document.getElementById('ee-amount').value);
   if(!desc||!amt||amt<=0){alert('Description and valid amount are required.');return;}
-  // Adjust project spent
-  if(e.proj&&PROJ[e.proj]){PROJ[e.proj].spent=(PROJ[e.proj].spent||0)-e.amount+amt;}
   e.desc=desc;e.amount=amt;
   e.paidto=document.getElementById('ee-paidto').value.trim();
   e.cat=document.getElementById('ee-cat').value;
   closeM('m-edit-expenditure');
   renderExpenditureLedger();refreshAll();
+  queueCloudSave();
   alert('Expenditure updated successfully.');
 }
 
@@ -5458,8 +5537,6 @@ function confirmDelete(){
     if(idx>-1){DB.activities.splice(idx,1);}
     closeM('m-delete-confirm');renderActivities();refreshAll();
   } else if(type==='expenditure'){
-    var e=DB.expenditures.find(function(x){return x.id===id;});
-    if(e&&e.proj&&PROJ[e.proj]){PROJ[e.proj].spent=Math.max(0,(PROJ[e.proj].spent||0)-e.amount);}
     idx=DB.expenditures.findIndex(function(x){return x.id===id;});
     if(idx>-1){DB.expenditures.splice(idx,1);}
     closeM('m-delete-confirm');renderExpenditureLedger();refreshAll();
@@ -5469,10 +5546,22 @@ function confirmDelete(){
     closeM('m-delete-confirm');renderPendingProjects();refreshAll();
   } else if(type==='project-live'){
     delete PROJ[id];
-    // Also remove associated data
+    // Remove every category of record linked to this project — previously only 3 of
+    // roughly 15 were cleaned up, leaving the Finance ledger and MEAL indicators still
+    // counting against a project that no longer exists.
     DB.activities=DB.activities.filter(function(a){return a.proj!==id;});
     DB.tasks=DB.tasks.filter(function(t){return t.proj!==id;});
     DB.milestones=DB.milestones.filter(function(m){return m.proj!==id;});
+    DB.indicators=DB.indicators.filter(function(x){return x.proj!==id;});
+    DB.expenditures=DB.expenditures.filter(function(x){return x.proj!==id;});
+    DB.cfrm=DB.cfrm.filter(function(x){return x.proj!==id;});
+    DB.findings=DB.findings.filter(function(x){return x.proj!==id;});
+    DB.risks=DB.risks.filter(function(x){return x.proj!==id;});
+    DB.benef=DB.benef.filter(function(x){return x.proj!==id;});
+    DB.proc=DB.proc.filter(function(x){return x.proj!==id;});
+    DB.dist=DB.dist.filter(function(x){return x.proj!==id;});
+    DB.visits=DB.visits.filter(function(x){return x.proj!==id;});
+    DB.pr=DB.pr.filter(function(x){return x.project!==id;});
     var pIdx=DB.pendingProjects.findIndex(function(x){return x.code===id;});
     if(pIdx>-1){DB.pendingProjects.splice(pIdx,1);}
     closeM('m-delete-confirm');renderProjectCards();renderPendingProjects();refreshAllProjectDropdowns();refreshAll();
@@ -5481,6 +5570,8 @@ function confirmDelete(){
     if(idx>-1){DB.pr.splice(idx,1);}
     closeM('m-delete-confirm');renderMyPRs();renderPRApprovals();refreshAll();
   }
+  DB.deletionLog.unshift({type:type,recordId:id,reason:reason,by:SES.name,at:new Date().toISOString()});
+  queueCloudSave();
   alert('Record deleted. Reason logged: '+reason);
 }
 
@@ -5565,8 +5656,12 @@ document.addEventListener('click',function(e){
   var dc=t.closest('[data-doc]');
   if(dc){var dv=dc.getAttribute('data-doc');if(dv){openDoc(dv);return;}}
   if((v=t.getAttribute('data-proc'))){
+    if(['finance','executive','progdeputy','deputy'].indexOf(SES.role)===-1){alert('Only Finance can approve a procurement request.');return;}
     var pp=DB.proc.find(function(x){return x.id===v;});
-    if(pp){pp.status='Approved';renderProc();}
+    if(pp && confirm('Approve procurement request '+pp.id+' — '+pp.item+' ('+money(pp.cost)+')?')){
+      pp.status='Approved';pp.approvedBy=SES.name;pp.approvedOn=today();
+      renderProc();queueCloudSave();
+    }
     return;
   }
 });
@@ -5693,6 +5788,17 @@ document.addEventListener('keydown',function(e){
   <div class="fr">
     <div class="fg ff"><label>Full Name</label><input type="text" id="eu-name"></div>
     <div class="fg"><label>Password</label><input type="text" id="eu-password"></div>
+    <div class="fg ff">
+      <label>Role Template (defines what this user can do)</label>
+      <select id="eu-role">
+        <option value="meal">MEAL</option><option value="finance">Finance</option><option value="hr">HR</option>
+        <option value="programs">Programs</option><option value="supply">Supply Chain</option><option value="admin">Admin</option>
+        <option value="safeguarding">Safeguarding</option><option value="operations">Operations</option>
+        <option value="progdeputy">Program Deputy Director</option><option value="deputy">Deputy Director</option>
+        <option value="it">IT</option><option value="access">Access</option>
+      </select>
+    </div>
+    <div class="fg"><label>Position / Title</label><input type="text" id="eu-position"></div>
     <div class="fg"><label>Status</label><select id="eu-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
   </div>
 </div>
@@ -6016,6 +6122,21 @@ function tsGetRecord(staff, month){
   if(!rec.leave) rec.leave = {};
   if(!rec.holiday) rec.holiday = {};
   if(!rec.absence) rec.absence = {};
+  // Only sync HR-managed holidays into the record while it's still editable — once
+  // approved, the record is frozen so a payroll total can't change after sign-off, and a
+  // holiday HR later deletes is no longer added back on the next view either. This
+  // replaces (not merges) the holiday hours each time, so removed holidays actually drop.
+  if(rec.status==='Draft' || rec.status==='Submitted'){
+    var freshHoliday={};
+    (DB.holidays||[]).forEach(function(h){
+      if(h.month===month){
+        var day=parseInt(h.date.split('-')[2]);
+        var dow=new Date(month+'-'+String(day).padStart(2,'0')).getDay();
+        if(dow!==5 && dow!==6) freshHoliday[day]=8; // Fri/Sat already shown as weekend, not extra hours
+      }
+    });
+    rec.holiday=freshHoliday;
+  }
   return rec;
 }
 
@@ -6371,14 +6492,7 @@ function renderMyTimesheet(){
     if(canEdit){ tr.insertCell(); }
   }
 
-  // Sync HR-managed holidays into this record
   if(!DB.holidays) DB.holidays=[];
-  DB.holidays.forEach(function(h){
-    if(h.month===month){
-      var day=parseInt(h.date.split('-')[2]);
-      rec.holiday[day]=8;
-    }
-  });
 
   addSpecialRow('Annual Leave', 'leave', '#fef9c3');
   addHolidayRow();
