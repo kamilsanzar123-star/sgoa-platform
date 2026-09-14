@@ -1146,7 +1146,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="st gr"><div class="stl">Active</div><div class="stv" id="um-active">11</div></div>
     <div class="st og"><div class="stl">Inactive</div><div class="stv" id="um-inactive">0</div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Original System Accounts</div></div><div class="cdb tw"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Password</th><th>Access Scope</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Original System Accounts</div></div><div class="cdb tw"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Access Scope</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Additional Users Created</div></div><div class="cdb tw"><table><thead><tr><th>Name</th><th>Username</th><th>Role Template</th><th>Linked Projects</th><th>Status</th><th>Created</th><th>Action</th></tr></thead><tbody id="users-extra-body"></tbody></table></div></div>
 </div>
 
@@ -1991,6 +1991,15 @@ function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=c
 function fmt(n){return n.toLocaleString();}
 function money(n){return '$'+n.toLocaleString();}
 function dt(s){if(!s)return '-';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function esc(s){
+  // Nothing in this file ever cleaned user-entered text before inserting it into the
+  // page — a project description, a CFRM complaint, a finding, etc. could contain HTML
+  // that runs as code in whoever views it next. Every place that interpolates free text
+  // into innerHTML must route it through this first.
+  return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
 function today(){
   // toISOString() is always UTC. Kabul is UTC+4:30, so between midnight and 4:30am local
   // time this used to date everything as the previous day — including safeguarding and
@@ -2494,7 +2503,7 @@ function renderExecTasks(){
     r.style.cssText='display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--g100)';
     var d=el('div');d.style.cssText='width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+(pc[t.prio]||'#94a3b8');
     var i=el('div');i.style.flex='1';
-    i.innerHTML='<div style="font-size:12px;font-weight:600;color:var(--g800)">'+t.title+'</div><div style="font-size:10px;color:'+(overdue(t.due)?'var(--red)':'var(--g400)')+'">'+t.dept+' · Due '+dt(t.due)+(overdue(t.due)?' — OVERDUE':'')+'</div>';
+    i.innerHTML='<div style="font-size:12px;font-weight:600;color:var(--g800)">'+esc(t.title)+'</div><div style="font-size:10px;color:'+(overdue(t.due)?'var(--red)':'var(--g400)')+'">'+esc(t.dept)+' · Due '+dt(t.due)+(overdue(t.due)?' — OVERDUE':'')+'</div>';
     var b=el('button','b bo bs','Done');
     b.setAttribute('data-task',t.id);
     r.appendChild(d);r.appendChild(i);r.appendChild(b);
@@ -2508,7 +2517,7 @@ function renderExecAlerts(){
   crit.forEach(function(f){
     var cls=f.sev==='critical'?'alD':'alW';
     var a=el('div','al '+cls);
-    a.innerHTML='<div><b>'+f.title+'</b><br>'+f.desc.slice(0,90)+'... <span style="font-size:10px;opacity:.8">['+f.dept+' · '+f.progress+'% resolved]</span></div>';
+    a.innerHTML='<div><b>'+esc(f.title)+'</b><br>'+esc(f.desc.slice(0,90))+'... <span style="font-size:10px;opacity:.8">['+esc(f.dept)+' · '+f.progress+'% resolved]</span></div>';
     a.style.cursor='pointer';
     a.onclick=function(){go('all-challenges');};
     c.appendChild(a);
@@ -2523,7 +2532,7 @@ function renderExecDeadlines(){
     r.className='clk';
     r.setAttribute('data-deadlinetask',t.id);
     var sb=overdue(t.due)?'<span class="bdg bR">Overdue</span>':(t.prio==='high'?'<span class="bdg bO">High</span>':'<span class="bdg bB">Normal</span>');
-    r.innerHTML='<td>'+t.title+'</td><td>'+t.dept+'</td><td>'+dt(t.due)+'</td><td>'+sb+'</td>';
+    r.innerHTML='<td>'+esc(t.title)+'</td><td>'+esc(t.dept)+'</td><td>'+dt(t.due)+'</td><td>'+sb+'</td>';
     c.appendChild(r);
   });
 }
@@ -2533,7 +2542,7 @@ function openDeadlineAction(id){
   var t=DB.tasks.find(function(x){return x.id===id;});
   if(!t)return;
   curDeadlineTask=id;
-  $('dl-ctx').innerHTML='<b>'+t.title+'</b><br><span style="font-size:11px;color:var(--g500)">'+t.dept+' \u00b7 Due '+dt(t.due)+(overdue(t.due)?' \u2014 OVERDUE':'')+'</span>';
+  $('dl-ctx').innerHTML='<b>'+esc(t.title)+'</b><br><span style="font-size:11px;color:var(--g500)">'+esc(t.dept)+' \u00b7 Due '+dt(t.due)+(overdue(t.due)?' \u2014 OVERDUE':'')+'</span>';
   $('dl-note').value='';
   openM('m-deadline-action');
 }
@@ -2577,8 +2586,8 @@ function renderProjectCards(){
     card.style.borderLeft='4px solid '+p.color;
     card.innerHTML='<div class="cdb">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;gap:10px;flex-wrap:wrap">'+
-      '<div><div style="font-size:16px;font-weight:700;color:var(--navy)">'+p.name+'</div>'+
-      '<div style="font-size:11.5px;color:var(--g500);margin-top:3px">Donor: '+p.donor+' · '+p.sector+' · '+p.loc+'</div></div>'+
+      '<div><div style="font-size:16px;font-weight:700;color:var(--navy)">'+esc(p.name)+'</div>'+
+      '<div style="font-size:11.5px;color:var(--g500);margin-top:3px">Donor: '+esc(p.donor)+' · '+esc(p.sector)+' · '+esc(p.loc)+'</div></div>'+
       '<span class="bdg '+(p.status==='Active'?'bG':'bB')+'">'+p.status+'</span></div>'+
       '<div style="display:flex;gap:22px;margin-bottom:11px;flex-wrap:wrap">'+
       '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--navy)">'+fmt(p.benef)+'</div><div style="font-size:10px;color:var(--g400)">Beneficiaries</div></div>'+
@@ -2611,8 +2620,8 @@ function openProject(k){
   var bens=DB.benef.filter(function(b){return b.proj===k;});
   var done=acts.filter(function(a){return a.status==='Complete';}).length;
 
-  var theme=SECTOR_THEME[p.sector]||{icon:'\uD83D\uDCC1',grad:'linear-gradient(135deg,#334155,#1e293b)',label:p.sector+' Project'};
-  var h='<div class="wb" style="background:'+theme.grad+';margin-bottom:16px"><div><div class="wbt">'+theme.icon+' '+theme.label+'</div><div class="wbs">'+p.sector+' \u00b7 '+p.donor+' \u00b7 '+p.loc+'</div></div><div class="wbi">'+theme.icon+'</div></div>';
+  var theme=SECTOR_THEME[p.sector]||{icon:'\uD83D\uDCC1',grad:'linear-gradient(135deg,#334155,#1e293b)',label:esc(p.sector)+' Project'};
+  var h='<div class="wb" style="background:'+theme.grad+';margin-bottom:16px"><div><div class="wbt">'+theme.icon+' '+theme.label+'</div><div class="wbs">'+esc(p.sector)+' \u00b7 '+esc(p.donor)+' \u00b7 '+esc(p.loc)+'</div></div><div class="wbi">'+theme.icon+'</div></div>';
 
   h+='<div class="stats" style="grid-template-columns:repeat(4,1fr)">'+
   '<div class="st nv"><div class="stl">Overall Progress</div><div class="stv">'+p.prog+'%</div></div>'+
@@ -2622,9 +2631,9 @@ function openProject(k){
 
   h+='<div class="cd" style="border-left:4px solid '+p.color+'"><div class="cdh"><div class="cdt">Goal &amp; Impact</div></div><div class="cdb">'+
   '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Project Goal</div>'+
-  '<div style="font-size:13px;color:var(--g700);line-height:1.6">'+(p.goal||'Goal statement not yet defined for this project.')+'</div></div>'+
+  '<div style="font-size:13px;color:var(--g700);line-height:1.6">'+(p.goal?esc(p.goal):'Goal statement not yet defined for this project.')+'</div></div>'+
   '<div><div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Expected Impact</div>'+
-  '<div style="font-size:13px;color:var(--g700);line-height:1.6">'+(p.impact||'Impact statement not yet defined for this project.')+'</div></div>'+
+  '<div style="font-size:13px;color:var(--g700);line-height:1.6">'+(p.impact?esc(p.impact):'Impact statement not yet defined for this project.')+'</div></div>'+
   '</div></div>';
 
   var mstones=DB.milestones.filter(function(m){return m.proj===k;});
@@ -2634,7 +2643,7 @@ function openProject(k){
   h+='<div class="g2"><div class="cd"><div class="cdh"><div class="cdt">Milestones</div><button class="b bo bs" onclick="addMilestone(\''+k+'\')">+ Add</button></div><div class="cdb">';
   if(mstones.length){mstones.forEach(function(m){
     h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--g100)">'+
-      '<div><div style="font-size:12.5px;font-weight:600;color:var(--g700)">'+m.title+'</div><div style="font-size:10.5px;color:var(--g500)">Target: '+dt(m.targetDate)+'</div></div>'+
+      '<div><div style="font-size:12.5px;font-weight:600;color:var(--g700)">'+esc(m.title)+'</div><div style="font-size:10.5px;color:var(--g500)">Target: '+dt(m.targetDate)+'</div></div>'+
       '<select data-milestoneid="'+m.id+'" onchange="updateMilestoneStatus(this)" class="bdg '+msBdg[m.status]+'" style="border:none;font-family:inherit;cursor:pointer">'+
       ['Not Started','In Progress','Achieved','Delayed'].map(function(s){return '<option'+(s===m.status?' selected':'')+'>'+s+'</option>';}).join('')+
       '</select></div>';
@@ -2645,7 +2654,7 @@ function openProject(k){
   h+='<div class="cd"><div class="cdh"><div class="cdt">Deliverables</div><button class="b bo bs" onclick="addDeliverable(\''+k+'\')">+ Add</button></div><div class="cdb">';
   if(delivs.length){delivs.forEach(function(dl){
     h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--g100)">'+
-      '<div><div style="font-size:12.5px;font-weight:600;color:var(--g700)">'+dl.title+'</div><div style="font-size:10.5px;color:var(--g500)">'+dl.dept+' \u00b7 Due: '+dt(dl.dueDate)+'</div></div>'+
+      '<div><div style="font-size:12.5px;font-weight:600;color:var(--g700)">'+esc(dl.title)+'</div><div style="font-size:10.5px;color:var(--g500)">'+esc(dl.dept)+' \u00b7 Due: '+dt(dl.dueDate)+'</div></div>'+
       '<select data-deliverableid="'+dl.id+'" onchange="updateDeliverableStatus(this)" class="bdg '+dlBdg[dl.status]+'" style="border:none;font-family:inherit;cursor:pointer">'+
       ['Pending','In Progress','Submitted','Approved'].map(function(s){return '<option'+(s===dl.status?' selected':'')+'>'+s+'</option>';}).join('')+
       '</select></div>';
@@ -2653,39 +2662,39 @@ function openProject(k){
   h+='</div></div></div>';
 
   h+='<div class="g2"><div class="cd"><div class="cdh"><div class="cdt">Project Information</div></div><div class="cdb tw"><table><tbody>'+
-  '<tr><td style="font-weight:700;color:var(--navy);width:130px">Project Code</td><td>'+k+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">Donor</td><td>'+p.donor+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">Sector</td><td>'+p.sector+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">Locations</td><td>'+p.loc+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy);width:130px">Project Code</td><td>'+esc(k)+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Donor</td><td>'+esc(p.donor)+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Sector</td><td>'+esc(p.sector)+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Locations</td><td>'+esc(p.loc)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">Start Date</td><td>'+dt(p.start)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">End Date</td><td>'+dt(p.end)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">Total Budget</td><td>'+money(p.budget)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">Spent to Date</td><td>'+money(p.spent)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">Balance</td><td>'+money(p.budget-p.spent)+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">Project Manager</td><td>'+p.mgr+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">MEAL Focal Point</td><td>'+p.meal+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">Status</td><td><span class="bdg '+(p.status==='Active'?'bG':'bB')+'">'+p.status+'</span></td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Project Manager</td><td>'+esc(p.mgr)+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">MEAL Focal Point</td><td>'+esc(p.meal)+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Status</td><td><span class="bdg '+(p.status==='Active'?'bG':'bB')+'">'+esc(p.status)+'</span></td></tr>'+
   '</tbody></table></div></div>';
 
   h+='<div class="cd"><div class="cdh"><div class="cdt">Indicator Achievement</div></div><div class="cdb">';
   if(inds.length){inds.forEach(function(i){
     var pct=i.target?Math.round(i.actual/i.target*100):0;
     var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
-    h+='<div class="mbr"><div class="mbl" style="font-size:11.5px">'+i.name.slice(0,45)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div></div>';
+    h+='<div class="mbr"><div class="mbl" style="font-size:11.5px">'+esc(i.name.slice(0,45))+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div></div>';
   });}else{h+='<div class="empty">No indicators</div>';}
   h+='</div></div></div>';
 
   h+='<div class="g2"><div class="cd"><div class="cdh"><div class="cdt">Program Activities ('+acts.length+')</div></div><div class="cdb tw"><table><thead><tr><th>Activity</th><th>Type</th><th>Target</th><th>Actual</th><th>Status</th></tr></thead><tbody>';
   acts.forEach(function(a){
     var sb=a.status==='Complete'?'bG':a.status==='In Progress'?'bB':'bY';
-    h+='<tr><td>'+a.name+'</td><td><span class="bdg bN">'+a.type+'</span></td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td><td><span class="bdg '+sb+'">'+a.status+'</span></td></tr>';
+    h+='<tr><td>'+esc(a.name)+'</td><td><span class="bdg bN">'+esc(a.type)+'</span></td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td><td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td></tr>';
   });
   h+='</tbody></table></div></div>';
 
   h+='<div class="cd"><div class="cdh"><div class="cdt">Supply Chain Activities ('+dists.length+')</div></div><div class="cdb tw"><table><thead><tr><th>Item</th><th>District</th><th>Beneficiaries</th><th>Date</th><th>Status</th></tr></thead><tbody>';
   if(dists.length){dists.forEach(function(d){
     var sb=d.status==='Complete'?'bG':d.status==='Partial'?'bO':'bY';
-    h+='<tr><td>'+d.item+'</td><td>'+d.dist+'</td><td>'+fmt(d.ben)+'</td><td>'+dt(d.date)+'</td><td><span class="bdg '+sb+'">'+d.status+'</span></td></tr>';
+    h+='<tr><td>'+esc(d.item)+'</td><td>'+esc(d.dist)+'</td><td>'+fmt(d.ben)+'</td><td>'+dt(d.date)+'</td><td><span class="bdg '+sb+'">'+esc(d.status)+'</span></td></tr>';
   });}else{h+='<tr><td colspan="5" class="empty">No distributions recorded</td></tr>';}
   h+='</tbody></table></div></div></div>';
 
@@ -2693,8 +2702,8 @@ function openProject(k){
   if(finds.length){finds.forEach(function(f){
     var cls=f.sev==='critical'?'cr':f.sev==='major'?'mj':f.sev==='positive'?'ps':'mn';
     var bd=f.sev==='critical'?'bR':f.sev==='major'?'bO':f.sev==='positive'?'bG':'bB';
-    h+='<div class="fc '+cls+'"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="fct">'+f.title+'</div><div class="fcm">'+f.dept+' · '+f.loc+' · '+dt(f.date)+' · Owner: '+f.assign+'</div></div><span class="bdg '+bd+'">'+f.sev+'</span></div><div class="fcb">'+f.desc+'</div>';
-    if(f.act)h+='<div style="background:var(--g50);padding:8px 10px;border-radius:6px;font-size:11.5px;margin-top:7px"><b>Action:</b> '+f.act+'<br><b>Due:</b> '+dt(f.due)+' · <b>Status:</b> '+f.status+' · <b>Progress:</b> '+f.progress+'%</div>';
+    h+='<div class="fc '+cls+'"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="fct">'+esc(f.title)+'</div><div class="fcm">'+esc(f.dept)+' · '+esc(f.loc)+' · '+dt(f.date)+' · Owner: '+esc(f.assign)+'</div></div><span class="bdg '+bd+'">'+esc(f.sev)+'</span></div><div class="fcb">'+esc(f.desc)+'</div>';
+    if(f.act)h+='<div style="background:var(--g50);padding:8px 10px;border-radius:6px;font-size:11.5px;margin-top:7px"><b>Action:</b> '+esc(f.act)+'<br><b>Due:</b> '+dt(f.due)+' · <b>Status:</b> '+esc(f.status)+' · <b>Progress:</b> '+f.progress+'%</div>';
     h+='</div>';
   });}else{h+='<div class="empty">No findings</div>';}
   h+='</div></div>';
@@ -2702,7 +2711,7 @@ function openProject(k){
   h+='<div class="g2"><div class="cd"><div class="cdh"><div class="cdt">Risks ('+risks.length+')</div></div><div class="cdb">';
   if(risks.length){risks.forEach(function(r){
     var rc={critical:'rsc',high:'rsh',medium:'rsm',low:'rsl'}[r.lvl];
-    h+='<div class="rk '+(r.lvl==='critical'?'cr':r.lvl==='high'?'hi':r.lvl==='medium'?'md2':'lo')+'"><div style="display:flex;justify-content:space-between;gap:8px"><div><b style="font-size:12.5px">'+r.title+'</b><div style="font-size:10.5px;color:var(--g500);margin-top:2px">L'+r.like+' × I'+r.imp+' = '+r.score+' · '+r.cat+' · Owner: '+r.owner+'</div></div><div class="rs '+rc+'">'+r.score+'</div></div></div>';
+    h+='<div class="rk '+(r.lvl==='critical'?'cr':r.lvl==='high'?'hi':r.lvl==='medium'?'md2':'lo')+'"><div style="display:flex;justify-content:space-between;gap:8px"><div><b style="font-size:12.5px">'+esc(r.title)+'</b><div style="font-size:10.5px;color:var(--g500);margin-top:2px">L'+r.like+' × I'+r.imp+' = '+r.score+' · '+esc(r.cat)+' · Owner: '+esc(r.owner)+'</div></div><div class="rs '+rc+'">'+r.score+'</div></div></div>';
   });}else{h+='<div class="empty">No risks</div>';}
   h+='</div></div>';
 
@@ -2710,20 +2719,20 @@ function openProject(k){
   if(cfs.length){cfs.forEach(function(c){
     var cls=c.status==='Escalated'?'es':c.status==='Resolved'?'cl':'op';
     var bd=c.status==='Escalated'?'bR':c.status==='Resolved'?'bG':'bO';
-    h+='<div class="cf '+cls+'"><div style="display:flex;justify-content:space-between;gap:8px"><div><b style="font-size:12px">'+c.id+'</b><div style="font-size:11.5px;color:var(--g600);margin-top:2px">'+c.desc+'</div><div style="font-size:10px;color:var(--g400);margin-top:3px">'+dt(c.date)+' · '+c.dist+' · '+c.chan+' · '+c.assign+'</div></div><span class="bdg '+bd+'">'+c.status+'</span></div></div>';
+    h+='<div class="cf '+cls+'"><div style="display:flex;justify-content:space-between;gap:8px"><div><b style="font-size:12px">'+c.id+'</b><div style="font-size:11.5px;color:var(--g600);margin-top:2px">'+esc(c.desc)+'</div><div style="font-size:10px;color:var(--g400);margin-top:3px">'+dt(c.date)+' · '+esc(c.dist)+' · '+esc(c.chan)+' · '+esc(c.assign)+'</div></div><span class="bdg '+bd+'">'+esc(c.status)+'</span></div></div>';
   });}else{h+='<div class="empty">No CFRM cases</div>';}
   h+='</div></div></div>';
 
   h+='<div class="g2"><div class="cd"><div class="cdh"><div class="cdt">Field Visits ('+vis.length+')</div></div><div class="cdb tw"><table><thead><tr><th>Date</th><th>District</th><th>Sites</th><th>By</th><th>Status</th></tr></thead><tbody>';
   if(vis.length){vis.forEach(function(v){
-    h+='<tr><td>'+dt(v.date)+'</td><td>'+v.dist+'</td><td>'+v.sites+'</td><td>'+v.by+'</td><td><span class="bdg '+(v.status==='Complete'?'bG':'bO')+'">'+v.status+'</span></td></tr>';
+    h+='<tr><td>'+dt(v.date)+'</td><td>'+esc(v.dist)+'</td><td>'+v.sites+'</td><td>'+esc(v.by)+'</td><td><span class="bdg '+(v.status==='Complete'?'bG':'bO')+'">'+esc(v.status)+'</span></td></tr>';
   });}else{h+='<tr><td colspan="5" class="empty">No visits</td></tr>';}
   h+='</tbody></table></div></div>';
 
   h+='<div class="cd"><div class="cdh"><div class="cdt">Open Tasks ('+tasks.filter(function(t){return !t.done;}).length+')</div></div><div class="cdb tw"><table><thead><tr><th>Task</th><th>Dept</th><th>Due</th><th>Priority</th></tr></thead><tbody>';
   var ot=tasks.filter(function(t){return !t.done;});
   if(ot.length){ot.forEach(function(t){
-    h+='<tr><td>'+t.title+'</td><td>'+t.dept+'</td><td'+(overdue(t.due)?' style="color:var(--red);font-weight:600"':'')+'>'+dt(t.due)+'</td><td><span class="bdg '+(t.prio==='high'?'bR':t.prio==='medium'?'bO':'bB')+'">'+t.prio+'</span></td></tr>';
+    h+='<tr><td>'+esc(t.title)+'</td><td>'+esc(t.dept)+'</td><td'+(overdue(t.due)?' style="color:var(--red);font-weight:600"':'')+'>'+dt(t.due)+'</td><td><span class="bdg '+(t.prio==='high'?'bR':t.prio==='medium'?'bO':'bB')+'">'+esc(t.prio)+'</span></td></tr>';
   });}else{h+='<tr><td colspan="4" class="empty">No open tasks</td></tr>';}
   h+='</tbody></table></div></div></div>';
 
@@ -2808,7 +2817,7 @@ function renderAllTasks(){
     var taskActions='';
     if(!t.done){taskActions+='<button class="b bo bs" data-task="'+t.id+'">Mark Done</button> ';}
     if(canEditTask){taskActions+='<button class="b bo bs" onclick="openEditTask(\''+t.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'task\',\''+t.id+'\')">Del</button>';}
-    r.innerHTML='<td style="font-weight:600">'+t.title+'</td><td style="font-size:11px;color:var(--g500)">'+(t.desc||'-')+'</td><td>'+t.dept+'</td><td>'+(t.proj||'-')+'</td><td'+(overdue(t.due)&&!t.done?' style="color:var(--red);font-weight:600"':'')+'>'+dt(t.due)+'</td><td><span class="bdg '+pb+'">'+t.prio+'</span></td><td>'+(t.done?'<span class="bdg bG">Done</span>':'<span class="bdg bO">Open</span>')+'</td><td>'+taskActions+'</td>';
+    r.innerHTML='<td style="font-weight:600">'+esc(t.title)+'</td><td style="font-size:11px;color:var(--g500)">'+(t.desc?esc(t.desc):'-')+'</td><td>'+esc(t.dept)+'</td><td>'+(t.proj?esc(t.proj):'-')+'</td><td'+(overdue(t.due)&&!t.done?' style="color:var(--red);font-weight:600"':'')+'>'+dt(t.due)+'</td><td><span class="bdg '+pb+'">'+esc(t.prio)+'</span></td><td>'+(t.done?'<span class="bdg bG">Done</span>':'<span class="bdg bO">Open</span>')+'</td><td>'+taskActions+'</td>';
     c.appendChild(r);
   });
 }
@@ -2832,20 +2841,20 @@ function renderAllChallenges(){
     var bd=f.sev==='critical'?'bR':f.sev==='major'?'bO':f.sev==='positive'?'bG':'bB';
     var pc=f.progress>=75?'var(--green)':f.progress>=40?'var(--orange)':'var(--red)';
     var d=el('div','fc '+cls);d.style.marginBottom='12px';
-    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="fct">'+f.id+' \u2014 '+f.title+'</div>'+
-      '<div class="fcm">Project: '+f.proj+' \u00b7 Department: <b>'+f.dept+'</b> \u00b7 Location: '+f.loc+' \u00b7 Date: '+dt(f.date)+' \u00b7 Source: '+f.src+'</div></div>'+
-      '<span class="bdg '+bd+'">'+f.sev.toUpperCase()+' \u2014 '+f.status+'</span></div>'+
-      '<div class="fcb">'+f.desc+'</div>'+
+    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="fct">'+f.id+' \u2014 '+esc(f.title)+'</div>'+
+      '<div class="fcm">Project: '+esc(f.proj)+' \u00b7 Department: <b>'+esc(f.dept)+'</b> \u00b7 Location: '+esc(f.loc)+' \u00b7 Date: '+dt(f.date)+' \u00b7 Source: '+esc(f.src)+'</div></div>'+
+      '<span class="bdg '+bd+'">'+esc((f.sev||'').toUpperCase())+' \u2014 '+esc(f.status)+'</span></div>'+
+      '<div class="fcb">'+esc(f.desc)+'</div>'+
       '<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px">'+
       '<div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:5px">Actions Taken &amp; Required</div>'+
-      '<div style="font-size:11.5px;color:var(--g600);line-height:1.6">'+(f.act||'No action recorded')+'</div>'+
-      '<div style="font-size:11px;color:var(--g500);margin-top:7px"><b>Owner:</b> '+f.assign+' &nbsp;\u00b7&nbsp; <b>Due:</b> '+dt(f.due)+' &nbsp;\u00b7&nbsp; <b>Status:</b> '+f.status+'</div></div>'+
+      '<div style="font-size:11.5px;color:var(--g600);line-height:1.6">'+(f.act?esc(f.act):'No action recorded')+'</div>'+
+      '<div style="font-size:11px;color:var(--g500);margin-top:7px"><b>Owner:</b> '+esc(f.assign)+' &nbsp;\u00b7&nbsp; <b>Due:</b> '+dt(f.due)+' &nbsp;\u00b7&nbsp; <b>Status:</b> '+esc(f.status)+'</div></div>'+
       '<div style="margin-top:9px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="color:var(--g500)">Resolution Progress</span><b style="color:'+pc+'">'+f.progress+'%</b></div>'+
       '<div class="pw"><div class="pb" style="width:'+f.progress+'%;background:'+pc+'"></div></div></div>';
     if(f.feedback&&f.feedback.length){
       h+='<div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--g100)"><div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:5px">Director Feedback</div>';
       f.feedback.forEach(function(fb){
-        h+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+fb.note+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+fb.by+' \u00b7 '+fb.date+'</div></div>';
+        h+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(fb.note)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(fb.by)+' \u00b7 '+fb.date+'</div></div>';
       });
       h+='</div>';
     }
@@ -2876,7 +2885,7 @@ function renderMealHome(){
     var pct=i.target?Math.round(i.actual/i.target*100):0;
     var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
     var r=el('div','mbr');
-    r.innerHTML='<div class="mbl" style="font-size:11.5px">'+i.name.slice(0,38)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
+    r.innerHTML='<div class="mbl" style="font-size:11.5px">'+esc(i.name.slice(0,38))+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
     c.appendChild(r);
   });}
   renderDeptTasks('meal-tasks','MEAL');
@@ -2884,7 +2893,7 @@ function renderMealHome(){
   if(a){a.innerHTML='';
     DB.findings.filter(function(f){return f.dept==='MEAL'&&f.sev!=='positive';}).slice(0,3).forEach(function(f){
       var d=el('div','al '+(f.sev==='critical'?'alD':'alW'));
-      d.innerHTML='<div><b>'+f.title+'</b><br>'+f.act+'</div>';
+      d.innerHTML='<div><b>'+esc(f.title)+'</b><br>'+esc(f.act)+'</div>';
       a.appendChild(d);
     });
     if(!a.innerHTML)a.innerHTML='<div class="empty">No active alerts</div>';
@@ -2901,8 +2910,8 @@ function renderInd(){
     var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
     var bdg=pct>=90?'<span class="bdg bG">On Track</span>':pct>=70?'<span class="bdg bO">At Risk</span>':pct>0?'<span class="bdg bR">Off Track</span>':'<span class="bdg bY">Baseline Pending</span>';
     var d=el('div','ind');
-    d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:5px"><div class="indn">'+i.id+' — '+i.name+'</div>'+bdg+'</div>'+
-      '<div class="indm"><span><b>Project:</b> '+i.proj+'</span><span><b>Level:</b> '+i.level+'</span><span><b>Target:</b> '+fmt(i.target)+' '+i.unit+'</span><span><b>Actual:</b> '+(i.actual>0?fmt(i.actual):'Pending')+'</span><span><b>MoV:</b> '+i.mov+'</span><span><b>Frequency:</b> '+i.freq+'</span></div>'+
+    d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:5px"><div class="indn">'+i.id+' — '+esc(i.name)+'</div>'+bdg+'</div>'+
+      '<div class="indm"><span><b>Project:</b> '+esc(i.proj)+'</span><span><b>Level:</b> '+esc(i.level)+'</span><span><b>Target:</b> '+fmt(i.target)+' '+esc(i.unit)+'</span><span><b>Actual:</b> '+(i.actual>0?fmt(i.actual):'Pending')+'</span><span><b>MoV:</b> '+esc(i.mov)+'</span><span><b>Frequency:</b> '+esc(i.freq)+'</span></div>'+
       (i.actual>0?'<div class="indp"><div class="pw" style="flex:1"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><div class="indv" style="color:'+col+'">'+pct+'%</div></div>':'');
     c.appendChild(d);
   });
@@ -2928,7 +2937,7 @@ function renderLF(){
   var badge={Impact:'bN',Outcome:'bD',Output:'bB'};
   inds.forEach(function(i){
     var r=el('tr');
-    r.innerHTML='<td><span class="bdg '+(badge[i.level]||'bB')+'">'+i.level+'</span></td><td>'+i.name+'</td><td>'+i.proj+'</td><td>'+fmt(i.target)+' '+i.unit+'</td><td>'+(i.actual>0?fmt(i.actual)+' '+i.unit:'-')+'</td><td>'+i.mov+'</td>';
+    r.innerHTML='<td><span class="bdg '+(badge[i.level]||'bB')+'">'+esc(i.level)+'</span></td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+' '+esc(i.unit)+'</td><td>'+(i.actual>0?fmt(i.actual)+' '+esc(i.unit):'-')+'</td><td>'+esc(i.mov)+'</td>';
     c.appendChild(r);
   });
 }
@@ -2944,11 +2953,11 @@ function renderCFRM(){
     var cls=x.status==='Escalated'?'es':x.status==='Resolved'?'cl':'op';
     var bd=x.status==='Escalated'?'bR':x.status==='Resolved'?'bG':'bO';
     var d=el('div','cf '+cls);
-    d.innerHTML='<div style="display:flex;justify-content:space-between;gap:9px"><div><b style="font-size:12.5px">'+x.id+'</b><div style="font-size:12px;color:var(--g600);margin-top:3px">'+x.desc+'</div></div>'+
+    d.innerHTML='<div style="display:flex;justify-content:space-between;gap:9px"><div><b style="font-size:12.5px">'+x.id+'</b><div style="font-size:12px;color:var(--g600);margin-top:3px">'+esc(x.desc)+'</div></div>'+
       '<select data-cfrmstatus="'+x.id+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit;height:fit-content">'+
       ['Open','Escalated','Resolved'].map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+
       '</select></div>'+
-      '<div style="font-size:10.5px;color:var(--g400);margin-top:6px">'+dt(x.date)+' · '+x.dist+' · '+x.chan+' · '+x.type+' · Assigned: '+x.assign+' · '+x.proj+'</div>';
+      '<div style="font-size:10.5px;color:var(--g400);margin-top:6px">'+dt(x.date)+' · '+esc(x.dist)+' · '+esc(x.chan)+' · '+esc(x.type)+' · Assigned: '+esc(x.assign)+' · '+esc(x.proj)+'</div>';
     c.appendChild(d);
   });
 }
@@ -2967,7 +2976,7 @@ function renderVisits(){
   DB.visits.forEach(function(v){
     var sb=v.status==='Complete'?'bG':v.status==='Action Required'?'bR':'bO';
     var r=el('tr');
-    r.innerHTML='<td>'+dt(v.date)+'</td><td>'+v.proj+'</td><td>'+v.dist+'</td><td>'+v.sites+'</td><td>'+v.by+'</td><td style="font-size:11.5px">'+v.find+'</td><td><span class="bdg '+sb+'">'+v.status+'</span></td>';
+    r.innerHTML='<td>'+dt(v.date)+'</td><td>'+esc(v.proj)+'</td><td>'+esc(v.dist)+'</td><td>'+v.sites+'</td><td>'+esc(v.by)+'</td><td style="font-size:11.5px">'+esc(v.find)+'</td><td><span class="bdg '+sb+'">'+esc(v.status)+'</span></td>';
     c.appendChild(r);
   });
 }
@@ -2983,13 +2992,13 @@ function renderFindings(){
     var cls=f.sev==='critical'?'cr':f.sev==='major'?'mj':f.sev==='positive'?'ps':'mn';
     var bd=f.sev==='critical'?'bR':f.sev==='major'?'bO':f.sev==='positive'?'bG':'bB';
     var d=el('div','fc '+cls);
-    var h='<div style="display:flex;justify-content:space-between;gap:9px"><div><div class="fct">'+f.id+' \u00b7 '+f.title+'</div><div class="fcm">'+f.proj+' \u00b7 '+f.dept+' \u00b7 '+f.loc+' \u00b7 '+dt(f.date)+'</div></div><span class="bdg '+bd+'">'+f.sev+'</span></div>'+
-      '<div class="fcb">'+f.desc+'</div>'+
-      (f.act?'<div style="background:var(--g50);padding:8px 10px;border-radius:6px;font-size:11.5px;margin-top:7px"><b>Action:</b> '+f.act+' \u00b7 <b>Owner:</b> '+f.assign+' \u00b7 <b>Due:</b> '+dt(f.due)+' \u00b7 <b>'+f.progress+'% resolved</b></div>':'');
+    var h='<div style="display:flex;justify-content:space-between;gap:9px"><div><div class="fct">'+f.id+' \u00b7 '+esc(f.title)+'</div><div class="fcm">'+esc(f.proj)+' \u00b7 '+esc(f.dept)+' \u00b7 '+esc(f.loc)+' \u00b7 '+dt(f.date)+'</div></div><span class="bdg '+bd+'">'+esc(f.sev)+'</span></div>'+
+      '<div class="fcb">'+esc(f.desc)+'</div>'+
+      (f.act?'<div style="background:var(--g50);padding:8px 10px;border-radius:6px;font-size:11.5px;margin-top:7px"><b>Action:</b> '+esc(f.act)+' \u00b7 <b>Owner:</b> '+esc(f.assign)+' \u00b7 <b>Due:</b> '+dt(f.due)+' \u00b7 <b>'+f.progress+'% resolved</b></div>':'');
     if(f.feedback && f.feedback.length){
       h+='<div style="margin-top:8px">';
       f.feedback.forEach(function(fb){
-        h+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+fb.note+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+fb.by+' \u00b7 '+fb.date+'</div></div>';
+        h+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(fb.note)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(fb.by)+' \u00b7 '+fb.date+'</div></div>';
       });
       h+='</div>';
     }
@@ -3045,8 +3054,12 @@ function renderDocs(cid,dept){
     var e=el('div','dc');
     e.style.cursor='pointer';
     e.setAttribute('data-doc',d.id);
-    var fileLink = d.fileUrl ? '<a href="'+d.fileUrl+'" target="_blank" class="b bn bs" style="margin-left:8px;text-decoration:none">Download File</a>' : '';
-    e.innerHTML='<div class="dci">'+(ic[d.type]||'📄')+'</div><div style="flex:1"><div class="dct">'+d.title+(d.fileName?' <span style="font-size:10px;color:var(--g500)">('+d.fileName+')</span>':'')+'</div><div class="dcm">v'+d.ver+' · '+dt(d.date)+' · '+d.by+(d.desc?' · '+d.desc:'')+'</div></div><span class="bdg bY">'+d.type+'</span><button class="b bo bs" data-doc="'+d.id+'" style="margin-left:8px">Open</button>'+fileLink;
+    // Only allow http(s) links through — the URL normally comes from Supabase Storage,
+    // but since anyone who can write to the shared data could set this to anything
+    // (including a javascript: URL), validate the scheme before it becomes a href.
+    var safeUrl = d.fileUrl && /^https:\/\//i.test(d.fileUrl) ? d.fileUrl : null;
+    var fileLink = safeUrl ? '<a href="'+esc(safeUrl)+'" target="_blank" rel="noopener noreferrer" class="b bn bs" style="margin-left:8px;text-decoration:none">Download File</a>' : '';
+    e.innerHTML='<div class="dci">'+(ic[d.type]||'📄')+'</div><div style="flex:1"><div class="dct">'+esc(d.title)+(d.fileName?' <span style="font-size:10px;color:var(--g500)">('+esc(d.fileName)+')</span>':'')+'</div><div class="dcm">v'+esc(d.ver)+' · '+dt(d.date)+' · '+esc(d.by)+(d.desc?' · '+esc(d.desc):'')+'</div></div><span class="bdg bY">'+esc(d.type)+'</span><button class="b bo bs" data-doc="'+d.id+'" style="margin-left:8px">Open</button>'+fileLink;
     c.appendChild(e);
   });
 }
@@ -3091,7 +3104,7 @@ function renderDept(cid,dept){
     var fs=DB.findings.filter(function(f){return f.dept===dept&&f.sev!=='positive'&&f.status!=='Resolved';});
     fs.slice(0,4).forEach(function(f){
       var d=el('div','al '+(f.sev==='critical'?'alD':'alW'));
-      var body='<div><b>'+f.title+'</b><br>'+(f.act||f.desc.slice(0,80))+'<br><span style="font-size:10px;opacity:.8">Due '+dt(f.due)+' · '+f.progress+'% resolved</span>';
+      var body='<div><b>'+esc(f.title)+'</b><br>'+esc(f.act||f.desc.slice(0,80))+'<br><span style="font-size:10px;opacity:.8">Due '+dt(f.due)+' · '+f.progress+'% resolved</span>';
       // A department could only ever respond to a finding raised against it if that
       // department happened to be Programs — every other department had no way to
       // record the corrective action or send it for MEAL verification at all.
@@ -3110,7 +3123,7 @@ function renderDept(cid,dept){
     var od=DB.tasks.filter(function(t){return t.dept===dept&&!t.done&&overdue(t.due);});
     od.slice(0,2).forEach(function(t){
       var d=el('div','al alD');
-      d.innerHTML='<div><b>OVERDUE: '+t.title+'</b><br>Was due '+dt(t.due)+' · Assigned to '+t.assign+'</div>';
+      d.innerHTML='<div><b>OVERDUE: '+esc(t.title)+'</b><br>Was due '+dt(t.due)+' · Assigned to '+esc(t.assign)+'</div>';
       a.appendChild(d);
     });
     if(!a.innerHTML)a.innerHTML='<div class="empty">No active alerts</div>';
@@ -3128,9 +3141,9 @@ function renderDeptTasks(cid,dept){
     var r=el('div','tk');
     if(t.roadmap){
       var i=el('div');i.style.flex='1';
-      var projTag=t.proj?('<span class="bdg bN" style="margin-right:5px">'+t.proj+'</span>'):'';
-      var phaseTag=t.phaseName?('<span class="bdg bD" style="margin-right:5px">'+t.phaseName+'</span>'):'';
-      i.innerHTML='<div style="margin-bottom:4px">'+projTag+phaseTag+'</div><div class="tkt">'+t.title+'</div><div class="tkd'+(overdue(t.due)&&t.status!=='blocked'?' od':'')+'">Due '+dt(t.due)+(overdue(t.due)&&t.status!=='blocked'?' \u2014 OVERDUE':'')+'</div>'+(t.status==='blocked'&&t.blockReason?'<div style="font-size:11px;color:var(--red);margin-top:3px">Blocked: '+t.blockReason+'</div>':'');
+      var projTag=t.proj?('<span class="bdg bN" style="margin-right:5px">'+esc(t.proj)+'</span>'):'';
+      var phaseTag=t.phaseName?('<span class="bdg bD" style="margin-right:5px">'+esc(t.phaseName)+'</span>'):'';
+      i.innerHTML='<div style="margin-bottom:4px">'+projTag+phaseTag+'</div><div class="tkt">'+esc(t.title)+'</div><div class="tkd'+(overdue(t.due)&&t.status!=='blocked'?' od':'')+'">Due '+dt(t.due)+(overdue(t.due)&&t.status!=='blocked'?' \u2014 OVERDUE':'')+'</div>'+(t.status==='blocked'&&t.blockReason?'<div style="font-size:11px;color:var(--red);margin-top:3px">Blocked: '+esc(t.blockReason)+'</div>':'');
       var statusBtn=el('button','bdg '+(statusBadge[t.status]||'bY')+' clk',statusLabel[t.status]||'Not Started');
       statusBtn.style.cssText+='border:none;cursor:pointer;font-family:inherit';
       statusBtn.setAttribute('data-taskstatus',t.id);
@@ -3138,7 +3151,7 @@ function renderDeptTasks(cid,dept){
     } else {
       var ck=el('div','tkc');ck.setAttribute('data-task',t.id);
       var i2=el('div');i2.style.flex='1';
-      i2.innerHTML='<div class="tkt">'+t.title+'</div><div class="tkd'+(overdue(t.due)?' od':'')+'">Due '+dt(t.due)+(overdue(t.due)?' \u2014 OVERDUE':'')+(t.assign?' \u00b7 '+t.assign:'')+'</div>';
+      i2.innerHTML='<div class="tkt">'+esc(t.title)+'</div><div class="tkd'+(overdue(t.due)?' od':'')+'">Due '+dt(t.due)+(overdue(t.due)?' \u2014 OVERDUE':'')+(t.assign?' \u00b7 '+esc(t.assign):'')+'</div>';
       var b=el('span','bdg '+(t.prio==='high'?'bR':t.prio==='medium'?'bO':'bB'),t.prio);
       r.appendChild(ck);r.appendChild(i2);r.appendChild(b);
     }
@@ -3187,7 +3200,7 @@ function renderStaff(){
   var c=$('hr-staff');if(!c)return;c.innerHTML='';
   DB.staff.forEach(function(s){
     var r=el('tr');
-    r.innerHTML='<td><b>'+s.name+'</b></td><td>'+s.pos+'</td><td>'+s.dept+'</td><td>'+s.loc+'</td><td>'+dt(s.start)+'</td><td><span class="bdg bG">'+s.status+'</span></td>';
+    r.innerHTML='<td><b>'+esc(s.name)+'</b></td><td>'+esc(s.pos)+'</td><td>'+esc(s.dept)+'</td><td>'+esc(s.loc)+'</td><td>'+dt(s.start)+'</td><td><span class="bdg bG">'+esc(s.status)+'</span></td>';
     c.appendChild(r);
   });
 }
@@ -3250,9 +3263,9 @@ function renderProgramsFindings(){
     var sevBdg=f.sev==='critical'?'bR':f.sev==='major'?'bO':'bY';
     h+='<div class="fc '+(f.sev==='critical'?'cr':f.sev==='major'?'mj':'mn')+'" style="margin-bottom:10px">';
     h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">';
-    h+='<div><div class="fct">'+f.id+' \u2014 '+f.title+'</div><div class="fcm">'+f.proj+' \u00b7 '+f.loc+' \u00b7 Raised by MEAL ('+f.src+') \u00b7 '+dt(f.date)+'</div></div>';
-    h+='<span class="bdg '+sevBdg+'">'+f.sev.toUpperCase()+'</span></div>';
-    h+='<div class="fcb">'+f.desc+'</div>';
+    h+='<div><div class="fct">'+f.id+' \u2014 '+esc(f.title)+'</div><div class="fcm">'+esc(f.proj)+' \u00b7 '+esc(f.loc)+' \u00b7 Raised by MEAL ('+esc(f.src)+') \u00b7 '+dt(f.date)+'</div></div>';
+    h+='<span class="bdg '+sevBdg+'">'+esc((f.sev||'').toUpperCase())+'</span></div>';
+    h+='<div class="fcb">'+esc(f.desc)+'</div>';
     if(f.verifyStatus==='pending'){
       h+='<div class="bdg bO" style="margin-top:8px">Submitted \u2014 Awaiting MEAL Verification</div>';
     } else if(f.verifyStatus==='verified'){
@@ -3263,7 +3276,7 @@ function renderProgramsFindings(){
     if(f.feedback && f.feedback.length){
       h+='<div style="margin-top:8px">';
       f.feedback.forEach(function(c){
-        h+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+c.note+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+c.by+' \u00b7 '+c.date+'</div></div>';
+        h+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(c.note)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(c.by)+' \u00b7 '+c.date+'</div></div>';
       });
       h+='</div>';
     }
@@ -3353,7 +3366,7 @@ function renderActivities(){
     var r=el('tr');
     var canEditAct=(a.createdBy===SES.name||!a.createdBy);
     var actActions=canEditAct?'<button class="b bo bs" onclick="openEditActivity(\''+a.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'activity\',\''+a.id+'\')">Del</button>':'-';
-    r.innerHTML='<td><b>'+a.name+'</b></td><td>'+a.proj+'</td><td><span class="bdg bN">'+a.type+'</span></td><td>'+a.loc+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td><td><div style="display:flex;align-items:center;gap:6px"><div class="pw" style="width:60px"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><b style="font-size:11px;color:'+col+'">'+pct+'%</b></div></td><td><span class="bdg '+sb+'">'+a.status+'</span></td><td>'+actActions+'</td>';
+    r.innerHTML='<td><b>'+esc(a.name)+'</b></td><td>'+esc(a.proj)+'</td><td><span class="bdg bN">'+esc(a.type)+'</span></td><td>'+esc(a.loc)+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td><td><div style="display:flex;align-items:center;gap:6px"><div class="pw" style="width:60px"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><b style="font-size:11px;color:'+col+'">'+pct+'%</b></div></td><td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td>'+actActions+'</td>';
     c.appendChild(r);
   });
 }
@@ -3371,7 +3384,7 @@ function renderBenef(){
   bs.forEach(function(b){
     var sb=b.status==='Verified'?'bG':b.status==='Rejected'?'bR':'bO';
     var r=el('tr');
-    r.innerHTML='<td>'+b.id+'</td><td><b>'+b.name+'</b><div style="font-size:10px;color:var(--g400)">s/o '+b.father+'</div></td><td>'+b.sex+'</td><td>'+b.age+'</td><td>'+b.proj+'</td><td>'+b.dist+'</td><td style="font-size:11.5px">'+b.crit+'</td><td><span class="bdg '+sb+'">'+b.status+'</span></td>';
+    r.innerHTML='<td>'+b.id+'</td><td><b>'+esc(b.name)+'</b><div style="font-size:10px;color:var(--g400)">s/o '+esc(b.father)+'</div></td><td>'+esc(b.sex)+'</td><td>'+b.age+'</td><td>'+esc(b.proj)+'</td><td>'+esc(b.dist)+'</td><td style="font-size:11.5px">'+esc(b.crit)+'</td><td><span class="bdg '+sb+'">'+esc(b.status)+'</span></td>';
     c.appendChild(r);
   });
 }
@@ -3393,7 +3406,7 @@ function renderAnalysis(){
     var mx2=Math.max.apply(null,Object.values(dc))||1;
     Object.keys(dc).forEach(function(k){
       var d=el('div','cbar');
-      d.innerHTML='<div class="cbl">'+k+'</div><div class="cbt"><div class="cbf" style="width:'+(dc[k]/mx2*100)+'%"></div></div><div class="cbv">'+dc[k]+'</div>';
+      d.innerHTML='<div class="cbl">'+esc(k)+'</div><div class="cbt"><div class="cbf" style="width:'+(dc[k]/mx2*100)+'%"></div></div><div class="cbv">'+dc[k]+'</div>';
       geo.appendChild(d);
     });
   }
@@ -3409,7 +3422,7 @@ function renderProc(){
   DB.proc.forEach(function(p){
     var sb=p.status==='Approved'?'bG':p.status.indexOf('Pending')>=0?'bO':'bY';
     var r=el('tr');
-    r.innerHTML='<td>'+p.id+'</td><td><b>'+p.item+'</b><div style="font-size:10px;color:var(--g400)">'+p.just+'</div></td><td>'+p.proj+'</td><td>'+p.qty+'</td><td>'+money(p.cost)+'</td><td>'+p.by+'</td><td><span class="bdg '+sb+'">'+p.status+'</span></td><td>'+(p.status.indexOf('Pending')>=0?'<button class="b bn bs" data-proc="'+p.id+'">Approve</button>':'-')+'</td>';
+    r.innerHTML='<td>'+p.id+'</td><td><b>'+esc(p.item)+'</b><div style="font-size:10px;color:var(--g400)">'+esc(p.just)+'</div></td><td>'+esc(p.proj)+'</td><td>'+p.qty+'</td><td>'+money(p.cost)+'</td><td>'+esc(p.by)+'</td><td><span class="bdg '+sb+'">'+esc(p.status)+'</span></td><td>'+(p.status.indexOf('Pending')>=0?'<button class="b bn bs" data-proc="'+p.id+'">Approve</button>':'-')+'</td>';
     c.appendChild(r);
   });
 }
@@ -3420,7 +3433,7 @@ function renderDist(){
   DB.dist.forEach(function(d){
     var sb=d.status==='Complete'?'bG':d.status==='Partial'?'bO':'bY';
     var r=el('tr');
-    r.innerHTML='<td>'+dt(d.date)+'</td><td><b>'+d.item+'</b></td><td>'+d.proj+'</td><td>'+d.dist+'</td><td>'+fmt(d.ben)+'</td><td><span class="bdg '+sb+'">'+d.status+'</span></td>';
+    r.innerHTML='<td>'+dt(d.date)+'</td><td><b>'+esc(d.item)+'</b></td><td>'+esc(d.proj)+'</td><td>'+esc(d.dist)+'</td><td>'+fmt(d.ben)+'</td><td><span class="bdg '+sb+'">'+esc(d.status)+'</span></td>';
     c.appendChild(r);
   });
 }
@@ -3434,13 +3447,13 @@ function renderSGCases(){
   DB.sgCases.forEach(function(x){
     var card=el('div','cd');card.style.marginBottom='10px';
     var body='<div class="cdb"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">';
-    body+='<div><b>'+x.id+'</b> \u2014 '+x.title+(x.confidential?' <span class="bdg bR" style="margin-left:4px">CONFIDENTIAL</span>':'')+
-      '<div style="font-size:11px;color:var(--g500);margin-top:3px">'+x.type+' \u00b7 '+(x.proj||'-')+' \u00b7 '+x.loc+' \u00b7 Reported '+dt(x.date)+' \u00b7 Investigator: '+x.investigator+'</div></div>';
-    body+='<span class="bdg '+sgStageBdg[x.stage]+'">'+x.stage+'</span></div>';
+    body+='<div><b>'+x.id+'</b> \u2014 '+esc(x.title)+(x.confidential?' <span class="bdg bR" style="margin-left:4px">CONFIDENTIAL</span>':'')+
+      '<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(x.type)+' \u00b7 '+(x.proj?esc(x.proj):'-')+' \u00b7 '+esc(x.loc)+' \u00b7 Reported '+dt(x.date)+' \u00b7 Investigator: '+esc(x.investigator)+'</div></div>';
+    body+='<span class="bdg '+sgStageBdg[x.stage]+'">'+esc(x.stage)+'</span></div>';
     if(x.notes&&x.notes.length){
       body+='<div style="margin-top:9px">';
       x.notes.forEach(function(n){
-        body+='<div style="font-size:11.5px;color:var(--g600);background:var(--g50);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+n.n+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+n.by+' \u00b7 '+n.dt+'</div></div>';
+        body+='<div style="font-size:11.5px;color:var(--g600);background:var(--g50);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(n.n)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(n.by)+' \u00b7 '+n.dt+'</div></div>';
       });
       body+='</div>';
     }
@@ -3473,7 +3486,7 @@ function renderAssets(){
     var cb=a.cond==='Good'?'bG':a.cond==='Fair'?'bO':'bR';
     var sb=a.status==='Active'?'bG':a.status==='Under Repair'?'bO':'bR';
     var r=el('tr');
-    r.innerHTML='<td><b>'+a.id+'</b></td><td>'+a.name+'<div style="font-size:10px;color:var(--g400)">'+(a.serial||'')+'</div></td><td><span class="bdg bN">'+a.cat+'</span></td><td>'+a.loc+'</td><td>'+a.assign+'</td><td><span class="bdg '+cb+'">'+a.cond+'</span></td><td>'+money(a.val)+'</td><td><span class="bdg '+sb+'">'+a.status+'</span></td><td><button class="b bo bs" data-asset="'+a.id+'">Update</button></td>';
+    r.innerHTML='<td><b>'+a.id+'</b></td><td>'+esc(a.name)+'<div style="font-size:10px;color:var(--g400)">'+esc(a.serial||'')+'</div></td><td><span class="bdg bN">'+esc(a.cat)+'</span></td><td>'+esc(a.loc)+'</td><td>'+esc(a.assign)+'</td><td><span class="bdg '+cb+'">'+esc(a.cond)+'</span></td><td>'+money(a.val)+'</td><td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td><button class="b bo bs" data-asset="'+a.id+'">Update</button></td>';
     c.appendChild(r);
   });
 }
@@ -3503,7 +3516,7 @@ function renderFleet(){
   DB.fleet.forEach(function(v){
     var sb=v.status==='Operational'?'bG':v.status==='Service Due'?'bO':'bR';
     var r=el('tr');
-    r.innerHTML='<td><b>'+v.plate+'</b></td><td>'+v.model+'<div style="font-size:10px;color:var(--g400)">'+v.year+' · '+v.fuel+'</div></td><td>'+v.assign+'</td><td>'+v.driver+'</td><td>'+v.loc+'</td><td>'+v.mile+'</td><td'+(overdue(v.next)?' style="color:var(--red);font-weight:600"':'')+'>'+dt(v.next)+'</td><td><span class="bdg '+sb+'">'+v.status+'</span></td><td><button class="b bo bs" data-vehicle="'+v.id+'">Update</button></td>';
+    r.innerHTML='<td><b>'+esc(v.plate)+'</b></td><td>'+esc(v.model)+'<div style="font-size:10px;color:var(--g400)">'+esc(v.year)+' · '+esc(v.fuel)+'</div></td><td>'+esc(v.assign)+'</td><td>'+esc(v.driver)+'</td><td>'+esc(v.loc)+'</td><td>'+esc(v.mile)+'</td><td'+(overdue(v.next)?' style="color:var(--red);font-weight:600"':'')+'>'+dt(v.next)+'</td><td><span class="bdg '+sb+'">'+esc(v.status)+'</span></td><td><button class="b bo bs" data-vehicle="'+v.id+'">Update</button></td>';
     c.appendChild(r);
   });
 }
@@ -3513,7 +3526,7 @@ function renderFleetQuick(){
   DB.fleet.slice(0,6).forEach(function(v){
     var sb=v.status==='Operational'?'bG':v.status==='Service Due'?'bO':'bR';
     var r=el('tr');
-    r.innerHTML='<td><b>'+v.plate+'</b></td><td>'+v.model+'</td><td>'+v.assign+'</td><td>'+v.loc+'</td><td><span class="bdg '+sb+'">'+v.status+'</span></td>';
+    r.innerHTML='<td><b>'+esc(v.plate)+'</b></td><td>'+esc(v.model)+'</td><td>'+esc(v.assign)+'</td><td>'+esc(v.loc)+'</td><td><span class="bdg '+sb+'">'+esc(v.status)+'</span></td>';
     c.appendChild(r);
   });
   if($('ops-fleet-mini-stats')){
@@ -3560,17 +3573,17 @@ function renderWF(){
     var card=el('div','wf '+(w.prio==='h'?'ph':w.prio==='m'?'pm':'pl'));
     var badgeCls = w.status==='complete'?'bG':w.status==='rejected'?'bR':'bO';
     var badgeText = w.status==='complete'?'Approved':w.status==='rejected'?'Rejected':'In Progress';
-    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="wft">'+w.id+' — '+w.title+'</div><div class="wfm">'+w.proj+' · Due '+dt(w.due)+' · Initiated by '+w.chain[0].d+'</div></div><span class="bdg '+badgeCls+'">'+badgeText+'</span></div>';
-    h+='<div style="font-size:11.5px;color:var(--g600);margin-top:6px">'+w.desc+'</div>';
+    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="wft">'+w.id+' — '+esc(w.title)+'</div><div class="wfm">'+esc(w.proj)+' · Due '+dt(w.due)+' · Initiated by '+esc(w.chain[0].d)+'</div></div><span class="bdg '+badgeCls+'">'+badgeText+'</span></div>';
+    h+='<div style="font-size:11.5px;color:var(--g600);margin-top:6px">'+esc(w.desc)+'</div>';
     h+='<div class="wfp">';
     w.chain.forEach(function(n,i){
-      h+='<div class="pn '+n.s+'">'+n.d+'</div>';
+      h+='<div class="pn '+n.s+'">'+esc(n.d)+'</div>';
       if(i<w.chain.length-1)h+='<div class="par '+(n.s==='done'?'done':'')+'"></div>';
     });
     h+='</div>';
     if(w.hist.length){
       var l=w.hist[w.hist.length-1];
-      h+='<div style="font-size:10.5px;color:var(--g500);background:var(--g50);padding:7px 9px;border-radius:6px;margin-top:6px"><b>'+l.dt+'</b> — '+l.a+' by '+l.by+(l.n?': '+l.n:'')+'</div>';
+      h+='<div style="font-size:10.5px;color:var(--g500);background:var(--g50);padding:7px 9px;border-radius:6px;margin-top:6px"><b>'+l.dt+'</b> — '+esc(l.a)+' by '+esc(l.by)+(l.n?': '+esc(l.n):'')+'</div>';
     }
     // Only the person actually assigned to the current step can act on it — previously
     // anyone (including the workflow's own initiator) could approve any step.
@@ -3584,7 +3597,7 @@ function renderWF(){
     } else if(w.status==='complete'){
       h+='<div class="wfa"><button class="b bo bs" data-signwf="'+w.id+'">Generate Signed Document</button></div>';
     } else if(w.status!=='rejected'){
-      h+='<div class="wfa"><span style="font-size:11px;color:var(--g500)">Awaiting action from: '+(w.chain[w.step]?w.chain[w.step].d:'-')+'</span></div>';
+      h+='<div class="wfa"><span style="font-size:11px;color:var(--g500)">Awaiting action from: '+(w.chain[w.step]?esc(w.chain[w.step].d):'-')+'</span></div>';
     }
     card.innerHTML=h;
     c.appendChild(card);
@@ -3596,7 +3609,7 @@ function openWF(id,act){
   var w=DB.wf.find(function(x){return x.id===id;});
   var t={approve:'Approve Activity',reject:'Reject Activity',sendback:'Send Back for Revision',comment:'Add Comment'};
   $('m-wf-action').querySelector('h3').textContent=t[act]||'Action';
-  $('wa-ctx').innerHTML='<b>'+id+'</b> — '+(w?w.title:'')+'<br><span style="font-size:11px;color:var(--g500)">Current step: '+(w?w.chain[w.step].d:'')+'</span>';
+  $('wa-ctx').innerHTML='<b>'+id+'</b> — '+(w?esc(w.title):'')+'<br><span style="font-size:11px;color:var(--g500)">Current step: '+(w?esc(w.chain[w.step].d):'')+'</span>';
   $('wa-note').value='';
   openM('m-wf-action');
 }
@@ -3628,7 +3641,9 @@ function renderUsers(){
   Object.keys(CRED).forEach(function(k){
     var u=CRED[k];
     var r=el('tr');
-    r.innerHTML='<td><b>'+u.n+'</b></td><td><code style="background:var(--g100);padding:2px 6px;border-radius:4px;font-size:11px">'+u.u+'</code></td><td><span class="bdg '+(k==='executive'?'bD':'bN')+'">'+u.r+'</span></td><td><code style="background:var(--g100);padding:2px 6px;border-radius:4px;font-size:11px">'+u.p+'</code></td><td>'+scope[k]+'</td>';
+    // Password intentionally not shown here — a directory listing anyone with User
+    // Management access can see should never display credentials in the clear.
+    r.innerHTML='<td><b>'+esc(u.n)+'</b></td><td><code style="background:var(--g100);padding:2px 6px;border-radius:4px;font-size:11px">'+esc(u.u)+'</code></td><td><span class="bdg '+(k==='executive'?'bD':'bN')+'">'+esc(u.r)+'</span></td><td>'+esc(scope[k])+'</td>';
     c.appendChild(r);
   });
 }
@@ -3638,7 +3653,7 @@ function renderDataHistory(){
   if(!DB.dataSub.length){c.innerHTML='<tr><td colspan="6" class="empty">No submissions yet</td></tr>';return;}
   DB.dataSub.forEach(function(d){
     var r=el('tr');
-    r.innerHTML='<td>'+dt(d.date)+'</td><td>'+d.proj+'</td><td>'+d.period+'</td><td>'+d.dist+'</td><td>'+d.by+'</td><td><span class="bdg bG">Submitted</span></td>';
+    r.innerHTML='<td>'+dt(d.date)+'</td><td>'+esc(d.proj)+'</td><td>'+esc(d.period)+'</td><td>'+esc(d.dist)+'</td><td>'+esc(d.by)+'</td><td><span class="bdg bG">Submitted</span></td>';
     c.appendChild(r);
   });
 }
@@ -3879,17 +3894,17 @@ function renderPendingProjects(){
     var mealBdg = p.mealApproved ? '<span class="bdg bG">MEAL: Approved</span>' : '<span class="bdg bO">MEAL: Pending Review</span>';
     var finBdg = p.financeApproved ? '<span class="bdg bG">Finance: Approved</span>' : '<span class="bdg bO">Finance: Pending Review</span>';
     var body='<div class="cdb"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">'+
-      '<div><b>'+p.name+'</b> ('+p.code+')<div style="font-size:11px;color:var(--g500);margin-top:3px">Donor: '+p.donor+' \u00b7 '+p.sector+' \u00b7 Budget: $'+p.budget.toLocaleString()+' \u00b7 Created by '+p.createdBy+'</div></div>'+
+      '<div><b>'+esc(p.name)+'</b> ('+esc(p.code)+')<div style="font-size:11px;color:var(--g500);margin-top:3px">Donor: '+esc(p.donor)+' \u00b7 '+esc(p.sector)+' \u00b7 Budget: $'+p.budget.toLocaleString()+' \u00b7 Created by '+esc(p.createdBy)+'</div></div>'+
       '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+edBdg+mealBdg+finBdg+'</div></div>';
     body+='<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px">'+
-      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">GOAL</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+(p.goal||'Not provided')+'</div>'+
-      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">IMPACT</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+(p.impact||'Not provided')+'</div>'+
-      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">DRAFT INDICATORS</div><div style="font-size:12px;color:var(--g700);white-space:pre-line;margin-bottom:8px">'+(p.indicators||'Not provided')+'</div>'+
-      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">BUDGET</div><div style="font-size:12px;color:var(--g700)">$'+p.budget.toLocaleString()+' total \u00b7 '+p.donor+'</div></div>';
+      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">GOAL</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+(p.goal?esc(p.goal):'Not provided')+'</div>'+
+      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">IMPACT</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+(p.impact?esc(p.impact):'Not provided')+'</div>'+
+      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">DRAFT INDICATORS</div><div style="font-size:12px;color:var(--g700);white-space:pre-line;margin-bottom:8px">'+(p.indicators?esc(p.indicators):'Not provided')+'</div>'+
+      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">BUDGET</div><div style="font-size:12px;color:var(--g700)">$'+p.budget.toLocaleString()+' total \u00b7 '+esc(p.donor)+'</div></div>';
     if(p.mealComments && p.mealComments.length){
       body+='<div style="margin-top:9px"><div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:5px">Reviewer Comments</div>';
       p.mealComments.forEach(function(c){
-        body+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+c.note+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+c.by+' \u00b7 '+c.date+'</div></div>';
+        body+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(c.note)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(c.by)+' \u00b7 '+c.date+'</div></div>';
       });
       body+='</div>';
     }
@@ -3982,7 +3997,7 @@ function openProjectComment(code){
   var p=DB.pendingProjects.find(function(x){return x.code===code;});
   if(!p)return;
   curCommentProject=code;
-  $('pc-ctx').innerHTML='<b>'+p.name+'</b> ('+p.code+')';
+  $('pc-ctx').innerHTML='<b>'+esc(p.name)+'</b> ('+esc(p.code)+')';
   $('pc-note').value='';
   openM('m-project-comment');
 }
@@ -4473,28 +4488,28 @@ function renderPRCard(pr,showActions){
   var card=el('div','cd');
   var itemsRows='';
   pr.items.forEach(function(it){
-    itemsRows+='<tr><td>'+it.sn+'</td><td>'+it.desc+'</td><td>'+it.qty+'</td><td>'+it.unit+'</td><td>'+(it.projCode||'-')+'</td><td>'+(it.budgetCode||'-')+'</td><td>'+(it.budgetLine||'-')+'</td><td>$'+it.unitPrice.toLocaleString()+'</td><td style="font-weight:700">$'+it.total.toLocaleString()+'</td></tr>';
+    itemsRows+='<tr><td>'+it.sn+'</td><td>'+esc(it.desc)+'</td><td>'+it.qty+'</td><td>'+esc(it.unit)+'</td><td>'+(it.projCode?esc(it.projCode):'-')+'</td><td>'+(it.budgetCode?esc(it.budgetCode):'-')+'</td><td>'+(it.budgetLine?esc(it.budgetLine):'-')+'</td><td>$'+it.unitPrice.toLocaleString()+'</td><td style="font-weight:700">$'+it.total.toLocaleString()+'</td></tr>';
   });
   var body='<div class="cdb">';
   body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
-  body+='<div><b>'+pr.prf+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+pr.dept+' \u00b7 '+pr.project+' \u00b7 '+pr.expenseType+' \u00b7 $'+pr.total.toLocaleString()+' \u00b7 Requested by '+pr.requestedBy+(pr.requestedByPosition?' ('+pr.requestedByPosition+')':'')+' \u00b7 '+dt(pr.created)+'</div></div>';
+  body+='<div><b>'+esc(pr.prf)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(pr.dept)+' \u00b7 '+esc(pr.project)+' \u00b7 '+esc(pr.expenseType)+' \u00b7 $'+pr.total.toLocaleString()+' \u00b7 Requested by '+esc(pr.requestedBy)+(pr.requestedByPosition?' ('+esc(pr.requestedByPosition)+')':'')+' \u00b7 '+dt(pr.created)+'</div></div>';
   body+='<span class="bdg '+(pr.status==='complete'?'bG':pr.status==='cancelled'?'bY':pr.status==='rejected'?'bR':'bO')+'">'+(pr.status==='complete'?'Approved':pr.status==='cancelled'?'Cancelled':pr.status==='rejected'?'Rejected':'In Progress')+'</span>';
   body+='</div>';
   body+='<div class="tw"><table style="margin-bottom:8px"><thead><tr><th>S/N</th><th>Description</th><th>Qty</th><th>Unit</th><th>Proj Code</th><th>Budget Code</th><th>Budget Line</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>'+itemsRows+'</tbody></table></div>';
-  body+='<div style="font-size:11.5px;color:var(--g600);margin-bottom:6px"><b>Justification:</b> '+pr.justification+'</div>';
-  if(pr.address)body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:3px"><b>Delivery:</b> '+pr.address+'</div>';
-  if(pr.donor)body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:3px"><b>Donor Source:</b> '+pr.donor+'</div>';
-  body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:8px"><b>Required Date:</b> '+dt(pr.dateNeeded)+' \u00b7 <b>Quotes required:</b> '+pr.quotesRequired+'</div>';
+  body+='<div style="font-size:11.5px;color:var(--g600);margin-bottom:6px"><b>Justification:</b> '+esc(pr.justification)+'</div>';
+  if(pr.address)body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:3px"><b>Delivery:</b> '+esc(pr.address)+'</div>';
+  if(pr.donor)body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:3px"><b>Donor Source:</b> '+esc(pr.donor)+'</div>';
+  body+='<div style="font-size:10.5px;color:var(--g500);margin-bottom:8px"><b>Required Date:</b> '+dt(pr.dateNeeded)+' \u00b7 <b>Quotes required:</b> '+esc(pr.quotesRequired)+'</div>';
   body+='<div class="wfp">';
   pr.chain.forEach(function(c,i){
     var st = c.status==='done'?'done':c.status==='active'?'active':c.status==='rejected'?'rejected':'pending';
-    body+='<div class="pn '+st+'">'+c.label.split(' ').slice(0,2).join(' ')+'</div>';
+    body+='<div class="pn '+st+'">'+esc(c.label.split(' ').slice(0,2).join(' '))+'</div>';
     if(i<pr.chain.length-1)body+='<div class="par '+(c.status==='done'?'done':'')+'"></div>';
   });
   body+='</div>';
   if(pr.hist.length){
     var l=pr.hist[pr.hist.length-1];
-    body+='<div style="font-size:10.5px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-top:8px">'+l.dt+' \u2014 '+l.a+' by '+l.by+(l.n?': '+l.n:'')+'</div>';
+    body+='<div style="font-size:10.5px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-top:8px">'+l.dt+' \u2014 '+esc(l.a)+' by '+esc(l.by)+(l.n?': '+esc(l.n):'')+'</div>';
   }
   if(showActions && pr.status==='progress'){
     body+='<div class="wfa">';
@@ -4558,7 +4573,7 @@ function openPRAction(id,act){
   var p=DB.pr.find(function(x){return x.id===id;});
   var t={approve:'Approve Purchase Request',reject:'Reject Purchase Request',comment:'Add Comment'};
   $('m-pr-action').querySelector('h3').textContent=t[act]||'Action';
-  var itemsDesc=(p&&p.items&&p.items.length)?p.items.map(function(x){return x.desc;}).join(', '):'';
+  var itemsDesc=(p&&p.items&&p.items.length)?esc(p.items.map(function(x){return x.desc;}).join(', ')):'';
   $('pra-ctx').innerHTML='<b>'+id+'</b> — '+(p?itemsDesc+' ($'+p.total.toLocaleString()+')':'');
   $('pra-note').value='';
   openM('m-pr-action');
@@ -4641,11 +4656,11 @@ function renderUserMgmt(){
   DB.users.forEach(function(u){
     var r=el('tr');
     var sb=u.status==='Active'?'bG':'bY';
-    r.innerHTML='<td><b>'+u.name+'</b>'+(u.position?'<div style="font-size:10px;color:var(--g400)">'+u.position+'</div>':'')+'</td>'+
-      '<td><code style="background:var(--g100);padding:2px 6px;border-radius:4px;font-size:11px">'+u.username+'</code></td>'+
-      '<td><span class="bdg bN">'+(ROLE_TEMPLATE_LABEL[u.roleTemplate]||u.roleTemplate)+'</span></td>'+
-      '<td>'+u.projects.join(', ')+'</td>'+
-      '<td><span class="bdg '+sb+'">'+u.status+'</span></td>'+
+    r.innerHTML='<td><b>'+esc(u.name)+'</b>'+(u.position?'<div style="font-size:10px;color:var(--g400)">'+esc(u.position)+'</div>':'')+'</td>'+
+      '<td><code style="background:var(--g100);padding:2px 6px;border-radius:4px;font-size:11px">'+esc(u.username)+'</code></td>'+
+      '<td><span class="bdg bN">'+esc(ROLE_TEMPLATE_LABEL[u.roleTemplate]||u.roleTemplate)+'</span></td>'+
+      '<td>'+esc(u.projects.join(', '))+'</td>'+
+      '<td><span class="bdg '+sb+'">'+esc(u.status)+'</span></td>'+
       '<td>'+dt(u.created)+'</td>'+
       '<td><button class="b bo bs" data-edituser="'+u.id+'">Edit</button></td>';
     extraBody.appendChild(r);
@@ -4666,18 +4681,18 @@ function generateSignedDoc(type,id){
     if(!rec)return;
     title='Purchase Request Form - '+rec.prf;
     sub=rec.dept+' Department - '+rec.project+' - '+rec.expenseType;
-    var itemsList=rec.items.map(function(it){return it.sn+'. '+it.desc+' (Qty '+it.qty+' '+it.unit+' x $'+it.unitPrice.toLocaleString()+' = $'+it.total.toLocaleString()+')';}).join('\n');
+    var itemsList=rec.items.map(function(it){return esc(it.sn+'. '+it.desc+' (Qty '+it.qty+' '+it.unit+' x $'+it.unitPrice.toLocaleString()+' = $'+it.total.toLocaleString()+')');}).join('\n');
     details=[
       ['Requested Date',dt(rec.dateRequested)],
       ['Required Date',dt(rec.dateNeeded)],
-      ['Delivery Address',rec.address||'-'],
-      ['Donor Source',rec.donor||'-'],
-      ['Special Instructions',rec.instructions||'-'],
+      ['Delivery Address',esc(rec.address||'-')],
+      ['Donor Source',esc(rec.donor||'-')],
+      ['Special Instructions',esc(rec.instructions||'-')],
       ['Line Items',itemsList],
       ['Grand Total','$'+rec.total.toLocaleString()],
-      ['Justification',rec.justification],
-      ['Notes',rec.notes||'-'],
-      ['Quotes Required',rec.quotesRequired]
+      ['Justification',esc(rec.justification)],
+      ['Notes',esc(rec.notes||'-')],
+      ['Quotes Required',esc(rec.quotesRequired)]
     ];
     chain=rec.chain;
   } else {
@@ -4686,9 +4701,9 @@ function generateSignedDoc(type,id){
     title='Workflow '+rec.id;
     sub=rec.proj+' — '+rec.title;
     details=[
-      ['Activity',rec.title],
-      ['Project',rec.proj],
-      ['Description',rec.desc],
+      ['Activity',esc(rec.title)],
+      ['Project',esc(rec.proj)],
+      ['Description',esc(rec.desc)],
       ['Due Date',dt(rec.due)]
     ];
     chain=rec.chain.map(function(c){return {role:null,label:c.d,status:c.s};});
@@ -4713,12 +4728,12 @@ function generateSignedDoc(type,id){
     var approverName = matchHist ? matchHist.by : (c.status==='done'||c.status==='rejected' ? 'Recorded' : '—');
     var dateStr = matchHist ? matchHist.dt : '—';
     var comment = matchHist ? matchHist.n : '';
-    var sigMark = (c.status==='done') ? '<span style="font-family:cursive;font-size:14px;color:#1A3A6B">'+(matchHist?matchHist.by:'Signed')+'</span>' : (c.status==='rejected'?'—':'Pending');
-    sigRows+='<tr><td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+c.label+'</td>'+
-      '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+approverName+'</td>'+
+    var sigMark = (c.status==='done') ? '<span style="font-family:cursive;font-size:14px;color:#1A3A6B">'+esc(matchHist?matchHist.by:'Signed')+'</span>' : (c.status==='rejected'?'—':'Pending');
+    sigRows+='<tr><td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+esc(c.label)+'</td>'+
+      '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+esc(approverName)+'</td>'+
       '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+decision+'</td>'+
       '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+dateStr+'</td>'+
-      '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+comment+'</td>'+
+      '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+esc(comment)+'</td>'+
       '<td style="padding:8px;border:1px solid #cbd5e1">'+sigMark+'</td></tr>';
   });
   $('pd-sigbody').innerHTML=sigRows;
@@ -4733,7 +4748,7 @@ function openFindingFeedback(id){
   var f=DB.findings.find(function(x){return x.id===id;});
   if(!f)return;
   curFeedbackFinding=id;
-  $('ff-ctx').innerHTML='<b>'+f.id+' \u2014 '+f.title+'</b><br><span style="font-size:11px;color:var(--g500)">Department: '+f.dept+'</span>';
+  $('ff-ctx').innerHTML='<b>'+f.id+' \u2014 '+esc(f.title)+'</b><br><span style="font-size:11px;color:var(--g500)">Department: '+esc(f.dept)+'</span>';
   $('ff-note').value='';
   openM('m-finding-feedback');
 }
@@ -4822,7 +4837,7 @@ function renderCrossProjectComparison(){
     var daysLeft=Math.ceil((new Date(p.end)-new Date())/86400000);
     var budgetPct=p.budget?Math.round(p.spent/p.budget*100):0;
     var r=el('tr');
-    r.innerHTML='<td><b>'+k+'</b></td><td>'+p.sector+'</td>'+
+    r.innerHTML='<td><b>'+esc(k)+'</b></td><td>'+esc(p.sector)+'</td>'+
       '<td><div class="pw" style="width:80px;display:inline-block"><div class="pb" style="width:'+p.prog+'%;background:'+p.color+'"></div></div> '+p.prog+'%</td>'+
       '<td>'+budgetPct+'% ('+money(p.spent)+' / '+money(p.budget)+')</td>'+
       '<td'+(daysLeft<30?' style="color:var(--red);font-weight:600"':'')+'>'+(daysLeft>0?daysLeft+' days':'Ended')+'</td>'+
@@ -4953,7 +4968,7 @@ function renderStaffDirectory(deptLabel,containerId){
   if(!staff.length){box.innerHTML='<div class="empty">No staff records for this department yet.</div>';return;}
   var h='<table><thead><tr><th>Name</th><th>Position</th><th>Province</th><th>Projects</th><th>Department</th><th></th></tr></thead><tbody>';
   staff.forEach(function(s){
-    h+='<tr><td><b>'+s.name+'</b></td><td>'+s.pos+'</td><td>'+s.loc+'</td><td>'+s.projects.join(', ')+'</td><td><span class="bdg bN">'+s.dept+'</span></td>'+
+    h+='<tr><td><b>'+esc(s.name)+'</b></td><td>'+esc(s.pos)+'</td><td>'+esc(s.loc)+'</td><td>'+esc(s.projects.join(', '))+'</td><td><span class="bdg bN">'+esc(s.dept)+'</span></td>'+
        '<td><button class="b bo bs" data-assignstaff="'+encodeURIComponent(s.name)+'" data-assigndept="'+encodeURIComponent(s.dept)+'">Assign Task</button></td></tr>';
   });
   h+='</tbody></table>';
@@ -5017,14 +5032,14 @@ function renderITTicketCard(tk,showITActions){
   var card=el('div','cd');
   var body='<div class="cdb">';
   body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
-  body+='<div><b>'+tk.id+'</b> — '+tk.title+'<div style="font-size:11px;color:var(--g500);margin-top:3px">'+tk.dept+' · Reported by '+tk.raisedBy+' · '+dt(tk.created)+'</div></div>';
-  body+='<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bdg '+(tk.prio==='high'?'bR':tk.prio==='medium'?'bO':'bY')+'">'+tk.prio+' priority</span><span class="bdg '+itStatusBdg[tk.status]+'">'+tk.status+'</span></div>';
+  body+='<div><b>'+tk.id+'</b> — '+esc(tk.title)+'<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(tk.dept)+' · Reported by '+esc(tk.raisedBy)+' · '+dt(tk.created)+'</div></div>';
+  body+='<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bdg '+(tk.prio==='high'?'bR':tk.prio==='medium'?'bO':'bY')+'">'+esc(tk.prio)+' priority</span><span class="bdg '+itStatusBdg[tk.status]+'">'+esc(tk.status)+'</span></div>';
   body+='</div>';
-  body+='<div style="font-size:12px;color:var(--g600);margin-bottom:8px">'+tk.desc+'</div>';
+  body+='<div style="font-size:12px;color:var(--g600);margin-bottom:8px">'+esc(tk.desc)+'</div>';
   if(tk.hist.length){
     body+='<div style="margin-top:8px">';
     tk.hist.forEach(function(hh){
-      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
+      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+esc(hh.a)+' by '+esc(hh.by)+(hh.n?': '+esc(hh.n):'')+'</div>';
     });
     body+='</div>';
   }
@@ -5156,15 +5171,15 @@ function renderTARCard(tar,showActions){
   var card=el('div','cd');
   var body='<div class="cdb">';
   body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
-  body+='<div><b>'+tar.id+'</b> — '+tar.purpose+'<div style="font-size:11px;color:var(--g500);margin-top:3px">'+tar.dept+(tar.proj?' · '+tar.proj:'')+' · Requested by '+tar.requestedBy+' · '+dt(tar.created)+'</div></div>';
-  body+='<span class="bdg '+tarStatusBdg[tar.status]+'">'+tar.status+'</span>';
+  body+='<div><b>'+tar.id+'</b> — '+esc(tar.purpose)+'<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(tar.dept)+(tar.proj?' · '+esc(tar.proj):'')+' · Requested by '+esc(tar.requestedBy)+' · '+dt(tar.created)+'</div></div>';
+  body+='<span class="bdg '+tarStatusBdg[tar.status]+'">'+esc(tar.status)+'</span>';
   body+='</div>';
-  body+='<div style="font-size:12px;color:var(--g600);margin-bottom:6px"><b>Destination:</b> '+tar.dest+' &nbsp; <b>Departure:</b> '+dt(tar.depart)+' &nbsp; <b>Return:</b> '+dt(tar.ret)+'</div>';
-  body+='<div style="font-size:12px;color:var(--g600);margin-bottom:8px"><b>Vehicle:</b> '+(tar.vehicle==='yes'?'Required':'Not required')+' &nbsp; <b>Passengers:</b> '+tar.passengers+(tar.staff?' &nbsp; <b>Staff:</b> '+tar.staff:'')+'</div>';
+  body+='<div style="font-size:12px;color:var(--g600);margin-bottom:6px"><b>Destination:</b> '+esc(tar.dest)+' &nbsp; <b>Departure:</b> '+dt(tar.depart)+' &nbsp; <b>Return:</b> '+dt(tar.ret)+'</div>';
+  body+='<div style="font-size:12px;color:var(--g600);margin-bottom:8px"><b>Vehicle:</b> '+(tar.vehicle==='yes'?'Required':'Not required')+' &nbsp; <b>Passengers:</b> '+tar.passengers+(tar.staff?' &nbsp; <b>Staff:</b> '+esc(tar.staff):'')+'</div>';
   if(tar.hist.length){
     body+='<div style="margin-top:8px">';
     tar.hist.forEach(function(hh){
-      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
+      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+esc(hh.a)+' by '+esc(hh.by)+(hh.n?': '+esc(hh.n):'')+'</div>';
     });
     body+='</div>';
   }
@@ -5213,7 +5228,7 @@ function renderTARQueue(){
       var h='<table><thead><tr><th>Department</th><th>Staff</th><th>Destination</th><th>Departure</th><th>Return</th><th>Status</th></tr></thead><tbody>';
       liveList.forEach(function(t){
         var isNow=new Date(t.depart)<=today2 && new Date(t.ret)>=today2;
-        h+='<tr><td>'+t.dept+'</td><td>'+(t.staff||t.requestedBy)+'</td><td>'+t.dest+'</td><td>'+dt(t.depart)+'</td><td>'+dt(t.ret)+'</td><td><span class="bdg '+(isNow?'bO':'bB')+'">'+(isNow?'In Field Now':'Upcoming')+'</span></td></tr>';
+        h+='<tr><td>'+esc(t.dept)+'</td><td>'+esc(t.staff||t.requestedBy)+'</td><td>'+esc(t.dest)+'</td><td>'+dt(t.depart)+'</td><td>'+dt(t.ret)+'</td><td><span class="bdg '+(isNow?'bO':'bB')+'">'+(isNow?'In Field Now':'Upcoming')+'</span></td></tr>';
       });
       h+='</tbody></table>';
       awareBox.innerHTML='<div class="tw">'+h+'</div>';
@@ -5307,7 +5322,7 @@ function renderContracts(){
     var st=contractStatus(c);
     var bdg=st==='Active'?'bG':st==='Expiring Soon'?'bO':'bR';
     var r=el('tr');
-    r.innerHTML='<td><b>'+c.name+'</b></td><td>'+c.position+'</td><td>'+c.type+'</td><td>'+dt(c.start)+'</td><td>'+(c.end?dt(c.end):'Open-ended')+'</td><td><span class="bdg '+bdg+'">'+st+'</span></td>';
+    r.innerHTML='<td><b>'+esc(c.name)+'</b></td><td>'+esc(c.position)+'</td><td>'+esc(c.type)+'</td><td>'+dt(c.start)+'</td><td>'+(c.end?dt(c.end):'Open-ended')+'</td><td><span class="bdg '+bdg+'">'+esc(st)+'</span></td>';
     body.appendChild(r);
   });
 }
@@ -5335,7 +5350,7 @@ function renderAttendance(){
   if(!DB.attendance.length){body.innerHTML='<tr><td colspan="7" class="empty">No attendance records yet</td></tr>';return;}
   DB.attendance.slice().reverse().forEach(function(a){
     var r=el('tr');
-    r.innerHTML='<td><b>'+a.name+'</b></td><td>'+a.dept+'</td><td>'+a.month+'</td><td>'+a.present+'</td><td'+(a.absent>0?' style="color:var(--red)"':'')+'>'+a.absent+'</td><td>'+a.late+'</td><td>'+a.leave+'</td>';
+    r.innerHTML='<td><b>'+esc(a.name)+'</b></td><td>'+esc(a.dept)+'</td><td>'+esc(a.month)+'</td><td>'+a.present+'</td><td'+(a.absent>0?' style="color:var(--red)"':'')+'>'+a.absent+'</td><td>'+a.late+'</td><td>'+a.leave+'</td>';
     body.appendChild(r);
   });
 }
@@ -5366,14 +5381,14 @@ function renderLeaveCard(lv,showActions){
   var card=el('div','cd');
   var body='<div class="cdb">';
   body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
-  body+='<div><b>'+lv.id+'</b> — '+lv.type+' Leave<div style="font-size:11px;color:var(--g500);margin-top:3px">'+lv.dept+' · '+lv.requestedBy+' · '+dt(lv.start)+' to '+dt(lv.end)+' ('+lv.days+' days)</div></div>';
-  body+='<span class="bdg '+lvStatusBdg[lv.status]+'">'+lv.status+'</span>';
+  body+='<div><b>'+lv.id+'</b> — '+esc(lv.type)+' Leave<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(lv.dept)+' · '+esc(lv.requestedBy)+' · '+dt(lv.start)+' to '+dt(lv.end)+' ('+lv.days+' days)</div></div>';
+  body+='<span class="bdg '+lvStatusBdg[lv.status]+'">'+esc(lv.status)+'</span>';
   body+='</div>';
-  body+='<div style="font-size:12px;color:var(--g600);margin-bottom:8px">'+lv.reason+'</div>';
+  body+='<div style="font-size:12px;color:var(--g600);margin-bottom:8px">'+esc(lv.reason)+'</div>';
   if(lv.hist.length){
     body+='<div style="margin-top:8px">';
     lv.hist.forEach(function(hh){
-      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
+      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+esc(hh.a)+' by '+esc(hh.by)+(hh.n?': '+esc(hh.n):'')+'</div>';
     });
     body+='</div>';
   }
@@ -5487,7 +5502,7 @@ function renderExpenditureLedger(){
     var r=el('tr');
     var canEditEx=(e.createdBy===SES.name||!e.createdBy);
     var exActions=canEditEx?'<button class="b bo bs" onclick="openEditExpenditure(\''+e.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'expenditure\',\''+e.id+'\')">Del</button>':'-';
-    r.innerHTML='<td>'+dt(e.date)+'</td><td>'+e.proj+'</td><td>'+e.cat+'</td><td>'+e.desc+'</td><td>'+(e.paidto||'-')+'</td><td>'+e.method+'</td><td style="font-weight:700">$'+e.amount.toLocaleString()+'</td><td>'+exActions+'</td>';
+    r.innerHTML='<td>'+dt(e.date)+'</td><td>'+esc(e.proj)+'</td><td>'+esc(e.cat)+'</td><td>'+esc(e.desc)+'</td><td>'+(e.paidto?esc(e.paidto):'-')+'</td><td>'+esc(e.method)+'</td><td style="font-weight:700">$'+e.amount.toLocaleString()+'</td><td>'+exActions+'</td>';
     body.appendChild(r);
   });
   if($('fin-ledger-total'))$('fin-ledger-total').textContent='$'+total.toLocaleString();
@@ -5875,7 +5890,7 @@ document.addEventListener('keydown',function(e){
   <div class="fr">
     <div class="fg ff"><label>Full Name *</label><input type="text" id="nu-name" placeholder="e.g. Zahara Ali Zada"></div>
     <div class="fg"><label>Username *</label><input type="text" id="nu-username" placeholder="e.g. zahara.alizada"></div>
-    <div class="fg"><label>Password *</label><input type="text" id="nu-password" placeholder="e.g. Field@sgoa26"></div>
+    <div class="fg"><label>Password *</label><div style="display:flex;gap:6px"><input type="password" id="nu-password" placeholder="e.g. Field@sgoa26" style="flex:1"><button type="button" class="b bo bs" onclick="var f=$('nu-password');f.type=f.type==='password'?'text':'password';">Show</button></div></div>
     <div class="fg ff">
       <label>Role Template (defines what this user can do)</label>
       <select id="nu-role">
@@ -5916,7 +5931,7 @@ document.addEventListener('keydown',function(e){
   <input type="hidden" id="eu-id">
   <div class="fr">
     <div class="fg ff"><label>Full Name</label><input type="text" id="eu-name"></div>
-    <div class="fg"><label>Password</label><input type="text" id="eu-password"></div>
+    <div class="fg"><label>Password</label><div style="display:flex;gap:6px"><input type="password" id="eu-password" style="flex:1"><button type="button" class="b bo bs" onclick="var f=$('eu-password');f.type=f.type==='password'?'text':'password';">Show</button></div></div>
     <div class="fg ff">
       <label>Role Template (defines what this user can do)</label>
       <select id="eu-role">
@@ -5959,7 +5974,7 @@ document.addEventListener('keydown',function(e){
     <tbody id="pd-sigbody"></tbody>
   </table>
   <div style="margin-top:24px;padding-top:14px;border-top:1px solid #cbd5e1;font-size:10px;color:#94a3b8">
-    This document was generated electronically by the SGOA Organizational Management Platform. Each approval recorded above corresponds to a unique, password-authenticated login action, time-stamped at the moment of decision. This constitutes a valid electronic signature record for audit purposes.
+    This document was generated electronically by the SGOA Organizational Management Platform, reflecting the approval steps recorded in the system at the time of printing. It is a record of the platform's internal workflow state, not a verified electronic signature.
   </div>
 </div>
 
@@ -6696,7 +6711,7 @@ function renderMyTimesheet(){
       var p=(r.rows||[]).map(function(row){return row.code||row.proj;}).filter(Boolean).join(', ');
       var sb={Draft:'bY',Submitted:'bO',Approved:'bG',Rejected:'bR'};
       var tr2=htbd.insertRow();
-      tr2.innerHTML='<td><b>'+r.month+'</b></td><td><b>'+h+'h</b></td><td style="font-size:11px">'+p+'</td><td style="font-size:11px">'+(r.submitted?r.submitted:'—')+'</td><td><span class="bdg '+(sb[r.status]||'bY')+'">'+r.status+'</span></td><td style="font-size:11px;color:#888">'+(r.hrNote||'—')+'</td>';
+      tr2.innerHTML='<td><b>'+esc(r.month)+'</b></td><td><b>'+h+'h</b></td><td style="font-size:11px">'+esc(p)+'</td><td style="font-size:11px">'+(r.submitted?esc(r.submitted):'—')+'</td><td><span class="bdg '+(sb[r.status]||'bY')+'">'+esc(r.status)+'</span></td><td style="font-size:11px;color:#888">'+(r.hrNote?esc(r.hrNote):'—')+'</td>';
     });
   }
   histBody.appendChild(htbl); histBox.appendChild(histBody); con.appendChild(histBox);
@@ -6872,7 +6887,7 @@ function renderTimesheetApprovals(){
       var h=0;(r.rows||[]).forEach(function(row){Object.values(row.hours||{}).forEach(function(v){h+=parseFloat(v)||0;});});
       var tr3=tbdy.insertRow();
       var canAct=r.status==='Submitted';
-      tr3.innerHTML='<td><b>'+r.staff+'</b></td><td>'+r.dept+'</td><td>'+r.month+'</td><td><b>'+h+'h</b></td><td style="font-size:11px">'+(r.submitted||'—')+'</td><td><span class="bdg '+(sb2[r.status]||'bY')+'">'+r.status+'</span></td><td></td>';
+      tr3.innerHTML='<td><b>'+esc(r.staff)+'</b></td><td>'+esc(r.dept)+'</td><td>'+esc(r.month)+'</td><td><b>'+h+'h</b></td><td style="font-size:11px">'+esc(r.submitted||'—')+'</td><td><span class="bdg '+(sb2[r.status]||'bY')+'">'+esc(r.status)+'</span></td><td></td>';
       if(canAct){
         var actBtn=document.createElement('button');actBtn.className='b bn bs';actBtn.style.fontSize='10px';actBtn.textContent='Review';
         (function(rec2){actBtn.addEventListener('click',function(){openTSApprove(rec2,'Approved');});})(r);
@@ -6888,7 +6903,7 @@ function openTSApprove(rec, defaultAction){
   var t=document.getElementById('m-ts-title');if(t) t.textContent=(defaultAction==='Approved'?'Approve':'Return')+' Timesheet — '+rec.staff;
   var h=0;(rec.rows||[]).forEach(function(r){Object.values(r.hours||{}).forEach(function(v){h+=parseFloat(v)||0;});});
   var info=document.getElementById('m-ts-info');
-  if(info) info.innerHTML='<b>Staff:</b> '+rec.staff+'<br><b>Month:</b> '+rec.month+'<br><b>Department:</b> '+rec.dept+'<br><b>Total Hours:</b> '+h+'h';
+  if(info) info.innerHTML='<b>Staff:</b> '+esc(rec.staff)+'<br><b>Month:</b> '+esc(rec.month)+'<br><b>Department:</b> '+esc(rec.dept)+'<br><b>Total Hours:</b> '+h+'h';
   var note=document.getElementById('m-ts-note');if(note) note.value='';
   openM('m-ts-approve');
 }
