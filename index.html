@@ -894,7 +894,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Beneficiary Register</div>
     <select id="bf-proj" onchange="renderBenef()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
       <option value="all">All Projects</option><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
-  <div class="cdb tw"><table><thead><tr><th>ID</th><th>Name</th><th>Sex</th><th>Age</th><th>Project</th><th>District</th><th>Selection Criteria</th><th>Status</th></tr></thead><tbody id="benef-body"></tbody></table></div></div>
+  <div class="cdb tw"><table><thead><tr><th>ID</th><th>Name</th><th>Sex</th><th>Age</th><th>Project</th><th>District</th><th>Selection Criteria</th><th>Status</th><th>Data Privacy</th></tr></thead><tbody id="benef-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-prog-analysis">
@@ -1165,6 +1165,8 @@ tbody tr:hover td{background:var(--g50);}
       <div class="fg"><label>Country</label><input type="text" id="org-country"></div>
       <div class="fg"><label>Head Office</label><input type="text" id="org-hq"></div>
       <div class="fg"><label>Email</label><input type="email" id="org-email"></div>
+      <div class="fg"><label>Default Currency</label><select id="org-currency"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select>
+        <div style="font-size:10px;color:var(--g500);margin-top:3px">Used for new projects by default and for org-wide totals that combine multiple projects.</div></div>
       <button class="b bn bs" onclick="saveOrgSettings()">Save Changes</button>
       <span id="org-msg" style="margin-left:10px;font-size:12px;color:var(--green)"></span>
     </div></div>
@@ -1418,6 +1420,10 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg ff"><label>Selection Criteria Met</label><select id="bn-crit"><option>Out of school child</option><option>Female-headed household</option><option>IDP/Returnee</option><option>Disability</option><option>Extreme poverty</option><option>Other vulnerability</option></select></div>
 <div class="fg"><label>Verification Status</label><select id="bn-stat"><option>Verified</option><option>Pending Verification</option><option>Rejected</option></select></div>
 <div class="fg"><label>Registration Date</label><input type="date" id="bn-date"></div>
+<div class="fg ff" style="background:var(--g50);padding:10px;border-radius:7px;margin-top:4px">
+  <label style="display:flex;gap:8px;align-items:flex-start;font-weight:600"><input type="checkbox" id="bn-consent" style="margin-top:3px"> Consent obtained from the beneficiary &mdash; or their guardian, for a minor &mdash; to collect and use this information *</label>
+  <div style="font-size:10.5px;color:var(--g500);margin-top:4px;margin-left:24px">Required before this record can be saved. This is personal data about a vulnerable individual; do not register someone without their (or their guardian's) informed consent.</div>
+</div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-benef')">Cancel</button><button class="b bn" onclick="saveBenef()">Register Beneficiary</button></div>
 </div></div>
@@ -1455,7 +1461,9 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Project Code</label><input type="text" id="pj-code" placeholder="e.g. GPE-STG"></div>
 <div class="fg"><label>Donor</label><input type="text" id="pj-donor"></div>
 <div class="fg"><label>Sector</label><select id="pj-sector"><option>Education</option><option>Health</option><option>Livelihoods</option><option>WASH</option><option>Protection</option><option>Food Security</option></select></div>
-<div class="fg"><label>Budget (USD)</label><input type="number" id="pj-budget"></div>
+<div class="fg"><label>Currency</label><select id="pj-currency" onchange="togglePjFxField()"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select></div>
+<div class="fg"><label>Budget</label><input type="number" id="pj-budget"></div>
+<div class="fg ff" id="pj-fx-wrap" style="display:none"><label>Exchange Rate to USD</label><input type="number" step="0.0001" id="pj-fx" placeholder="e.g. 0.0140 (1 AFN = $0.0140)"><div style="font-size:10px;color:var(--g500);margin-top:3px">Used only to combine this project's budget into org-wide USD totals &mdash; the project itself is tracked and reported in the currency above.</div></div>
 <div class="fg"><label>Target Beneficiaries</label><input type="number" id="pj-benef"></div>
 <div class="fg"><label>Start Date</label><input type="date" id="pj-start"></div>
 <div class="fg"><label>End Date</label><input type="date" id="pj-end"></div>
@@ -2030,7 +2038,22 @@ function renderRoadmap(){
 function $(id){return document.getElementById(id);}
 function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
 function fmt(n){return n.toLocaleString();}
-function money(n){return '$'+n.toLocaleString();}
+// ============ MULTI-CURRENCY ============
+// Every amount used to be assumed USD with no currency field anywhere. A project now carries
+// its own currency plus a fxToUSD rate (1 unit of that currency = fxToUSD US dollars), set once
+// at creation. money() stays backward-compatible: called with no currency it still prints '$'
+// exactly as before, so none of the ~19 existing call sites needed to change to keep working.
+var CURRENCIES={
+  USD:{sym:'$',name:'US Dollar'},
+  AFN:{sym:'؋',name:'Afghani'},
+  EUR:{sym:'€',name:'Euro'},
+  GBP:{sym:'£',name:'British Pound'},
+  PKR:{sym:'₨',name:'Pakistani Rupee'}
+};
+function money(n,cur){var sym=(CURRENCIES[cur||'USD']||CURRENCIES.USD).sym;return sym+n.toLocaleString();}
+// A project's currency, falling back to the org's default currency, then USD.
+function projCurrency(code){return (PROJ[code]&&PROJ[code].currency) || (DB.org&&DB.org.currency) || 'USD';}
+function projFxToUSD(code){return (PROJ[code]&&PROJ[code].fxToUSD)||1;}
 function dt(s){if(!s)return '-';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 function esc(s){
   // Nothing in this file ever cleaned user-entered text before inserting it into the
@@ -2112,13 +2135,15 @@ function renderSettings(){
   $('org-country').value=o.country||'';
   $('org-hq').value=o.hq||'';
   $('org-email').value=o.email||'';
+  if($('org-currency'))$('org-currency').value=o.currency||'USD';
   $('org-info-depts').textContent=Object.keys(DEPTNAME).length;
   $('org-info-projects').textContent=Object.keys(PROJ).length;
   $('org-info-users').textContent=DB.users.length+Object.keys(CRED).length;
 }
 function saveOrgSettings(){
   DB.org={name:$('org-name').value.trim(),acronym:$('org-acronym').value.trim(),
-    country:$('org-country').value.trim(),hq:$('org-hq').value.trim(),email:$('org-email').value.trim()};
+    country:$('org-country').value.trim(),hq:$('org-hq').value.trim(),email:$('org-email').value.trim(),
+    currency:$('org-currency')?$('org-currency').value:'USD'};
   queueCloudSave();
   var m=$('org-msg');m.textContent='✅ Saved!';setTimeout(function(){m.textContent='';},2500);
 }
@@ -2290,6 +2315,14 @@ function initProjectLFFields(){
   addGoalRow();
   addOutcomeBlock();
   addOutputBlock();
+  var curSel=$('pj-currency');if(curSel)curSel.value=(DB.org&&DB.org.currency)||'USD';
+  var fx=$('pj-fx');if(fx)fx.value='';
+  togglePjFxField();
+}
+function togglePjFxField(){
+  var sel=$('pj-currency'),wrap=$('pj-fx-wrap');
+  if(!sel||!wrap)return;
+  wrap.style.display=sel.value==='USD'?'none':'block';
 }
 function collectLFGoals(){
   return Array.from(document.querySelectorAll('#pj-goals-wrap .pj-goal-input')).map(function(i){return i.value.trim();}).filter(Boolean);
@@ -2497,7 +2530,10 @@ function getProjData(pf){
   var behind=acts.filter(function(a){return a.status==='In Progress'&&a.target>0&&(a.actual/a.target)<0.5;}).length;
   prog=Math.max(0,prog-behind);
   var budget=0,spent=0,benef=0;
-  if(pf==='all'){for(var k in PROJ){budget+=PROJ[k].budget;spent+=PROJ[k].spent;benef+=PROJ[k].benef;}}
+  // Summing "all" projects' budgets only makes sense in one common currency — each project's
+  // own fxToUSD rate converts it before adding, so a mix of USD/AFN/etc. projects still totals
+  // correctly (see money(...,'USD') and the "(USD equiv.)" labeling in drawAll below).
+  if(pf==='all'){for(var k in PROJ){var fx=projFxToUSD(k);budget+=PROJ[k].budget*fx;spent+=PROJ[k].spent*fx;benef+=PROJ[k].benef;}}
   else if(PROJ[pf]){budget=PROJ[pf].budget;spent=PROJ[pf].spent;benef=PROJ[pf].benef;}
   var tot=acts.length||1;
   var comp=Math.round((done/tot)*100);
@@ -2514,11 +2550,15 @@ function drawAll(){
   var pf=$('f-proj')?$('f-proj').value:'all';
   var per=$('f-period')?$('f-period').value:'This Year';
   var d=getProjData(pf);
+  // getProjData already converts every project to USD when pf is 'all', so the display
+  // currency here is USD for that view and the project's own currency for a single project.
+  var dispCur=pf==='all'?'USD':((PROJ[pf]&&PROJ[pf].currency)||'USD');
+  var fxNote=pf==='all'?' (USD equiv.)':'';
   if($('k-ben'))$('k-ben').textContent=fmt(d.benef);
   if($('k-act'))$('k-act').textContent=d.tot;
   if($('k-act-s'))$('k-act-s').textContent=d.done+' done · '+d.prog+' in progress';
   if($('k-bud'))$('k-bud').textContent=d.budget?Math.round(d.spent/d.budget*100)+'%':'0%';
-  if($('k-bud-s'))$('k-bud-s').textContent=money(Math.round(d.spent/1000))+'K of '+money(Math.round(d.budget/1000))+'K';
+  if($('k-bud-s'))$('k-bud-s').textContent=money(Math.round(d.spent/1000),dispCur)+'K of '+money(Math.round(d.budget/1000),dispCur)+'K'+fxNote;
   if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).length:1;
 
   donut('c-donut',[{v:d.done,c:'#16a34a'},{v:d.prog,c:'#2563eb'},{v:d.behind,c:'#dc2626'},{v:d.not,c:'#e2e8f0'}],26);
@@ -2532,15 +2572,17 @@ function drawAll(){
 
   if(pf==='all'){
     var pk=Object.keys(PROJ);
+    // Convert each project to USD before charting them side by side — otherwise a large AFN
+    // figure would tower over a USD bar for reasons that have nothing to do with actual size.
     bars('c-bar',pk.map(function(k){return k.length>9?k.slice(0,8):k;}),
-      [{d:pk.map(function(k){return PROJ[k].budget;}),c:'#1A3A6B'},
-       {d:pk.map(function(k){return PROJ[k].spent;}),c:'#C8922A'}]);
+      [{d:pk.map(function(k){return PROJ[k].budget*projFxToUSD(k);}),c:'#1A3A6B'},
+       {d:pk.map(function(k){return PROJ[k].spent*projFxToUSD(k);}),c:'#C8922A'}]);
   }else{
     bars('c-bar',['Planned','Spent','Balance'],[{d:[d.budget,d.spent,d.budget-d.spent],c:['#1A3A6B','#C8922A','#16a34a']}]);
   }
-  if($('b-plan'))$('b-plan').textContent=money(Math.round(d.budget/1000))+'K';
-  if($('b-spent'))$('b-spent').textContent=money(Math.round(d.spent/1000))+'K';
-  if($('b-bal'))$('b-bal').textContent=money(Math.round((d.budget-d.spent)/1000))+'K';
+  if($('b-plan'))$('b-plan').textContent=money(Math.round(d.budget/1000),dispCur)+'K'+fxNote;
+  if($('b-spent'))$('b-spent').textContent=money(Math.round(d.spent/1000),dispCur)+'K'+fxNote;
+  if($('b-bal'))$('b-bal').textContent=money(Math.round((d.budget-d.spent)/1000),dispCur)+'K'+fxNote;
 
   // Build live expenditure by category from DB.expenditures + approved DB.pr items
   var catColors={'Personnel':'#1A3A6B','Operations':'#2563eb','Activities':'#16a34a','Travel':'#ea580c','Supplies':'#f59e0b','Other':'#94a3b8'};
@@ -2595,7 +2637,7 @@ function renderExecProjects(){
     var p=PROJ[k];
     var row=el('div','pr');
     row.setAttribute('data-proj',k);
-    row.innerHTML='<div class="prn">'+k+'</div><div class="prb"><div class="pw"><div class="pb" style="width:'+p.prog+'%;background:'+p.color+'"></div></div><div style="font-size:10px;color:var(--g400);margin-top:3px">'+p.sector+' · '+fmt(p.benef)+' beneficiaries · '+money(Math.round(p.budget/1000))+'K budget</div></div><div class="prv" style="color:'+p.color+'">'+p.prog+'%</div>';
+    row.innerHTML='<div class="prn">'+k+'</div><div class="prb"><div class="pw"><div class="pb" style="width:'+p.prog+'%;background:'+p.color+'"></div></div><div style="font-size:10px;color:var(--g400);margin-top:3px">'+p.sector+' · '+fmt(p.benef)+' beneficiaries · '+money(Math.round(p.budget/1000),p.currency)+'K budget</div></div><div class="prv" style="color:'+p.color+'">'+p.prog+'%</div>';
     c.appendChild(row);
   });
 }
@@ -2699,7 +2741,7 @@ function renderProjectCards(){
       '<span class="bdg '+(p.status==='Active'?'bG':'bB')+'">'+p.status+'</span></div>'+
       '<div style="display:flex;gap:22px;margin-bottom:11px;flex-wrap:wrap">'+
       '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--navy)">'+fmt(p.benef)+'</div><div style="font-size:10px;color:var(--g400)">Beneficiaries</div></div>'+
-      '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--navy)">'+money(Math.round(p.budget/1000))+'K</div><div style="font-size:10px;color:var(--g400)">Budget</div></div>'+
+      '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--navy)">'+money(Math.round(p.budget/1000),p.currency)+'K</div><div style="font-size:10px;color:var(--g400)">Budget</div></div>'+
       '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--navy)">'+acts.length+'</div><div style="font-size:10px;color:var(--g400)">Activities</div></div>'+
       '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:var(--navy)">'+inds.length+'</div><div style="font-size:10px;color:var(--g400)">Indicators</div></div>'+
       '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:'+p.color+'">'+p.prog+'%</div><div style="font-size:10px;color:var(--g400)">Progress</div></div></div>'+
@@ -2739,7 +2781,7 @@ function openProject(k){
   h+='<div class="stats" style="grid-template-columns:repeat(4,1fr)">'+
   '<div class="st nv"><div class="stl">Overall Progress</div><div class="stv">'+p.prog+'%</div></div>'+
   '<div class="st gr"><div class="stl">Beneficiaries</div><div class="stv">'+fmt(p.benef)+'</div><div class="sts">'+bens.length+' registered in system</div></div>'+
-  '<div class="st gd"><div class="stl">Budget Utilized</div><div class="stv">'+(p.budget?Math.round(p.spent/p.budget*100):0)+'%</div><div class="sts">'+money(p.spent)+' of '+money(p.budget)+'</div></div>'+
+  '<div class="st gd"><div class="stl">Budget Utilized</div><div class="stv">'+(p.budget?Math.round(p.spent/p.budget*100):0)+'%</div><div class="sts">'+money(p.spent,p.currency)+' of '+money(p.budget,p.currency)+'</div></div>'+
   '<div class="st bl"><div class="stl">Activities</div><div class="stv">'+acts.length+'</div><div class="sts">'+done+' completed</div></div></div>';
 
   h+='<div class="cd" style="border-left:4px solid '+p.color+'"><div class="cdh"><div class="cdt">Logframe: Goal, Impact, Outcomes &amp; Outputs</div></div><div class="cdb">'+renderLogframeSummary(p)+'</div></div>';
@@ -2776,9 +2818,10 @@ function openProject(k){
   '<tr><td style="font-weight:700;color:var(--navy)">Locations</td><td>'+esc(p.loc)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">Start Date</td><td>'+dt(p.start)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">End Date</td><td>'+dt(p.end)+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">Total Budget</td><td>'+money(p.budget)+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">Spent to Date</td><td>'+money(p.spent)+'</td></tr>'+
-  '<tr><td style="font-weight:700;color:var(--navy)">Balance</td><td>'+money(p.budget-p.spent)+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Currency</td><td>'+esc(p.currency||'USD')+(p.currency&&p.currency!=='USD'?' <span style="color:var(--g400);font-weight:400">(1 '+esc(p.currency)+' = $'+(p.fxToUSD||1)+' USD)</span>':'')+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Total Budget</td><td>'+money(p.budget,p.currency)+(p.currency&&p.currency!=='USD'?' <span style="color:var(--g400)">(&#8776; '+money(Math.round(p.budget*(p.fxToUSD||1)),'USD')+')</span>':'')+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Spent to Date</td><td>'+money(p.spent,p.currency)+'</td></tr>'+
+  '<tr><td style="font-weight:700;color:var(--navy)">Balance</td><td>'+money(p.budget-p.spent,p.currency)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">Project Manager</td><td>'+esc(p.mgr)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">MEAL Focal Point</td><td>'+esc(p.meal)+'</td></tr>'+
   '<tr><td style="font-weight:700;color:var(--navy)">Status</td><td><span class="bdg '+(p.status==='Active'?'bG':'bB')+'">'+esc(p.status)+'</span></td></tr>'+
@@ -3276,11 +3319,20 @@ function renderFinBudget(){
     d.innerHTML='<div class="cbl">'+k+'</div><div class="cbt"><div class="cbf" style="width:'+pct+'%;background:'+p.color+'"></div></div><div class="cbv">'+pct+'%</div>';
     c.appendChild(d);
   });
-  var tot=0,sp=0;for(var k in PROJ){tot+=PROJ[k].budget;sp+=PROJ[k].spent;}
+  // Projects can each carry their own currency, so combining them into one total requires
+  // converting every project through its own fxToUSD rate first — summing raw numbers across
+  // different currencies would silently produce a meaningless figure.
+  var tot=0,sp=0,mixedCurrency=false;
+  for(var k in PROJ){
+    var fx=projFxToUSD(k);
+    tot+=PROJ[k].budget*fx;sp+=PROJ[k].spent*fx;
+    if(PROJ[k].currency&&PROJ[k].currency!=='USD')mixedCurrency=true;
+  }
+  var totalLabel='Total Budget'+(mixedCurrency?' (USD equiv.)':'');
   var t=el('div');t.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid var(--g100);display:flex;justify-content:space-around;text-align:center';
-  t.innerHTML='<div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+money(tot)+'</div><div style="font-size:10px;color:var(--g500)">Total Budget</div></div>'+
-    '<div><div style="font-size:18px;font-weight:700;color:var(--gold)">'+money(sp)+'</div><div style="font-size:10px;color:var(--g500)">Spent</div></div>'+
-    '<div><div style="font-size:18px;font-weight:700;color:var(--green)">'+money(tot-sp)+'</div><div style="font-size:10px;color:var(--g500)">Balance</div></div>';
+  t.innerHTML='<div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+money(tot,'USD')+'</div><div style="font-size:10px;color:var(--g500)">'+totalLabel+'</div></div>'+
+    '<div><div style="font-size:18px;font-weight:700;color:var(--gold)">'+money(sp,'USD')+'</div><div style="font-size:10px;color:var(--g500)">Spent'+(mixedCurrency?' (USD equiv.)':'')+'</div></div>'+
+    '<div><div style="font-size:18px;font-weight:700;color:var(--green)">'+money(tot-sp,'USD')+'</div><div style="font-size:10px;color:var(--g500)">Balance</div></div>';
   c.appendChild(t);
 }
 
@@ -3321,8 +3373,8 @@ function renderProgramsHomeCharts(){
   var pcolors=pk.map(function(k){var c=PROJ[k].color.match(/--(\w+)/);return colorMap[c?c[1]:'navy']||'#1A3A6B';});
 
   bars('pg-c-budget',pk,[
-    {d:pk.map(function(k){return PROJ[k].budget;}),c:'#94a3b8'},
-    {d:pk.map(function(k){return PROJ[k].spent;}),c:pcolors}
+    {d:pk.map(function(k){return PROJ[k].budget*projFxToUSD(k);}),c:'#94a3b8'},
+    {d:pk.map(function(k){return PROJ[k].spent*projFxToUSD(k);}),c:pcolors}
   ]);
 
   var allActs=DB.activities;
@@ -3488,13 +3540,30 @@ function renderBenef(){
   if($('bn-pen'))$('bn-pen').textContent=DB.benef.filter(function(b){return b.status==='Pending Verification';}).length;
   var f=DB.benef.filter(function(b){return b.sex==='Female';}).length;
   if($('bn-fem'))$('bn-fem').textContent=DB.benef.length?Math.round(f/DB.benef.length*100)+'%':'0%';
-  if(!bs.length){c.innerHTML='<tr><td colspan="8" class="empty">No beneficiaries registered</td></tr>';return;}
+  if(!bs.length){c.innerHTML='<tr><td colspan="9" class="empty">No beneficiaries registered</td></tr>';return;}
   bs.forEach(function(b){
     var sb=b.status==='Verified'?'bG':b.status==='Rejected'?'bR':'bO';
     var r=el('tr');
-    r.innerHTML='<td>'+b.id+'</td><td><b>'+esc(b.name)+'</b><div style="font-size:10px;color:var(--g400)">s/o '+esc(b.father)+'</div></td><td>'+esc(b.sex)+'</td><td>'+b.age+'</td><td>'+esc(b.proj)+'</td><td>'+esc(b.dist)+'</td><td style="font-size:11.5px">'+esc(b.crit)+'</td><td><span class="bdg '+sb+'">'+esc(b.status)+'</span></td>';
+    var nameCell=b.anonymized?
+      '<b style="color:var(--g400);font-style:italic">Anonymized</b><div style="font-size:10px;color:var(--g400)">record #'+b.id+'</div>'
+      :'<b>'+esc(b.name)+'</b><div style="font-size:10px;color:var(--g400)">s/o '+esc(b.father)+'</div>';
+    var privacyCell=b.anonymized?
+      '<span class="bdg bN">Anonymized '+dt(b.anonymizedOn)+'</span>'
+      :(b.consent?'<span class="bdg bG">Consent on file</span> <button class="b bo bs" style="margin-left:4px" onclick="anonymizeBeneficiary(\''+b.id+'\')">Anonymize</button>'
+        :'<span class="bdg bR">No consent recorded</span>');
+    r.innerHTML='<td>'+b.id+'</td><td>'+nameCell+'</td><td>'+esc(b.sex)+'</td><td>'+b.age+'</td><td>'+esc(b.proj)+'</td><td>'+esc(b.dist)+'</td><td style="font-size:11.5px">'+esc(b.crit)+'</td><td><span class="bdg '+sb+'">'+esc(b.status)+'</span></td><td>'+privacyCell+'</td>';
     c.appendChild(r);
   });
+}
+function anonymizeBeneficiary(id){
+  var b=DB.benef.find(function(x){return x.id===id;});
+  if(!b)return;
+  if(b.anonymized){alert('This record is already anonymized.');return;}
+  if(!confirm('Remove this beneficiary\'s name and father\'s name permanently? Sex, age, district, project, and selection criteria are kept for reporting; the identifying details cannot be recovered afterward.'))return;
+  b.name='';b.father='';b.anonymized=true;b.anonymizedOn=today();b.anonymizedBy=SES.name;
+  DB.deletionLog.unshift({type:'beneficiary-anonymize',recordId:id,reason:'Data minimization / retention',by:SES.name,at:new Date().toISOString()});
+  renderBenef();
+  queueCloudSave();
 }
 
 function renderAnalysis(){
@@ -3530,7 +3599,7 @@ function renderProc(){
   DB.proc.forEach(function(p){
     var sb=p.status==='Approved'?'bG':p.status.indexOf('Pending')>=0?'bO':'bY';
     var r=el('tr');
-    r.innerHTML='<td>'+p.id+'</td><td><b>'+esc(p.item)+'</b><div style="font-size:10px;color:var(--g400)">'+esc(p.just)+'</div></td><td>'+esc(p.proj)+'</td><td>'+p.qty+'</td><td>'+money(p.cost)+'</td><td>'+esc(p.by)+'</td><td><span class="bdg '+sb+'">'+esc(p.status)+'</span></td><td>'+(p.status.indexOf('Pending')>=0?'<button class="b bn bs" data-proc="'+p.id+'">Approve</button>':'-')+'</td>';
+    r.innerHTML='<td>'+p.id+'</td><td><b>'+esc(p.item)+'</b><div style="font-size:10px;color:var(--g400)">'+esc(p.just)+'</div></td><td>'+esc(p.proj)+'</td><td>'+p.qty+'</td><td>'+money(p.cost,projCurrency(p.proj))+'</td><td>'+esc(p.by)+'</td><td><span class="bdg '+sb+'">'+esc(p.status)+'</span></td><td>'+(p.status.indexOf('Pending')>=0?'<button class="b bn bs" data-proc="'+p.id+'">Approve</button>':'-')+'</td>';
     c.appendChild(r);
   });
 }
@@ -3869,10 +3938,12 @@ function saveVehicle(){
 function saveBenef(){
   var n=$('bn-name');
   if(!n||!n.value.trim()){alert('Please enter beneficiary name.');return;}
+  if(!$('bn-consent').checked){alert('Consent from the beneficiary (or their guardian) must be obtained and confirmed before this record can be saved.');return;}
   DB.benef.push({id:nid('B'),name:n.value.trim(),father:$('bn-father').value,sex:$('bn-sex').value,
     age:parseInt($('bn-age').value)||0,proj:$('bn-proj').value,dist:$('bn-dist').value,
-    crit:$('bn-crit').value,status:$('bn-stat').value,date:$('bn-date').value||today()});
-  closeM('m-benef');n.value='';renderBenef();queueCloudSave();
+    crit:$('bn-crit').value,status:$('bn-stat').value,date:$('bn-date').value||today(),
+    consent:true,consentDate:$('bn-date').value||today(),registeredBy:SES.name});
+  closeM('m-benef');n.value='';$('bn-consent').checked=false;renderBenef();queueCloudSave();
 }
 
 function saveActivity(){
@@ -4070,11 +4141,15 @@ function saveProject(){
   var codeTaken = !!PROJ[code] || DB.pendingProjects.some(function(x){return x.code===code && x.status!=='rejected';});
   if(codeTaken){alert('Project code "'+code+'" is already in use by another project. Please choose a different code — reusing one will overwrite the existing project\'s data.');return;}
   if(!$('pj-budget').value || parseInt($('pj-budget').value)<=0){alert('Please enter a budget greater than 0.');return;}
+  var currency=$('pj-currency')?$('pj-currency').value:'USD';
+  var fxToUSD=currency==='USD'?1:(parseFloat($('pj-fx').value)||0);
+  if(currency!=='USD' && fxToUSD<=0){alert('Please enter the exchange rate to USD for '+currency+' (e.g. how many US dollars is 1 '+currency+' worth).');return;}
   var goals=collectLFGoals();
   var outcomes=collectLFGroup('pj-outcomes-wrap','pj-outcome-text','pj-outcome-ind-text');
   var outputs=collectLFGroup('pj-outputs-wrap','pj-output-text','pj-output-ind-text');
   var data={code:code,name:n.value.trim(),donor:$('pj-donor').value,sector:$('pj-sector').value,
     budget:parseInt($('pj-budget').value)||0,spent:0,benef:parseInt($('pj-benef').value)||0,
+    currency:currency,fxToUSD:fxToUSD,
     prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:$('pj-loc').value,
     mgr:SES.name,meal:'Kamil Sanzar',status:'pending',color:'var(--teal)',
     goal:goals.join(' | '),impact:$('pj-impact').value.trim(),
@@ -4094,6 +4169,7 @@ function maybeActivateProject(code){
   if(!p||!p.edApproved||!p.mealApproved||!p.financeApproved)return;
   p.status='approved';
   PROJ[code]={name:p.name,donor:p.donor,sector:p.sector,budget:p.budget,spent:0,benef:p.benef,
+    currency:p.currency||'USD',fxToUSD:p.fxToUSD||1,
     prog:0,start:p.start,end:p.end,loc:p.loc,mgr:p.mgr,meal:p.meal,status:'Active',color:'var(--teal)',
     goal:p.goal||('Improve outcomes for beneficiaries through '+p.sector.toLowerCase()+' programming in '+p.loc+'.'),
     impact:p.impact||('Measurable improvement in '+p.sector.toLowerCase()+' outcomes for '+fmt(p.benef)+' beneficiaries.'),
@@ -5014,7 +5090,7 @@ function renderCrossProjectComparison(){
     var r=el('tr');
     r.innerHTML='<td><b>'+esc(k)+'</b></td><td>'+esc(p.sector)+'</td>'+
       '<td><div class="pw" style="width:80px;display:inline-block"><div class="pb" style="width:'+p.prog+'%;background:'+p.color+'"></div></div> '+p.prog+'%</td>'+
-      '<td>'+budgetPct+'% ('+money(p.spent)+' / '+money(p.budget)+')</td>'+
+      '<td>'+budgetPct+'% ('+money(p.spent,p.currency)+' / '+money(p.budget,p.currency)+')</td>'+
       '<td'+(daysLeft<30?' style="color:var(--red);font-weight:600"':'')+'>'+(daysLeft>0?daysLeft+' days':'Ended')+'</td>'+
       '<td>'+fmt(p.benef)+'</td>'+
       '<td><span class="bdg '+(p.status==='Active'?'bG':'bY')+'">'+p.status+'</span></td>';
@@ -5705,17 +5781,19 @@ function saveExpenditure(){
 function renderExpenditureLedger(){
   var body=$('fin-ledger');if(!body)return;
   body.innerHTML='';
-  var total=0;
+  var totalUSD=0,mixedCurrency=false;
   if(!DB.expenditures.length){body.innerHTML='<tr><td colspan="7" class="empty">No expenditures recorded yet</td></tr>';}
   DB.expenditures.forEach(function(e){
-    total+=e.amount;
+    var cur=projCurrency(e.proj);
+    totalUSD+=e.amount*projFxToUSD(e.proj);
+    if(cur!=='USD')mixedCurrency=true;
     var r=el('tr');
     var canEditEx=(e.createdBy===SES.name||!e.createdBy);
     var exActions=canEditEx?'<button class="b bo bs" onclick="openEditExpenditure(\''+e.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'expenditure\',\''+e.id+'\')">Del</button>':'-';
-    r.innerHTML='<td>'+dt(e.date)+'</td><td>'+esc(e.proj)+'</td><td>'+esc(e.cat)+'</td><td>'+esc(e.desc)+'</td><td>'+(e.paidto?esc(e.paidto):'-')+'</td><td>'+esc(e.method)+'</td><td style="font-weight:700">$'+e.amount.toLocaleString()+'</td><td>'+exActions+'</td>';
+    r.innerHTML='<td>'+dt(e.date)+'</td><td>'+esc(e.proj)+'</td><td>'+esc(e.cat)+'</td><td>'+esc(e.desc)+'</td><td>'+(e.paidto?esc(e.paidto):'-')+'</td><td>'+esc(e.method)+'</td><td style="font-weight:700">'+money(e.amount,cur)+'</td><td>'+exActions+'</td>';
     body.appendChild(r);
   });
-  if($('fin-ledger-total'))$('fin-ledger-total').textContent='$'+total.toLocaleString();
+  if($('fin-ledger-total'))$('fin-ledger-total').textContent=money(totalUSD,'USD')+(mixedCurrency?' (USD equivalent)':'');
 }
 
 
@@ -6071,7 +6149,7 @@ document.addEventListener('click',function(e){
   if((v=t.getAttribute('data-proc'))){
     if(['finance','executive','progdeputy','deputy'].indexOf(SES.role)===-1){alert('Only Finance can approve a procurement request.');return;}
     var pp=DB.proc.find(function(x){return x.id===v;});
-    if(pp && confirm('Approve procurement request '+pp.id+' — '+pp.item+' ('+money(pp.cost)+')?')){
+    if(pp && confirm('Approve procurement request '+pp.id+' — '+pp.item+' ('+money(pp.cost,projCurrency(pp.proj))+')?')){
       pp.status='Approved';pp.approvedBy=SES.name;pp.approvedOn=today();
       renderProc();queueCloudSave();
     }
