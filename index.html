@@ -1218,8 +1218,8 @@ tbody tr:hover td{background:var(--g50);}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 <div class="fg"><label>Email</label><input type="email" id="ms-email" placeholder="email@sgoa.org"></div>
 <div class="fg"><label>Phone</label><input type="text" id="ms-phone" placeholder="+93..."></div>
-</div
-<button class="btn" onclick="saveMyProfile()">💾 Save Profile</button>
+</div>
+<button class="b bn" onclick="saveMyProfile()">💾 Save Profile</button>
 <span id="ms-profile-msg" style="margin-left:10px;font-size:12px;color:var(--green)"></span>
 </div>
 <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1);">
@@ -1227,19 +1227,19 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Current Password</label><input type="password" id="ms-cur"></div>
 <div class="fg"><label>New Password</label><input type="password" id="ms-new"></div>
 <div class="fg"><label>Confirm New</label><input type="password" id="ms-cfm"></div>
-<button class="btn" onclick="saveMyPassword()">🔒 Update Password</button>
+<button class="b bn" onclick="saveMyPassword()">🔒 Update Password</button>
 <div id="ms-pwd-msg" style="margin-top:8px;font-size:12px"></div>
 </div>
-<div class="card">
+<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1);">
 <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px">🔔 Notifications</h3>
 <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" id="ms-notif-tasks"> Task alerts</label>
 <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" id="ms-notif-pr"> PR notifications</label>
 <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" id="ms-notif-leave"> Leave updates</label>
 <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="ms-notif-wf"> Workflow alerts</label>
-<button class="btn" style="margin-top:14px" onclick="saveMyPrefs()">💾 Save</button>
+<button class="b bn" style="margin-top:14px" onclick="saveMyPrefs()">💾 Save</button>
 <span id="ms-prefs-msg" style="margin-left:10px;font-size:12px;color:var(--green)"></span>
 </div>
-<div class="card" style="grid-column:1/-1">
+<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.1);grid-column:1/-1">
 <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:14px">🏢 Account Info</h3>
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
 <div><div style="font-size:11px;color:var(--g500);margin-bottom:3px">NAME</div><div id="ms-info-name" style="font-weight:600;color:var(--navy)">-</div></div>
@@ -1563,19 +1563,19 @@ executive:['exec','projects','project-detail','roadmap','all-tasks','all-challen
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
 'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
 'admin','safeguarding','operations','ops-assets','ops-fleet','it','access','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
-meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-finance:['finance','projects','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-hr:['hr','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
-programs:['programs','prog-activities','prog-benef','prog-analysis','projects','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+finance:['finance','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+hr:['hr','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+programs:['programs','prog-activities','prog-benef','prog-analysis','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 supply:['supply','supply-proc','supply-dist','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request',
+progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
   'admin','safeguarding','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
-deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request',
+deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
   'admin','safeguarding','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
@@ -1589,21 +1589,21 @@ executive:[
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
-{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'}]},
-{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-dist',n:'Distribution'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 operations:[{l:'OPERATIONS',i:[{p:'operations',n:'Operations Home'},{p:'ops-assets',n:'Asset Register'},{p:'ops-fleet',n:'Fleet Management'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -1611,13 +1611,15 @@ operations:[{l:'OPERATIONS',i:[{p:'operations',n:'Operations Home'},{p:'ops-asse
 progdeputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
+{l:'CROSS-DEPT',i:[{p:'tar-request',n:'Raise TAR'},{p:'it-tickets',n:'IT Support'},{p:'timesheet',n:'⏱ My Timesheet'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 deputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'}]},
+{l:'CROSS-DEPT',i:[{p:'tar-request',n:'Raise TAR'},{p:'it-tickets',n:'IT Support'},{p:'timesheet',n:'⏱ My Timesheet'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
+it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
 };
 var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations',progdeputy:'pr-approvals',deputy:'pr-approvals',it:'it',access:'access'};
 
@@ -1705,16 +1707,20 @@ try{
 var cloudSyncEnabled = !!supa;
 var cloudSaveTimer = null;
 var cloudStatus = 'idle';
+var cloudRowVersion = null; // updated_at of the row as last read by this tab — used to detect concurrent edits
+var syncBlocked = false;    // true once a load failure means we must never autosave/overwrite
 
 function updateCloudStatusUI(){
   var el2 = document.getElementById('cloud-status');
   if(!el2)return;
   var map = {
     idle: {t:'', c:''},
-    saving: {t:'Saving\\u2026', c:'#f59e0b'},
+    saving: {t:'Saving…', c:'#f59e0b'},
     saved: {t:'All changes saved', c:'#16a34a'},
-    error: {t:'Could not save \\u2014 check connection', c:'#dc2626'},
-    loading: {t:'Loading your data\\u2026', c:'#2563eb'}
+    error: {t:'Could not save — check connection', c:'#dc2626'},
+    loading: {t:'Loading your data…', c:'#2563eb'},
+    conflict: {t:'Someone else saved changes — reload before editing further', c:'#dc2626'},
+    blocked: {t:'Could not load data — changes are NOT being saved. Reload the page.', c:'#dc2626'}
   };
   var m = map[cloudStatus] || map.idle;
   el2.textContent = m.t;
@@ -1722,17 +1728,28 @@ function updateCloudStatusUI(){
 }
 
 async function saveToCloud(){
-  if(!cloudSyncEnabled)return;
+  if(!cloudSyncEnabled || syncBlocked)return;
   cloudStatus='saving'; updateCloudStatusUI();
   try{
+    // Stale-write guard: if someone else's tab saved since we last read this row, refuse to
+    // silently clobber their work — stop and tell the user to reload instead.
+    if(cloudRowVersion){
+      var check = await supa.from('sgoa_store').select('updated_at').eq('key','app_state').maybeSingle();
+      if(!check.error && check.data && check.data.updated_at && check.data.updated_at !== cloudRowVersion){
+        cloudStatus='conflict'; updateCloudStatusUI();
+        if(cloudSaveTimer){clearTimeout(cloudSaveTimer);cloudSaveTimer=null;}
+        return;
+      }
+    }
     var payload = { DB: DB, PROJ: PROJ };
+    var nowIso = new Date().toISOString();
     var { error } = await supa.from('sgoa_store').upsert({
       key: 'app_state',
       data: payload,
-      updated_at: new Date().toISOString()
+      updated_at: nowIso
     });
     if(error){ cloudStatus='error'; console.error('Cloud save error:', error); }
-    else { cloudStatus='saved'; }
+    else { cloudStatus='saved'; cloudRowVersion=nowIso; }
   }catch(e){
     cloudStatus='error'; console.error('Cloud save exception:', e);
   }
@@ -1740,17 +1757,20 @@ async function saveToCloud(){
 }
 
 function queueCloudSave(){
-  if(!cloudSyncEnabled)return;
+  if(!cloudSyncEnabled || syncBlocked)return;
   if(cloudSaveTimer)clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(saveToCloud, 1500);
 }
 
 async function loadFromCloud(){
-  if(!cloudSyncEnabled)return false;
+  // Returns 'ok' (loaded real data), 'empty' (row genuinely doesn't exist yet), or 'error'
+  // (network/server failure) — callers must never treat 'error' the same as 'empty', or a
+  // dropped connection ends up overwriting real data with a blank slate.
+  if(!cloudSyncEnabled)return 'error';
   cloudStatus='loading'; updateCloudStatusUI();
   try{
-    var { data, error } = await supa.from('sgoa_store').select('data').eq('key','app_state').maybeSingle();
-    if(error){ console.error('Cloud load error:', error); cloudStatus='error'; updateCloudStatusUI(); return false; }
+    var { data, error } = await supa.from('sgoa_store').select('data,updated_at').eq('key','app_state').maybeSingle();
+    if(error){ console.error('Cloud load error:', error); cloudStatus='error'; updateCloudStatusUI(); return 'error'; }
     if(data && data.data){
       if(data.data.DB){
         Object.keys(data.data.DB).forEach(function(k){ DB[k] = data.data.DB[k]; });
@@ -1759,20 +1779,42 @@ async function loadFromCloud(){
         Object.keys(PROJ).forEach(function(k){ delete PROJ[k]; });
         Object.keys(data.data.PROJ).forEach(function(k){ PROJ[k] = data.data.PROJ[k]; });
       }
+      cloudRowVersion = data.updated_at || null;
       cloudStatus='saved'; updateCloudStatusUI();
-      return true;
+      return 'ok';
     }
     cloudStatus='idle'; updateCloudStatusUI();
-    return false;
+    return 'empty';
   }catch(e){
     console.error('Cloud load exception:', e);
     cloudStatus='error'; updateCloudStatusUI();
-    return false;
+    return 'error';
   }
 }
 
-window.addEventListener('beforeunload', function(){ if(cloudSyncEnabled) saveToCloud(); });
-setInterval(function(){ if(cloudSyncEnabled) saveToCloud(); }, 25000);
+window.addEventListener('beforeunload', function(){ if(cloudSyncEnabled && !syncBlocked) saveToCloud(); });
+setInterval(function(){ if(cloudSyncEnabled && !syncBlocked) saveToCloud(); }, 25000);
+
+// The 13 built-in department-head accounts (CRED) live only in this file's source, not in
+// saved data — without this, a password change for any of them is silently lost on reload
+// (see the go-live audit, SEC-13/REL). Make sure each has a real, persisted DB.users record,
+// which login and password-change now treat as the source of truth.
+function migrateCredAccounts(){
+  var added=false;
+  Object.keys(CRED).forEach(function(key){
+    var c=CRED[key];
+    var exists=DB.users.some(function(u){return u.username===c.u;});
+    if(!exists){
+      DB.users.push({
+        id:'U'+key, name:c.n, username:c.u, password:c.p, position:c.r,
+        roleTemplate:key, dept:DEPTNAME[key]||'', email:'', phone:'',
+        status:'Active', prefs:{}, projects:[]
+      });
+      added=true;
+    }
+  });
+  return added;
+}
 
 
 // ============ PROJECT ROADMAP TEMPLATE ============
@@ -1948,11 +1990,16 @@ function overdue(d){if(!d)return false;return new Date(d)<new Date();}
 
 function doLogin(){
   var u=$('lu').value.trim(),p=$('lp').value.trim(),e=$('lerr');
-  var extraUser=DB.users.find(function(x){return x.username===u && x.password===p && x.status==='Active';});
+  // DB.users is the source of truth once an account has been migrated into it (see
+  // migrateCredAccounts) — checking it first means a changed password actually takes
+  // effect, instead of the original CRED password working forever regardless of changes.
+  var acct=DB.users.find(function(x){return x.username===u;});
   var effRole,effName,effLabel,effPosition;
-  if(extraUser){
-    effRole=extraUser.roleTemplate;effName=extraUser.name;effLabel=ROLE_TEMPLATE_LABEL[extraUser.roleTemplate]||extraUser.roleTemplate;
-    effPosition=extraUser.position||effLabel;
+  if(acct){
+    if(acct.password!==p || acct.status!=='Active'){e.style.display='block';e.textContent='Incorrect username or password.';setTimeout(function(){e.style.display='none';},3000);return;}
+    effRole=acct.roleTemplate;effName=acct.name;
+    effLabel=acct.position||ROLE_TEMPLATE_LABEL[acct.roleTemplate]||acct.roleTemplate;
+    effPosition=acct.position||effLabel;
   } else {
     var matchKey=null;
     for(var key in CRED){ if(CRED[key].u===u){ matchKey=key; break; } }
@@ -1977,8 +2024,6 @@ function doLogin(){
 function renderMySettings(){
   var u=DB.users.find(function(x){return x.name===SES.name;});
   // profile fields
-  document.getElementById('ms-name').value=SES.name||'';
-  document.getElementById('ms-pos').value=(u&&u.position)||SES.position||'';
   document.getElementById('ms-email').value=(u&&u.email)||'';
   document.getElementById('ms-phone').value=(u&&u.phone)||'';
   // prefs
@@ -2026,12 +2071,11 @@ function saveMyPassword(){
   var msg=document.getElementById('ms-pwd-msg');
   function show(t,c){msg.textContent=t;msg.style.color=c;setTimeout(function(){msg.textContent='';},3500);}
   var u=DB.users.find(function(x){return x.name===SES.name;});
-  var k=null; for(var i in CRED){if(CRED[i].n===SES.name){k=i;break;}}
-  if(!(u&&u.password===cur)&&!(k&&CRED[k].p===cur)){show('Current password incorrect.','var(--red)');return;}
+  if(!u){show('Account error — please contact IT.','var(--red)');return;}
+  if(u.password!==cur){show('Current password incorrect.','var(--red)');return;}
   if(nw.length<6){show('Min 6 characters.','var(--red)');return;}
   if(nw!==cf){show('Passwords do not match.','var(--red)');return;}
-  if(u)u.password=nw;
-  if(k)CRED[k].p=nw;
+  u.password=nw;
   queueCloudSave();
   show('✅ Password updated!','var(--green)');
 }
@@ -2067,16 +2111,11 @@ function doChangePassword(){
   var msg=document.getElementById('pwd-msg');
   function showMsg(t,type){msg.textContent=t;msg.className='pwd-msg '+type;msg.style.display='block';setTimeout(function(){msg.style.display='none';},3500);}
   var dbUser=DB.users.find(function(u){return u.name===SES.name;});
-  var credKey=null;
-  for(var k in CRED){if(CRED[k].n===SES.name){credKey=k;break;}}
-  var currentOk=false;
-  if(dbUser && dbUser.password===cur) currentOk=true;
-  if(credKey && CRED[credKey].p===cur) currentOk=true;
-  if(!currentOk){showMsg('Current password is incorrect.','err');return;}
+  if(!dbUser){showMsg('Account error — please contact IT.','err');return;}
+  if(dbUser.password!==cur){showMsg('Current password is incorrect.','err');return;}
   if(nw.length<6){showMsg('New password must be at least 6 characters.','err');return;}
   if(nw!==cf){showMsg('New passwords do not match.','err');return;}
-  if(dbUser) dbUser.password=nw;
-  if(credKey) CRED[credKey].p=nw;
+  dbUser.password=nw;
   queueCloudSave();
   showMsg('✅ Password updated successfully!','ok');
   setTimeout(closePwdModal,2000);
@@ -3507,7 +3546,7 @@ function renderDataHistory(){
 }
 
 // ============ SAVE FUNCTIONS ============
-function nid(p){return p+Date.now().toString().slice(-6);}
+function nid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 
 function saveTask(){
   var t=$('t-title');
@@ -4246,7 +4285,7 @@ function submitPR(){
     justification:$('pr-justification').value.trim(),notes:$('pr-notes').value.trim(),
     quotesRequired:prQuotesRequired(total),
     requestedBy:SES.name,requestedByPosition:($('pr-position-display').value||SES.position||''),requestedByRole:SES.role,
-    chain:chain,step:track==='ops'?0:1,
+    chain:chain,step:0,
     status:'progress',created:today(),
     hist:[{a:'Created',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'PR submitted for '+dept,position:SES.position}]
   };
@@ -4256,7 +4295,8 @@ function submitPR(){
   addPRItemRow();
   $('pr-prf-display').value=nextPRFNumber($('pr-project').value);$('pr-prf-display')._userChanged=false;
   renderMyPRs();
-  alert('Purchase Request '+pr.prf+' submitted. Routed to: '+chain[track==='ops'?0:1].label);
+  queueCloudSave();
+  alert('Purchase Request '+pr.prf+' submitted. Routed to: '+chain[0].label);
 }
 
 
@@ -4386,16 +4426,7 @@ function confirmPRAction(){
 // ============ USER MANAGEMENT SYSTEM ============
 DB.users=[];
 
-var ROLE_TEMPLATE_LABEL={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations',progdeputy:'Program Deputy Director',deputy:'Deputy Director'};
-
-function findLoginUser(username,pass){
-  var extra=DB.users.find(function(u){return u.username===username && u.password===pass && u.status==='Active';});
-  if(extra)return {role:extra.roleTemplate,n:extra.name,r:ROLE_TEMPLATE_LABEL[extra.roleTemplate]||extra.roleTemplate};
-  for(var key in CRED){
-    if(CRED[key].u===username && CRED[key].p===pass) return {role:key,n:CRED[key].n,r:CRED[key].r};
-  }
-  return null;
-}
+var ROLE_TEMPLATE_LABEL={executive:'Executive Director',meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations',progdeputy:'Program Deputy Director',deputy:'Deputy Director',it:'IT Support Officer',access:'Access & Movement Officer'};
 
 function saveNewUser(){
   var name=$('nu-name'),user=$('nu-username'),pass=$('nu-password');
@@ -5270,8 +5301,8 @@ function openEditProject(code){
   _editingId=code;
   var m=document.getElementById('m-edit-project');
   if(!m){
-    m=document.createElement('div');m.id='m-edit-project';m.className='modal';
-    m.innerHTML='<div class="mb"><div class="mh"><h3>Edit Project</h3><button class="mx" onclick="closeM(\'m-edit-project\')">&times;</button></div><div class="mc"><div class="fg"><label>Project Name</label><input id="ep-name" class="fi" type="text"></div><div class="fg"><label>Donor</label><input id="ep-donor" class="fi" type="text"></div><div class="fg"><label>Budget ($)</label><input id="ep-budget" class="fi" type="number" min="0"></div><div class="fg"><label>Goal</label><textarea id="ep-goal" class="fi" rows="2"></textarea></div><div class="fg"><label>Impact</label><textarea id="ep-impact" class="fi" rows="2"></textarea></div><div class="fg"><label>Draft Indicators</label><textarea id="ep-indicators" class="fi" rows="3"></textarea></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-project\')">Cancel</button><button class="b bn" onclick="saveEditProject()">Save Changes</button></div></div>';
+    m=document.createElement('div');m.id='m-edit-project';m.className='mb';
+    m.innerHTML='<div class="md"><div class="mh"><h3>Edit Project</h3><button class="mx" onclick="closeM(\'m-edit-project\')">&times;</button></div><div class="mbd"><div class="fg"><label>Project Name</label><input id="ep-name" class="fi" type="text"></div><div class="fg"><label>Donor</label><input id="ep-donor" class="fi" type="text"></div><div class="fg"><label>Budget ($)</label><input id="ep-budget" class="fi" type="number" min="0"></div><div class="fg"><label>Goal</label><textarea id="ep-goal" class="fi" rows="2"></textarea></div><div class="fg"><label>Impact</label><textarea id="ep-impact" class="fi" rows="2"></textarea></div><div class="fg"><label>Draft Indicators</label><textarea id="ep-indicators" class="fi" rows="3"></textarea></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-project\')">Cancel</button><button class="b bn" onclick="saveEditProject()">Save Changes</button></div></div>';
     document.body.appendChild(m);
   }
   document.getElementById('ep-name').value=p.name;
@@ -5305,8 +5336,8 @@ function openEditTask(id){
   _editingId=id;
   var m=document.getElementById('m-edit-task');
   if(!m){
-    m=document.createElement('div');m.id='m-edit-task';m.className='modal';
-    m.innerHTML='<div class="mb"><div class="mh"><h3>Edit Task</h3><button class="mx" onclick="closeM(\'m-edit-task\')">&times;</button></div><div class="mc"><div class="fg"><label>Title</label><input id="et-title" class="fi" type="text"></div><div class="fg"><label>Description</label><input id="et-desc" class="fi" type="text"></div><div class="fg"><label>Due Date</label><input id="et-due" class="fi" type="date"></div><div class="fg"><label>Priority</label><select id="et-prio" class="fi"><option>low</option><option>medium</option><option>high</option></select></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-task\')">Cancel</button><button class="b bn" onclick="saveEditTask()">Save Changes</button></div></div>';
+    m=document.createElement('div');m.id='m-edit-task';m.className='mb';
+    m.innerHTML='<div class="md"><div class="mh"><h3>Edit Task</h3><button class="mx" onclick="closeM(\'m-edit-task\')">&times;</button></div><div class="mbd"><div class="fg"><label>Title</label><input id="et-title" class="fi" type="text"></div><div class="fg"><label>Description</label><input id="et-desc" class="fi" type="text"></div><div class="fg"><label>Due Date</label><input id="et-due" class="fi" type="date"></div><div class="fg"><label>Priority</label><select id="et-prio" class="fi"><option>low</option><option>medium</option><option>high</option></select></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-task\')">Cancel</button><button class="b bn" onclick="saveEditTask()">Save Changes</button></div></div>';
     document.body.appendChild(m);
   }
   document.getElementById('et-title').value=t.title;
@@ -5338,8 +5369,8 @@ function openEditActivity(id){
   var m=document.getElementById('m-edit-activity');
   if(!m){
     var projOpts=Object.keys(PROJ).map(function(k){return '<option>'+k+'</option>';}).join('');
-    m=document.createElement('div');m.id='m-edit-activity';m.className='modal';
-    m.innerHTML='<div class="mb"><div class="mh"><h3>Edit Activity</h3><button class="mx" onclick="closeM(\'m-edit-activity\')">&times;</button></div><div class="mc"><div class="fg"><label>Name</label><input id="ea-name" class="fi" type="text"></div><div class="fg"><label>Project</label><select id="ea-proj" class="fi">'+projOpts+'</select></div><div class="fg"><label>Location</label><input id="ea-loc" class="fi" type="text"></div><div class="fg"><label>Target</label><input id="ea-target" class="fi" type="number" min="0"></div><div class="fg"><label>Actual</label><input id="ea-actual" class="fi" type="number" min="0"></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-activity\')">Cancel</button><button class="b bn" onclick="saveEditActivity()">Save Changes</button></div></div>';
+    m=document.createElement('div');m.id='m-edit-activity';m.className='mb';
+    m.innerHTML='<div class="md"><div class="mh"><h3>Edit Activity</h3><button class="mx" onclick="closeM(\'m-edit-activity\')">&times;</button></div><div class="mbd"><div class="fg"><label>Name</label><input id="ea-name" class="fi" type="text"></div><div class="fg"><label>Project</label><select id="ea-proj" class="fi">'+projOpts+'</select></div><div class="fg"><label>Location</label><input id="ea-loc" class="fi" type="text"></div><div class="fg"><label>Target</label><input id="ea-target" class="fi" type="number" min="0"></div><div class="fg"><label>Actual</label><input id="ea-actual" class="fi" type="number" min="0"></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-activity\')">Cancel</button><button class="b bn" onclick="saveEditActivity()">Save Changes</button></div></div>';
     document.body.appendChild(m);
   }
   document.getElementById('ea-name').value=a.name;
@@ -5373,8 +5404,8 @@ function openEditExpenditure(id){
   _editingId=id;
   var m=document.getElementById('m-edit-expenditure');
   if(!m){
-    m=document.createElement('div');m.id='m-edit-expenditure';m.className='modal';
-    m.innerHTML='<div class="mb"><div class="mh"><h3>Edit Expenditure</h3><button class="mx" onclick="closeM(\'m-edit-expenditure\')">&times;</button></div><div class="mc"><div class="fg"><label>Description</label><input id="ee-desc" class="fi" type="text"></div><div class="fg"><label>Amount ($)</label><input id="ee-amount" class="fi" type="number" min="0" step="0.01"></div><div class="fg"><label>Paid To</label><input id="ee-paidto" class="fi" type="text"></div><div class="fg"><label>Category</label><select id="ee-cat" class="fi"><option>Personnel</option><option>Operations</option><option>Activities</option><option>Travel</option><option>Supplies</option><option>Other</option></select></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-expenditure\')">Cancel</button><button class="b bn" onclick="saveEditExpenditure()">Save Changes</button></div></div>';
+    m=document.createElement('div');m.id='m-edit-expenditure';m.className='mb';
+    m.innerHTML='<div class="md"><div class="mh"><h3>Edit Expenditure</h3><button class="mx" onclick="closeM(\'m-edit-expenditure\')">&times;</button></div><div class="mbd"><div class="fg"><label>Description</label><input id="ee-desc" class="fi" type="text"></div><div class="fg"><label>Amount ($)</label><input id="ee-amount" class="fi" type="number" min="0" step="0.01"></div><div class="fg"><label>Paid To</label><input id="ee-paidto" class="fi" type="text"></div><div class="fg"><label>Category</label><select id="ee-cat" class="fi"><option>Personnel</option><option>Operations</option><option>Activities</option><option>Travel</option><option>Supplies</option><option>Other</option></select></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-expenditure\')">Cancel</button><button class="b bn" onclick="saveEditExpenditure()">Save Changes</button></div></div>';
     document.body.appendChild(m);
   }
   document.getElementById('ee-desc').value=e.desc;
@@ -5403,8 +5434,8 @@ function saveEditExpenditure(){
 function deleteItem(type,id){
   var m=document.getElementById('m-delete-confirm');
   if(!m){
-    m=document.createElement('div');m.id='m-delete-confirm';m.className='modal';
-    m.innerHTML='<div class="mb"><div class="mh"><h3>Confirm Delete</h3><button class="mx" onclick="closeM(\'m-delete-confirm\')">&times;</button></div><div class="mc"><p style="color:var(--red);font-weight:600">⚠ This action cannot be undone.</p><div class="fg"><label>Reason for deletion (required)</label><textarea id="del-reason" class="fi" rows="3" placeholder="Why are you deleting this record?"></textarea></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-delete-confirm\')">Cancel</button><button class="b bn" style="background:var(--red)" onclick="confirmDelete()">Delete</button></div></div>';
+    m=document.createElement('div');m.id='m-delete-confirm';m.className='mb';
+    m.innerHTML='<div class="md"><div class="mh"><h3>Confirm Delete</h3><button class="mx" onclick="closeM(\'m-delete-confirm\')">&times;</button></div><div class="mbd"><p style="color:var(--red);font-weight:600">⚠ This action cannot be undone.</p><div class="fg"><label>Reason for deletion (required)</label><textarea id="del-reason" class="fi" rows="3" placeholder="Why are you deleting this record?"></textarea></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-delete-confirm\')">Cancel</button><button class="b bn" style="background:var(--red)" onclick="confirmDelete()">Delete</button></div></div>';
     document.body.appendChild(m);
   }
   document.getElementById('del-reason').value='';
@@ -5455,10 +5486,20 @@ function confirmDelete(){
 
 async function initAppOnLoad(){
   if(cloudSyncEnabled){
-    var got = await loadFromCloud();
-    if(!got){
-      // First time ever connecting: push current (should be empty) state as the baseline
+    var result = await loadFromCloud();
+    if(result==='empty'){
+      // Genuinely first time ever connecting (not a failed read) — push the current
+      // (empty) state as the baseline, after seeding the 13 built-in accounts into it.
+      migrateCredAccounts();
       await saveToCloud();
+    } else if(result==='error'){
+      // A failed read must never be treated as "nothing saved yet" — doing so is what
+      // wipes the whole database on a dropped connection. Block saving instead.
+      syncBlocked = true;
+      cloudStatus = 'blocked'; updateCloudStatusUI();
+      alert('Could not load saved data from the server. To prevent data loss, nothing will be saved in this session. Please check your connection and reload the page before entering any data.');
+    } else {
+      if(migrateCredAccounts()) queueCloudSave();
     }
   }
   var overlay=document.getElementById('login-loading');
@@ -5591,6 +5632,16 @@ document.addEventListener('keydown',function(e){
   <div class="fg"><label>Comment / Reason</label><textarea rows="4" id="pra-note" placeholder="Add your reason or comment..."></textarea></div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-pr-action')">Cancel</button><button class="b bn" onclick="confirmPRAction()">Confirm</button></div>
+</div></div>
+
+
+<div class="mb" id="m-ts-approve"><div class="md">
+<div class="mh"><h3 id="m-ts-title">Review Timesheet</h3><button class="mx" onclick="closeM('m-ts-approve')">&times;</button></div>
+<div class="mbd">
+  <div id="m-ts-info" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fg"><label>Note (optional)</label><textarea rows="3" id="m-ts-note" placeholder="Add a note for the staff member..."></textarea></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-ts-approve')">Cancel</button><button class="b bn" style="background:var(--red)" onclick="doTSDecision('Rejected')">Return ✕</button><button class="b bn" onclick="doTSDecision('Approved')">Approve ✓</button></div>
 </div></div>
 
 
