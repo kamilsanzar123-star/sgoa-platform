@@ -1721,6 +1721,7 @@ var cloudSaveTimer = null;
 var cloudStatus = 'idle';
 var cloudRowVersion = null; // updated_at of the row as last read by this tab — used to detect concurrent edits
 var syncBlocked = false;    // true once a load failure means we must never autosave/overwrite
+var cloudDirty = false;     // true once this tab has a local change not yet confirmed saved
 
 function updateCloudStatusUI(){
   var el2 = document.getElementById('cloud-status');
@@ -1741,6 +1742,10 @@ function updateCloudStatusUI(){
 
 async function saveToCloud(){
   if(!cloudSyncEnabled || syncBlocked)return;
+  // The debounce timer that scheduled this call has now fired — it is no longer "pending",
+  // regardless of what happens below. Leaving this set forever after a normal save used to
+  // permanently block this tab's periodic cloud refresh from ever running again.
+  cloudSaveTimer=null;
   cloudStatus='saving'; updateCloudStatusUI();
   try{
     // Stale-write guard: if someone else's tab saved since we last read this row, refuse to
@@ -1749,7 +1754,6 @@ async function saveToCloud(){
       var check = await supa.from('sgoa_store').select('updated_at').eq('key','app_state').maybeSingle();
       if(!check.error && check.data && check.data.updated_at && check.data.updated_at !== cloudRowVersion){
         cloudStatus='conflict'; updateCloudStatusUI();
-        if(cloudSaveTimer){clearTimeout(cloudSaveTimer);cloudSaveTimer=null;}
         return;
       }
     }
@@ -1761,7 +1765,7 @@ async function saveToCloud(){
       updated_at: nowIso
     });
     if(error){ cloudStatus='error'; console.error('Cloud save error:', error); }
-    else { cloudStatus='saved'; cloudRowVersion=nowIso; }
+    else { cloudStatus='saved'; cloudRowVersion=nowIso; cloudDirty=false; }
   }catch(e){
     cloudStatus='error'; console.error('Cloud save exception:', e);
   }
@@ -1770,6 +1774,7 @@ async function saveToCloud(){
 
 function queueCloudSave(){
   if(!cloudSyncEnabled || syncBlocked)return;
+  cloudDirty=true;
   if(cloudSaveTimer)clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(saveToCloud, 1500);
 }
@@ -1804,8 +1809,13 @@ async function loadFromCloud(){
   }
 }
 
-window.addEventListener('beforeunload', function(){ if(cloudSyncEnabled && !syncBlocked) saveToCloud(); });
-setInterval(function(){ if(cloudSyncEnabled && !syncBlocked) saveToCloud(); }, 25000);
+// Only push to the cloud when THIS tab actually has an unsaved local change (cloudDirty).
+// An idle tab that autosaved unconditionally every 25s was overwriting the shared record
+// with its own stale snapshot even when it had made zero edits — a background/idle
+// department tab could win a write race against another tab's fresh, real change and wipe
+// it out. Read-only tabs now never write at all; only pollCloudRefresh() reads for them.
+window.addEventListener('beforeunload', function(){ if(cloudSyncEnabled && !syncBlocked && cloudDirty) saveToCloud(); });
+setInterval(function(){ if(cloudSyncEnabled && !syncBlocked && cloudDirty) saveToCloud(); }, 25000);
 
 // Cross-department visibility gap: loadFromCloud() used to run only once at page load, so a
 // project/PR/approval another department submitted after you logged in stayed invisible until
