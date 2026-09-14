@@ -366,6 +366,7 @@ tbody tr:hover td{background:var(--g50);}
       <div class="nuser"><div class="nav-av" id="uav">KS</div><div><div class="nuname" id="unm">Kamil Sanzar</div><div class="nurole" id="url">Head of MEAL</div></div></div>
       <span id="cloud-status" style="font-size:11px;color:#94a3b8;margin-right:10px"></span>
       <button class="nlogout" id="nb-back" style="display:none" onclick="goBack()">&larr; Back</button>
+      <button class="nlogout" onclick="openM('m-incident')" style="background:rgba(220,38,38,.25)" title="Report a safeguarding concern — available to every department">🛡 Report a Concern</button>
       <button class="nlogout" onclick="openPwdModal()" style="background:rgba(255,255,255,.06)">🔒 Password</button>
 <button class="nlogout" onclick="doLogout()">Sign Out</button>
     </div>
@@ -1562,7 +1563,7 @@ var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
 'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
-'admin','safeguarding','operations','ops-assets','ops-fleet','it','access','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+'admin','operations','ops-assets','ops-fleet','it','access','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 finance:['finance','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 hr:['hr','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
@@ -1574,11 +1575,11 @@ operations:['operations','ops-assets','ops-fleet','projects','project-detail','r
 progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
-  'admin','safeguarding','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
+  'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
-  'admin','safeguarding','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
+  'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
 access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
 };
@@ -1586,7 +1587,7 @@ access:['access','projects','project-detail','all-tasks','workflow','denied','le
 var SIDEBAR={
 executive:[
 {l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
-{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
+{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -1610,12 +1611,12 @@ operations:[{l:'OPERATIONS',i:[{p:'operations',n:'Operations Home'},{p:'ops-asse
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 progdeputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
-{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
+{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
 {l:'CROSS-DEPT',i:[{p:'tar-request',n:'Raise TAR'},{p:'it-tickets',n:'IT Support'},{p:'timesheet',n:'⏱ My Timesheet'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 deputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
-{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'}]},
+{l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'}]},
 {l:'CROSS-DEPT',i:[{p:'tar-request',n:'Raise TAR'},{p:'it-tickets',n:'IT Support'},{p:'timesheet',n:'⏱ My Timesheet'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
@@ -1916,7 +1917,10 @@ function renderRoadmap(){
   var code=sel?sel.value:Object.keys(PROJ)[0];
   var p=PROJ[code];
   if(!p){$('rm-body').innerHTML='<div class="empty">No project selected</div>';return;}
-  var myDept = SES.role==='executive'?null:DEPTNAME[SES.role];
+  // Deputy Directors approve across every department, so they need the same org-wide
+  // view as Executive — their own department label ("Deputy Director") matches nothing
+  // in the roadmap's per-department activity map, which made every counter read 0.
+  var myDept = (SES.role==='executive'||SES.role==='progdeputy'||SES.role==='deputy')?null:DEPTNAME[SES.role];
   var today=new Date();
   var start=new Date(p.start),end=new Date(p.end);
   var totalDays=(end-start)/86400000||180;
@@ -2822,7 +2826,7 @@ function renderAllChallenges(){
 
 
 function renderMealHome(){
-  var inds=DB.indicators.filter(function(i){return i.proj==='GPE-STG';});
+  var inds=DB.indicators; // was hardcoded to a demo project code that never exists in a real deployment
   var on=0,risk=0,off=0;
   DB.indicators.forEach(function(i){
     if(!i.target)return;
@@ -3031,7 +3035,20 @@ function renderDept(cid,dept){
     var fs=DB.findings.filter(function(f){return f.dept===dept&&f.sev!=='positive'&&f.status!=='Resolved';});
     fs.slice(0,4).forEach(function(f){
       var d=el('div','al '+(f.sev==='critical'?'alD':'alW'));
-      d.innerHTML='<div><b>'+f.title+'</b><br>'+(f.act||f.desc.slice(0,80))+'<br><span style="font-size:10px;opacity:.8">Due '+dt(f.due)+' · '+f.progress+'% resolved</span></div>';
+      var body='<div><b>'+f.title+'</b><br>'+(f.act||f.desc.slice(0,80))+'<br><span style="font-size:10px;opacity:.8">Due '+dt(f.due)+' · '+f.progress+'% resolved</span>';
+      // A department could only ever respond to a finding raised against it if that
+      // department happened to be Programs — every other department had no way to
+      // record the corrective action or send it for MEAL verification at all.
+      if(f.verifyStatus==='pending'){
+        body+='<div class="bdg bO" style="margin-top:6px">Submitted — Awaiting MEAL Verification</div>';
+      } else if(f.verifyStatus==='rejected'){
+        body+='<div class="bdg bR" style="margin-top:6px">MEAL requested more work — see comments</div>';
+      } else {
+        body+='<div style="margin-top:6px"><textarea data-findingaction-note="'+f.id+'" rows="2" placeholder="Describe the action taken to resolve this finding..." style="width:100%;padding:6px;border:1px solid var(--g200);border-radius:6px;font-family:inherit;font-size:11.5px;margin-bottom:5px;color:var(--g900)"></textarea>'+
+          '<button class="b bn bs" data-submitverify="'+f.id+'">Submit for MEAL Verification</button></div>';
+      }
+      body+='</div>';
+      d.innerHTML=body;
       a.appendChild(d);
     });
     var od=DB.tasks.filter(function(t){return t.dept===dept&&!t.done&&overdue(t.due);});
@@ -3204,6 +3221,15 @@ function renderProgramsFindings(){
   box.innerHTML=h;
 }
 
+function refreshCurrentDeptView(){
+  // Findings can now be responded to from any department's home page (not just
+  // Programs), so whichever department is currently viewing needs its alerts refreshed.
+  if(['finance','hr','programs','supply','admin','safeguarding','operations'].indexOf(SES.role)!==-1){
+    renderDept(SES.role,DEPTNAME[SES.role]);
+  }
+  if(SES.role==='programs')renderProgramsFindings();
+}
+
 function submitFindingForVerification(id){
   var f=DB.findings.find(function(x){return x.id===id;});
   if(!f)return;
@@ -3214,7 +3240,7 @@ function submitFindingForVerification(id){
   f.feedback.push({by:SES.name,note:'Action taken: '+note,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
   f.verifyStatus='pending';
   f.status='In Progress';
-  renderProgramsFindings();
+  refreshCurrentDeptView();
   queueCloudSave();
   alert('Submitted to MEAL for verification.');
 }
@@ -3228,9 +3254,9 @@ function verifyFinding(id){
   if(!f.feedback)f.feedback=[];
   f.feedback.push({by:SES.name,note:'Verified and closed by MEAL.',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
   renderFindings();
-  renderProgramsFindings();
+  refreshCurrentDeptView();
   queueCloudSave();
-  alert('Finding '+f.id+' verified and marked resolved. Programs has been notified.');
+  alert('Finding '+f.id+' verified and marked resolved. The responsible department has been notified.');
 }
 
 function rejectFindingVerification(id){
@@ -3242,7 +3268,7 @@ function rejectFindingVerification(id){
   if(!f.feedback)f.feedback=[];
   f.feedback.push({by:SES.name,note:'Needs more work: '+reason,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
   renderFindings();
-  renderProgramsFindings();
+  refreshCurrentDeptView();
   queueCloudSave();
   alert('Sent back to '+f.dept+' with your comment.');
 }
@@ -3470,9 +3496,12 @@ function renderWF(){
   if($('wf-app'))$('wf-app').textContent=DB.wf.filter(function(w){return w.status==='complete';}).length;
   if($('wf-prog'))$('wf-prog').textContent=DB.wf.filter(function(w){return w.status==='progress';}).length;
   if($('wf-act'))$('wf-act').textContent=DB.wf.filter(function(w){return w.status==='progress'&&overdue(w.due);}).length;
+  var myDeptLabel = SES.role==='executive' ? 'Executive Director' : (DEPTNAME[SES.role]||'');
   DB.wf.forEach(function(w){
     var card=el('div','wf '+(w.prio==='h'?'ph':w.prio==='m'?'pm':'pl'));
-    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="wft">'+w.id+' — '+w.title+'</div><div class="wfm">'+w.proj+' · Due '+dt(w.due)+' · Initiated by '+w.chain[0].d+'</div></div><span class="bdg '+(w.status==='complete'?'bG':'bO')+'">'+(w.status==='complete'?'Approved':'In Progress')+'</span></div>';
+    var badgeCls = w.status==='complete'?'bG':w.status==='rejected'?'bR':'bO';
+    var badgeText = w.status==='complete'?'Approved':w.status==='rejected'?'Rejected':'In Progress';
+    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="wft">'+w.id+' — '+w.title+'</div><div class="wfm">'+w.proj+' · Due '+dt(w.due)+' · Initiated by '+w.chain[0].d+'</div></div><span class="bdg '+badgeCls+'">'+badgeText+'</span></div>';
     h+='<div style="font-size:11.5px;color:var(--g600);margin-top:6px">'+w.desc+'</div>';
     h+='<div class="wfp">';
     w.chain.forEach(function(n,i){
@@ -3484,14 +3513,19 @@ function renderWF(){
       var l=w.hist[w.hist.length-1];
       h+='<div style="font-size:10.5px;color:var(--g500);background:var(--g50);padding:7px 9px;border-radius:6px;margin-top:6px"><b>'+l.dt+'</b> — '+l.a+' by '+l.by+(l.n?': '+l.n:'')+'</div>';
     }
-    if(w.status!=='complete'){
+    // Only the person actually assigned to the current step can act on it — previously
+    // anyone (including the workflow's own initiator) could approve any step.
+    var isMyTurn = w.status!=='complete' && w.status!=='rejected' && w.chain[w.step] && w.chain[w.step].d===myDeptLabel;
+    if(isMyTurn){
       h+='<div class="wfa">'+
         '<button class="b bn bs" data-wf="'+w.id+'" data-act="approve">Approve</button>'+
         '<button class="b bo bs" data-wf="'+w.id+'" data-act="reject">Reject</button>'+
         '<button class="b bo bs" data-wf="'+w.id+'" data-act="sendback">Send Back</button>'+
         '<button class="b bo bs" data-wf="'+w.id+'" data-act="comment">Comment</button></div>';
-    } else {
+    } else if(w.status==='complete'){
       h+='<div class="wfa"><button class="b bo bs" data-signwf="'+w.id+'">Generate Signed Document</button></div>';
+    } else if(w.status!=='rejected'){
+      h+='<div class="wfa"><span style="font-size:11px;color:var(--g500)">Awaiting action from: '+(w.chain[w.step]?w.chain[w.step].d:'-')+'</span></div>';
     }
     card.innerHTML=h;
     c.appendChild(card);
@@ -3738,7 +3772,11 @@ var PROJECT_SELECT_IDS=[
   {id:'t-proj',all:false,core:false,none:true},
   {id:'in-proj',all:false,core:false},
   {id:'ds-proj',all:false,core:false},
-  {id:'fv-proj',all:false,core:false}
+  {id:'fv-proj',all:false,core:false},
+  {id:'pr-proj',all:false,core:true},
+  {id:'ex-proj',all:false,core:true},
+  {id:'f-proj',all:true,core:false},
+  {id:'pcf-proj',all:false,core:false,none:true,noneLabel:'Not sure / General'}
 ];
 
 function refreshAllProjectDropdowns(){
@@ -3748,9 +3786,9 @@ function refreshAllProjectDropdowns(){
     if(!sel)return;
     var cur=sel.value;
     var html='';
-    if(cfg.none)html+='<option value="">None</option>';
+    if(cfg.none)html+='<option value="">'+(cfg.noneLabel||'None')+'</option>';
     if(cfg.core)html+='<option>Core/Admin</option>';
-    if(cfg.all)html+='<option>All Projects</option>';
+    if(cfg.all)html+='<option value="all">All Projects</option>';
     keys.forEach(function(k){html+='<option>'+k+'</option>';});
     sel.innerHTML=html;
     if(cur && Array.from(sel.options).some(function(o){return o.value===cur;})) sel.value=cur;
@@ -3973,14 +4011,20 @@ function submitData(){
   var g=parseInt($('de-girls').value)||0,b=parseInt($('de-boys').value)||0;
   var cl=parseInt($('de-classes').value)||0,tc=parseInt($('de-teachers').value)||0;
   var proj=$('de-proj').value;
+  // This matches indicators by guessing at specific English phrases in their name, which
+  // rarely matches what MEAL actually typed when creating the indicator (free text) — so
+  // count real matches and report honestly instead of always claiming success.
+  var matched=0;
   DB.indicators.forEach(function(i){
     if(i.proj!==proj)return;
+    var before=i.actual;
     if(i.name.indexOf('classes operational')>=0&&cl)i.actual=cl;
     if(i.name.indexOf('girls enrolled')>=0&&g)i.actual=g;
     if(i.name.indexOf('boys enrolled')>=0&&b)i.actual=b;
     if(i.name.indexOf('pre-service training')>=0&&tc)i.actual=tc;
     if(i.name.indexOf('girl attendance')>=0&&$('de-gatt').value)i.actual=parseInt($('de-gatt').value);
     if(i.name.indexOf('boy attendance')>=0&&$('de-batt').value)i.actual=parseInt($('de-batt').value);
+    if(i.actual!==before)matched++;
   });
   DB.dataSub.unshift({date:today(),proj:proj,period:$('de-period').value,dist:$('de-dist').value,by:c.value.trim()});
   if($('de-obs').value.trim()){
@@ -3988,7 +4032,11 @@ function submitData(){
       sev:'minor',proj:proj,dept:'MEAL',loc:$('de-dist').value,date:today(),src:'Data Collection',
       desc:$('de-obs').value.trim(),act:'Review and follow up',assign:SES.name,due:today(),status:'Open',progress:0});
   }
-  alert('Data submitted successfully. Indicators updated and visible on Executive Dashboard.');
+  if(matched>0){
+    alert('Data submitted. '+matched+' indicator(s) for this project were updated and are visible on the Executive Dashboard.');
+  } else {
+    alert('Data submitted and logged, but no indicator for this project matched the standard field names (classes operational / girls or boys enrolled / pre-service training / attendance). Nothing was auto-updated — ask MEAL to update the indicator actuals directly from the Indicator Tracker if needed.');
+  }
   ['de-classes','de-teachers','de-girls','de-boys','de-gatt','de-batt','de-obs','de-collector'].forEach(function(id){
     if($(id))$(id).value='';
   });
@@ -4387,13 +4435,13 @@ function renderPRCard(pr,showActions){
     body+='<button class="b bo bs" data-prid="'+pr.id+'" data-praction="comment">Comment</button>';
     body+='</div>';
   }
-  if(pr.status==='progress' && pr.requestedByRole===SES.role){
+  if(pr.status==='progress' && pr.requestedBy===SES.name){
     body+='<div class="wfa"><button class="b bo bs" data-prcancel="'+pr.id+'">Cancel Request</button></div>';
   }
   if(pr.status==='complete'){
     body+='<div class="wfa"><button class="b bo bs" data-signpr="'+pr.id+'">Generate Signed Document</button></div>';
   }
-  if(pr.requestedByRole===SES.role && pr.status!=='cancelled'){
+  if(pr.requestedBy===SES.name && pr.status!=='cancelled'){
     body+='<div class="wfa"><button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'pr\',\''+pr.id+'\')">Delete PR</button></div>';
   }
   body+='</div>';
@@ -4404,7 +4452,7 @@ function renderPRCard(pr,showActions){
 
 function renderMyPRs(){
   var c=$('my-pr-list');if(!c)return;c.innerHTML='';
-  var mine=DB.pr.filter(function(p){return p.requestedByRole===SES.role;});
+  var mine=DB.pr.filter(function(p){return p.requestedBy===SES.name;});
   if(!mine.length){c.innerHTML='<div class="empty">You have not raised any PRs yet.</div>';return;}
   mine.forEach(function(p){c.appendChild(renderPRCard(p,false));});
 }
@@ -4779,7 +4827,7 @@ function renderProgramAnalysisFull(){
 function checkDeadlineAlerts(){
   var banner=$('deadline-banner');
   if(!banner)return;
-  var myDept = SES.role==='executive' ? null : DEPTNAME[SES.role];
+  var myDept = (SES.role==='executive'||SES.role==='progdeputy'||SES.role==='deputy') ? null : DEPTNAME[SES.role];
   var relevant = DB.tasks.filter(function(t){
     if(t.done)return false;
     if(myDept && t.dept!==myDept)return false;
@@ -4806,10 +4854,11 @@ function dismissDeadlineBanner(){
 // ============ STAFF DIRECTORY ============
 function getDeptStaffList(deptLabel){
   var list=[];
-  var headRec=DB.staff.find(function(s){return s.dept===deptLabel;});
-  if(headRec){
+  // Previously only the FIRST staff match was included (.find) — every other person HR
+  // registered in the department was invisible here and in the "Assign To" dropdown.
+  DB.staff.filter(function(s){return s.dept===deptLabel;}).forEach(function(headRec){
     list.push({name:headRec.name,pos:headRec.pos,loc:headRec.loc,projects:['All Projects'],dept:deptLabel,source:'head'});
-  }
+  });
   DB.users.forEach(function(u){
     if(ROLE_TEMPLATE_LABEL[u.roleTemplate]===deptLabel && u.status==='Active'){
       list.push({name:u.name,pos:u.position||ROLE_TEMPLATE_LABEL[u.roleTemplate],loc:u.loc||'Kabul',projects:u.projects,dept:deptLabel,source:'user'});
@@ -4920,7 +4969,7 @@ function renderITTicketCard(tk,showITActions){
 
 function renderMyITTickets(){
   var box=$('itt-mylist');if(!box)return;
-  var mine=DB.itTickets.filter(function(t){return t.raisedByRole===SES.role;});
+  var mine=DB.itTickets.filter(function(t){return t.raisedBy===SES.name;});
   box.innerHTML='';
   if(!mine.length){box.innerHTML='<div class="empty">You have not reported any IT problems.</div>';return;}
   mine.forEach(function(t){box.appendChild(renderITTicketCard(t,false));});
@@ -5053,7 +5102,7 @@ function renderTARCard(tar,showActions){
 
 function renderMyTARs(){
   var box=$('tar-mylist');if(!box)return;
-  var mine=DB.tars.filter(function(t){return t.requestedByRole===SES.role;});
+  var mine=DB.tars.filter(function(t){return t.requestedBy===SES.name;});
   box.innerHTML='';
   if(!mine.length){box.innerHTML='<div class="empty">You have not raised any TAR requests.</div>';return;}
   mine.forEach(function(t){box.appendChild(renderTARCard(t,false));});
@@ -5259,7 +5308,7 @@ function renderLeaveCard(lv,showActions){
 
 function renderMyLeaveRequests(){
   var box=$('lv-mylist');if(!box)return;
-  var mine=DB.leaveRequests.filter(function(l){return l.requestedByRole===SES.role;});
+  var mine=DB.leaveRequests.filter(function(l){return l.requestedBy===SES.name;});
   box.innerHTML='';
   if(!mine.length){box.innerHTML='<div class="empty">You have not requested any leave.</div>';return;}
   mine.forEach(function(l){box.appendChild(renderLeaveCard(l,false));});
@@ -5267,7 +5316,9 @@ function renderMyLeaveRequests(){
 
 function renderLeaveQueue(){
   var box=$('hr-leave-queue');if(!box)return;
-  var pending=DB.leaveRequests.filter(function(l){return l.status==='Pending';});
+  // Exclude the approver's own request — HR/Executive could otherwise approve their
+  // own leave, defeating the point of requiring someone else to sign off.
+  var pending=DB.leaveRequests.filter(function(l){return l.status==='Pending' && l.requestedBy!==SES.name;});
   box.innerHTML='';
   if(!pending.length){box.innerHTML='<div class="empty">No leave requests awaiting action.</div>';return;}
   pending.forEach(function(l){box.appendChild(renderLeaveCard(l,true));});
@@ -5349,10 +5400,6 @@ function saveExpenditure(){
 
 function renderExpenditureLedger(){
   var body=$('fin-ledger');if(!body)return;
-  var sel=$('ex-proj');
-  if(sel && !sel.options.length){
-    sel.innerHTML='<option>Core/Admin</option>'+Object.keys(PROJ).map(function(k){return '<option>'+k+'</option>';}).join('');
-  }
   body.innerHTML='';
   var total=0;
   if(!DB.expenditures.length){body.innerHTML='<tr><td colspan="7" class="empty">No expenditures recorded yet</td></tr>';}
@@ -5593,6 +5640,9 @@ async function initAppOnLoad(){
       if(migrateCredAccounts()) queueCloudSave();
     }
   }
+  // Also needed on the public complaints page (no login involved), so real project
+  // names are available there too instead of the four hardcoded demo project names.
+  refreshAllProjectDropdowns();
   var overlay=document.getElementById('login-loading');
   if(overlay)overlay.style.display='none';
 }
