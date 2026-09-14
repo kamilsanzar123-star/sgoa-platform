@@ -940,7 +940,7 @@ tbody tr:hover td{background:var(--g50);}
 <div class="pg" id="p-supply-proc">
   <div class="ph"><div><h1>Procurement Tracker</h1><p>All procurement requests and status</p></div>
   <div class="pha"><button class="b bo bs" onclick="go('supply')">Back</button><button class="b bn bs" onclick="openM('m-proc')">+ New Request</button></div></div>
-  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Ref</th><th>Item</th><th>Project</th><th>Qty</th><th>Est. Cost</th><th>Requested By</th><th>Status</th><th>Action</th></tr></thead><tbody id="proc-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Ref</th><th>Item</th><th>Project</th><th>Qty</th><th>Est. Cost</th><th>Compliance</th><th>Requested By</th><th>Status</th><th>Action</th></tr></thead><tbody id="proc-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-supply-dist">
@@ -1167,6 +1167,10 @@ tbody tr:hover td{background:var(--g50);}
       <div class="fg"><label>Email</label><input type="email" id="org-email"></div>
       <div class="fg"><label>Default Currency</label><select id="org-currency"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select>
         <div style="font-size:10px;color:var(--g500);margin-top:3px">Used for new projects by default and for org-wide totals that combine multiple projects.</div></div>
+      <div class="fg"><label>Competitive Quote Threshold (USD)</label><input type="number" id="org-proc-quote" placeholder="3000">
+        <div style="font-size:10px;color:var(--g500);margin-top:3px">Purchases at or above this need 3 competitive quotes or a sole-source justification. USAID default: $3,000.</div></div>
+      <div class="fg"><label>Formal Bidding Threshold (USD)</label><input type="number" id="org-proc-bid" placeholder="100000">
+        <div style="font-size:10px;color:var(--g500);margin-top:3px">Purchases at or above this need a formal competitive bid reference. USAID default: $100,000.</div></div>
       <button class="b bn bs" onclick="saveOrgSettings()">Save Changes</button>
       <span id="org-msg" style="margin-left:10px;font-size:12px;color:var(--green)"></span>
     </div></div>
@@ -1526,11 +1530,19 @@ tbody tr:hover td{background:var(--g50);}
 <div class="mh"><h3>New Procurement Request</h3><button class="mx" onclick="closeM('m-proc')">&times;</button></div>
 <div class="mbd"><div class="fr">
 <div class="fg ff"><label>Item Description *</label><input type="text" id="pr-item"></div>
-<div class="fg"><label>Project</label><select id="pr-proj"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option><option>Core/Admin</option></select></div>
+<div class="fg"><label>Project</label><select id="pr-proj" onchange="updateProcComplianceUI()"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option><option>Core/Admin</option></select></div>
 <div class="fg"><label>Quantity</label><input type="number" id="pr-qty"></div>
-<div class="fg"><label>Estimated Cost (USD)</label><input type="number" id="pr-cost"></div>
+<div class="fg"><label>Estimated Cost</label><input type="number" id="pr-cost" oninput="updateProcComplianceUI()"></div>
 <div class="fg"><label>Requested By</label><input type="text" id="pr-by"></div>
 <div class="fg ff"><label>Justification</label><textarea rows="2" id="pr-just"></textarea></div>
+</div>
+<div class="fg ff" id="pr-compliance-box" style="display:none;background:var(--g50);padding:10px;border-radius:7px;margin-top:4px;border-left:3px solid var(--gold)">
+  <div id="pr-compliance-msg" style="font-size:11.5px;color:var(--g700);margin-bottom:8px;font-weight:600"></div>
+  <div class="fr">
+    <div class="fg"><label>Number of Competitive Quotes Obtained</label><input type="number" id="pr-quotes" min="0" value="0"></div>
+    <div class="fg ff"><label>Sole-Source / Waiver Justification <span style="font-weight:400;color:var(--g500)">(required only if fewer than 3 quotes)</span></label><textarea rows="2" id="pr-solejust" placeholder="Explain why fewer than 3 competitive quotes could be obtained"></textarea></div>
+    <div class="fg ff" id="pr-bidref-wrap" style="display:none"><label>Competitive Bid Reference</label><input type="text" id="pr-bidref" placeholder="e.g. Bid announcement ref/date, or approved waiver number"></div>
+  </div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-proc')">Cancel</button><button class="b bn" onclick="saveProc()">Submit Request</button></div>
 </div></div>
@@ -2136,6 +2148,8 @@ function renderSettings(){
   $('org-hq').value=o.hq||'';
   $('org-email').value=o.email||'';
   if($('org-currency'))$('org-currency').value=o.currency||'USD';
+  if($('org-proc-quote'))$('org-proc-quote').value=o.procQuoteThreshold||3000;
+  if($('org-proc-bid'))$('org-proc-bid').value=o.procBidThreshold||100000;
   $('org-info-depts').textContent=Object.keys(DEPTNAME).length;
   $('org-info-projects').textContent=Object.keys(PROJ).length;
   $('org-info-users').textContent=DB.users.length+Object.keys(CRED).length;
@@ -2143,7 +2157,9 @@ function renderSettings(){
 function saveOrgSettings(){
   DB.org={name:$('org-name').value.trim(),acronym:$('org-acronym').value.trim(),
     country:$('org-country').value.trim(),hq:$('org-hq').value.trim(),email:$('org-email').value.trim(),
-    currency:$('org-currency')?$('org-currency').value:'USD'};
+    currency:$('org-currency')?$('org-currency').value:'USD',
+    procQuoteThreshold:parseFloat($('org-proc-quote').value)||3000,
+    procBidThreshold:parseFloat($('org-proc-bid').value)||100000};
   queueCloudSave();
   var m=$('org-msg');m.textContent='✅ Saved!';setTimeout(function(){m.textContent='';},2500);
 }
@@ -2259,7 +2275,7 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc')resetProcComplianceUI();}
 
 // A department head could previously pick ANY department in the Add Task modal and assign
 // work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
@@ -3595,11 +3611,26 @@ function renderAnalysis(){
 // ============ SUPPLY CHAIN ============
 function renderProc(){
   var c=$('proc-body');if(!c)return;c.innerHTML='';
-  if(!DB.proc.length){c.innerHTML='<tr><td colspan="8" class="empty">No procurement requests</td></tr>';return;}
+  if(!DB.proc.length){c.innerHTML='<tr><td colspan="9" class="empty">No procurement requests</td></tr>';return;}
+  var th=procThresholdsUSD();
   DB.proc.forEach(function(p){
     var sb=p.status==='Approved'?'bG':p.status.indexOf('Pending')>=0?'bO':'bY';
     var r=el('tr');
-    r.innerHTML='<td>'+p.id+'</td><td><b>'+esc(p.item)+'</b><div style="font-size:10px;color:var(--g400)">'+esc(p.just)+'</div></td><td>'+esc(p.proj)+'</td><td>'+p.qty+'</td><td>'+money(p.cost,projCurrency(p.proj))+'</td><td>'+esc(p.by)+'</td><td><span class="bdg '+sb+'">'+esc(p.status)+'</span></td><td>'+(p.status.indexOf('Pending')>=0?'<button class="b bn bs" data-proc="'+p.id+'">Approve</button>':'-')+'</td>';
+    var costUSD=procCostUSD(p.proj,p.cost);
+    var quotes=p.quotes||0;
+    var complianceCell;
+    if(costUSD<th.quote){
+      complianceCell='<span style="font-size:10.5px;color:var(--g400)">Below threshold</span>';
+    } else if(costUSD>=th.bid){
+      complianceCell=p.bidRef?'<span class="bdg bG">Bid: '+esc(p.bidRef)+'</span>':'<span class="bdg bR">Missing competitive bid</span>';
+    } else if(quotes>=3){
+      complianceCell='<span class="bdg bG">'+quotes+' quotes</span>';
+    } else if(p.soleJust){
+      complianceCell='<span class="bdg bO" title="'+esc(p.soleJust)+'">Sole-source (waiver)</span>';
+    } else {
+      complianceCell='<span class="bdg bR">Only '+quotes+' quote(s)</span>';
+    }
+    r.innerHTML='<td>'+p.id+'</td><td><b>'+esc(p.item)+'</b><div style="font-size:10px;color:var(--g400)">'+esc(p.just)+'</div></td><td>'+esc(p.proj)+'</td><td>'+p.qty+'</td><td>'+money(p.cost,projCurrency(p.proj))+'</td><td>'+complianceCell+'</td><td>'+esc(p.by)+'</td><td><span class="bdg '+sb+'">'+esc(p.status)+'</span></td><td>'+(p.status.indexOf('Pending')>=0?'<button class="b bn bs" data-proc="'+p.id+'">Approve</button>':'-')+'</td>';
     c.appendChild(r);
   });
 }
@@ -4271,13 +4302,61 @@ function saveStaff(){
   closeM('m-staff');n.value='';renderStaff();renderHRChart();renderAllStaffDirectories();queueCloudSave();
 }
 
+// ============ PROCUREMENT COMPLIANCE THRESHOLDS ============
+// Standard donor procurement rules (USAID 2 CFR 200.317-326: 3 competitive quotes above
+// $3,000, formal competitive bidding above $100,000; ECHO/other donors set their own) enforced
+// against the project's own currency converted to its USD equivalent, since thresholds are
+// conventionally expressed in USD regardless of which currency the project itself is tracked in.
+function procThresholdsUSD(){
+  var o=DB.org||{};
+  return {quote:o.procQuoteThreshold||3000, bid:o.procBidThreshold||100000};
+}
+function procCostUSD(proj,cost){
+  var fx=(proj&&PROJ[proj])?projFxToUSD(proj):1;
+  return cost*fx;
+}
+function updateProcComplianceUI(){
+  var costEl=$('pr-cost'),projEl=$('pr-proj'),box=$('pr-compliance-box'),msg=$('pr-compliance-msg'),bidWrap=$('pr-bidref-wrap');
+  if(!costEl||!box)return;
+  var cost=parseFloat(costEl.value)||0;
+  var costUSD=procCostUSD(projEl?projEl.value:'',cost);
+  var th=procThresholdsUSD();
+  if(costUSD<th.quote){box.style.display='none';return;}
+  box.style.display='block';
+  var overBid=costUSD>=th.bid;
+  if(bidWrap)bidWrap.style.display=overBid?'block':'none';
+  msg.textContent=overBid
+    ? ('≈ $'+Math.round(costUSD).toLocaleString()+' USD — above the $'+th.bid.toLocaleString()+' formal competitive bidding threshold. Formal competitive bidding is required in addition to quotes.')
+    : ('≈ $'+Math.round(costUSD).toLocaleString()+' USD — above the $'+th.quote.toLocaleString()+' competitive-quote threshold. At least 3 competitive quotes are required, or a documented sole-source justification.');
+}
+function resetProcComplianceUI(){
+  ['pr-quotes'].forEach(function(id){var el=$(id);if(el)el.value='0';});
+  ['pr-solejust','pr-bidref'].forEach(function(id){var el=$(id);if(el)el.value='';});
+  var box=$('pr-compliance-box');if(box)box.style.display='none';
+}
 function saveProc(){
   var i=$('pr-item');
   if(!i||!i.value.trim()){alert('Please enter item description.');return;}
-  DB.proc.push({id:nid('PR'),item:i.value.trim(),proj:$('pr-proj').value,
-    qty:parseInt($('pr-qty').value)||1,cost:parseInt($('pr-cost').value)||0,
-    by:$('pr-by').value||SES.name,just:$('pr-just').value,status:'Pending Finance'});
-  closeM('m-proc');i.value='';renderProc();queueCloudSave();
+  var proj=$('pr-proj').value;
+  var cost=parseInt($('pr-cost').value)||0;
+  var costUSD=procCostUSD(proj,cost);
+  var th=procThresholdsUSD();
+  var quotes=parseInt($('pr-quotes').value)||0;
+  var soleJust=$('pr-solejust').value.trim();
+  var bidRef=$('pr-bidref').value.trim();
+  if(costUSD>=th.quote && quotes<3 && !soleJust){
+    alert('This purchase is ≈ $'+Math.round(costUSD).toLocaleString()+' USD, above the $'+th.quote.toLocaleString()+' competitive-quote threshold. Record at least 3 competitive quotes, or provide a sole-source/waiver justification, before submitting.');
+    return;
+  }
+  if(costUSD>=th.bid && !bidRef){
+    alert('This purchase is ≈ $'+Math.round(costUSD).toLocaleString()+' USD, above the $'+th.bid.toLocaleString()+' formal-competitive-bidding threshold. Record the competitive bid reference (or an approved waiver number) before submitting.');
+    return;
+  }
+  DB.proc.push({id:nid('PR'),item:i.value.trim(),proj:proj,
+    qty:parseInt($('pr-qty').value)||1,cost:cost,
+    by:$('pr-by').value||SES.name,just:$('pr-just').value,
+    quotes:quotes,soleJust:soleJust,bidRef:bidRef,status:'Pending Finance'});
+  closeM('m-proc');i.value='';resetProcComplianceUI();renderProc();queueCloudSave();
 }
 
 function saveDist(){
