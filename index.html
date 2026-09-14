@@ -1459,11 +1459,19 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg ff"><label>Description</label><textarea rows="2" id="pj-desc"></textarea></div>
 </div>
 <div style="background:var(--g50);padding:12px;border-radius:8px;margin-top:12px;border-left:3px solid var(--navy)">
-  <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">MEAL Review Section \u2014 sent to MEAL Head for M&amp;E approval</div>
-  <div class="fr">
-    <div class="fg ff"><label>Project Goal</label><textarea rows="2" id="pj-goal" placeholder="What is this project trying to achieve?"></textarea></div>
-    <div class="fg ff"><label>Expected Impact</label><textarea rows="2" id="pj-impact" placeholder="What does success look like?"></textarea></div>
-    <div class="fg ff"><label>Draft Indicators (one per line)</label><textarea rows="3" id="pj-indicators" placeholder="e.g. # children enrolled disaggregated by sex&#10;% attendance rate&#10;# teachers trained"></textarea></div>
+  <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">MEAL Review Section &mdash; sent to MEAL Head for M&amp;E approval</div>
+  <div class="fg ff"><label>Project Goal(s) <span style="font-weight:400;color:var(--g500)">(optional &mdash; add as many as apply)</span></label>
+    <div id="pj-goals-wrap"></div>
+    <button type="button" class="b bo bs" onclick="addGoalRow()">+ Add Goal</button>
+  </div>
+  <div class="fg ff" style="margin-top:12px"><label>Expected Impact</label><textarea rows="2" id="pj-impact" placeholder="What does success look like?"></textarea></div>
+  <div class="fg ff" style="margin-top:12px"><label>Outcomes &amp; Outcome Indicators <span style="font-weight:400;color:var(--g500)">(add as many outcomes/indicators as needed)</span></label>
+    <div id="pj-outcomes-wrap"></div>
+    <button type="button" class="b bo bs" onclick="addOutcomeBlock()">+ Add Outcome</button>
+  </div>
+  <div class="fg ff" style="margin-top:12px"><label>Outputs &amp; Output Indicators <span style="font-weight:400;color:var(--g500)">(add as many outputs/indicators as needed)</span></label>
+    <div id="pj-outputs-wrap"></div>
+    <button type="button" class="b bo bs" onclick="addOutputBlock()">+ Add Output</button>
   </div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-project')">Cancel</button><button class="b bn" onclick="saveProject()">Create Project</button></div>
@@ -1798,6 +1806,23 @@ async function loadFromCloud(){
 
 window.addEventListener('beforeunload', function(){ if(cloudSyncEnabled && !syncBlocked) saveToCloud(); });
 setInterval(function(){ if(cloudSyncEnabled && !syncBlocked) saveToCloud(); }, 25000);
+
+// Cross-department visibility gap: loadFromCloud() used to run only once at page load, so a
+// project/PR/approval another department submitted after you logged in stayed invisible until
+// you manually reloaded the page — this is what made approvals appear to "not show anything."
+// Poll for other users' changes, but never while this tab has its own unsaved edit queued
+// (cloudSaveTimer set) or mid-save, so we can't clobber a local change with a stale read.
+function pollCloudRefresh(){
+  if(!cloudSyncEnabled || syncBlocked || cloudSaveTimer || cloudStatus==='saving')return;
+  loadFromCloud().then(function(result){
+    if(result==='ok'){
+      if(currentPageId)render(currentPageId);
+      refreshAll();
+    }
+  });
+}
+setInterval(pollCloudRefresh, 20000);
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible')pollCloudRefresh(); });
 
 // The 13 built-in department-head accounts (CRED) live only in this file's source, not in
 // saved data — without this, a password change for any of them is silently lost on reload
@@ -2194,7 +2219,54 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task')populateAssignToDropdown();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task')populateAssignToDropdown();if(id==='m-project')initProjectLFFields();}
+
+// ============ ADD-PROJECT LOGFRAME BUILDER (dynamic Goals / Outcomes+Indicators / Outputs+Indicators) ============
+function lfRow(cls,placeholder,nested){
+  var d=el('div','lf-row');
+  d.style.cssText='display:flex;gap:6px;margin-bottom:4px'+(nested?';margin-left:16px':'');
+  d.innerHTML='<input type="text" class="'+cls+'" placeholder="'+placeholder+'" style="flex:1'+(nested?';font-size:12px':'')+'">'+
+    '<button type="button" class="b bs" style="background:var(--red);color:#fff" onclick="removeRow(this)">&times;</button>';
+  return d;
+}
+function lfBlock(headerCls,headerPlaceholder,indsWrapCls,addLabel,addOnclick){
+  var b=el('div','lf-block');
+  b.style.cssText='border:1px solid var(--g200);border-radius:7px;padding:8px;margin-bottom:8px;background:#fff';
+  b.innerHTML='<div style="display:flex;gap:6px;margin-bottom:6px"><input type="text" class="'+headerCls+'" placeholder="'+headerPlaceholder+'" style="flex:1">'+
+    '<button type="button" class="b bs" style="background:var(--red);color:#fff" onclick="removeRow(this,true)">&times;</button></div>'+
+    '<div class="'+indsWrapCls+'"></div>'+
+    '<button type="button" class="b bo bs" onclick="'+addOnclick+'">'+addLabel+'</button>';
+  return b;
+}
+function addGoalRow(){ var w=$('pj-goals-wrap'); if(w)w.appendChild(lfRow('pj-goal-input','e.g. Improve access to quality education')); }
+function addOutcomeBlock(){ var w=$('pj-outcomes-wrap'); if(w)w.appendChild(lfBlock('pj-outcome-text','Outcome statement','pj-outcome-inds','+ Add Indicator','addSubIndicator(this,\'outcome\')')); }
+function addOutputBlock(){ var w=$('pj-outputs-wrap'); if(w)w.appendChild(lfBlock('pj-output-text','Output statement','pj-output-inds','+ Add Indicator','addSubIndicator(this,\'output\')')); }
+function addSubIndicator(btn,kind){
+  var block=btn.closest('.lf-block');if(!block)return;
+  var wrap=block.querySelector(kind==='outcome'?'.pj-outcome-inds':'.pj-output-inds');
+  if(wrap)wrap.appendChild(lfRow(kind==='outcome'?'pj-outcome-ind-text':'pj-output-ind-text','Indicator',true));
+}
+function removeRow(btn,isBlock){
+  var target=isBlock?btn.closest('.lf-block'):btn.closest('.lf-row');
+  if(target)target.remove();
+}
+function initProjectLFFields(){
+  ['pj-goals-wrap','pj-outcomes-wrap','pj-outputs-wrap'].forEach(function(id){var w=$(id);if(w)w.innerHTML='';});
+  addGoalRow();
+  addOutcomeBlock();
+  addOutputBlock();
+}
+function collectLFGoals(){
+  return Array.from(document.querySelectorAll('#pj-goals-wrap .pj-goal-input')).map(function(i){return i.value.trim();}).filter(Boolean);
+}
+function collectLFGroup(wrapId,textCls,indCls){
+  return Array.from(document.querySelectorAll('#'+wrapId+' .lf-block')).map(function(b){
+    var textEl=b.querySelector('.'+textCls);
+    var text=textEl?textEl.value.trim():'';
+    var inds=Array.from(b.querySelectorAll('.'+indCls)).map(function(i){return i.value.trim();}).filter(Boolean);
+    return {text:text,indicators:inds};
+  }).filter(function(o){return o.text||o.indicators.length;});
+}
 function closeM(id){var m=$(id);if(m)m.classList.remove('on');}
 
 // ============ RENDER ROUTER ============
@@ -2630,12 +2702,7 @@ function openProject(k){
   '<div class="st gd"><div class="stl">Budget Utilized</div><div class="stv">'+(p.budget?Math.round(p.spent/p.budget*100):0)+'%</div><div class="sts">'+money(p.spent)+' of '+money(p.budget)+'</div></div>'+
   '<div class="st bl"><div class="stl">Activities</div><div class="stv">'+acts.length+'</div><div class="sts">'+done+' completed</div></div></div>';
 
-  h+='<div class="cd" style="border-left:4px solid '+p.color+'"><div class="cdh"><div class="cdt">Goal &amp; Impact</div></div><div class="cdb">'+
-  '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Project Goal</div>'+
-  '<div style="font-size:13px;color:var(--g700);line-height:1.6">'+(p.goal?esc(p.goal):'Goal statement not yet defined for this project.')+'</div></div>'+
-  '<div><div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Expected Impact</div>'+
-  '<div style="font-size:13px;color:var(--g700);line-height:1.6">'+(p.impact?esc(p.impact):'Impact statement not yet defined for this project.')+'</div></div>'+
-  '</div></div>';
+  h+='<div class="cd" style="border-left:4px solid '+p.color+'"><div class="cdh"><div class="cdt">Logframe: Goal, Impact, Outcomes &amp; Outputs</div></div><div class="cdb">'+renderLogframeSummary(p)+'</div></div>';
 
   var mstones=DB.milestones.filter(function(m){return m.proj===k;});
   var delivs=DB.deliverables.filter(function(dl){return dl.proj===k;});
@@ -3881,6 +3948,33 @@ function renderProjectAddBtn(){
   renderPendingProjects();
 }
 
+function renderLogframeSummary(p){
+  var goals=(p.logframe&&p.logframe.goals&&p.logframe.goals.length)?p.logframe.goals:(p.goal?[p.goal]:[]);
+  var h='<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">GOAL'+(goals.length>1?'S':'')+'</div>';
+  h+=goals.length?('<ul style="margin:0 0 8px 16px;padding:0;font-size:12px;color:var(--g700)">'+goals.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul>')
+    :'<div style="font-size:12px;color:var(--g700);margin-bottom:8px">Not provided</div>';
+  if(p.impact){
+    h+='<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">IMPACT</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+esc(p.impact)+'</div>';
+  }
+  function group(label,items){
+    if(!items||!items.length)return '';
+    return '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">'+label+'</div><div style="margin-bottom:8px">'+
+      items.map(function(o){
+        return '<div style="font-size:12px;color:var(--g700);margin-bottom:3px"><b>'+esc(o.text||'(untitled)')+'</b>'+
+          (o.indicators&&o.indicators.length?'<ul style="margin:2px 0 0 16px;padding:0;font-size:11.5px;color:var(--g600)">'+o.indicators.map(function(i){return '<li>'+esc(i)+'</li>';}).join('')+'</ul>':'')+
+          '</div>';
+      }).join('')+'</div>';
+  }
+  var outcomes=(p.logframe&&p.logframe.outcomes)||[];
+  var outputs=(p.logframe&&p.logframe.outputs)||[];
+  if(outcomes.length||outputs.length){
+    h+=group('OUTCOMES',outcomes)+group('OUTPUTS',outputs);
+  } else {
+    h+='<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">DRAFT INDICATORS</div><div style="font-size:12px;color:var(--g700);white-space:pre-line;margin-bottom:8px">'+(p.indicators?esc(p.indicators):'Not provided')+'</div>';
+  }
+  return h;
+}
+
 function renderPendingProjects(){
   var box=$('pending-projects-card'),list=$('pending-projects-list');
   if(!box||!list)return;
@@ -3897,10 +3991,7 @@ function renderPendingProjects(){
     var body='<div class="cdb"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">'+
       '<div><b>'+esc(p.name)+'</b> ('+esc(p.code)+')<div style="font-size:11px;color:var(--g500);margin-top:3px">Donor: '+esc(p.donor)+' \u00b7 '+esc(p.sector)+' \u00b7 Budget: $'+p.budget.toLocaleString()+' \u00b7 Created by '+esc(p.createdBy)+'</div></div>'+
       '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+edBdg+mealBdg+finBdg+'</div></div>';
-    body+='<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px">'+
-      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">GOAL</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+(p.goal?esc(p.goal):'Not provided')+'</div>'+
-      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">IMPACT</div><div style="font-size:12px;color:var(--g700);margin-bottom:8px">'+(p.impact?esc(p.impact):'Not provided')+'</div>'+
-      '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">DRAFT INDICATORS</div><div style="font-size:12px;color:var(--g700);white-space:pre-line;margin-bottom:8px">'+(p.indicators?esc(p.indicators):'Not provided')+'</div>'+
+    body+='<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px">'+renderLogframeSummary(p)+
       '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">BUDGET</div><div style="font-size:12px;color:var(--g700)">$'+p.budget.toLocaleString()+' total \u00b7 '+esc(p.donor)+'</div></div>';
     if(p.mealComments && p.mealComments.length){
       body+='<div style="margin-top:9px"><div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:5px">Reviewer Comments</div>';
@@ -3935,15 +4026,20 @@ function saveProject(){
   var codeTaken = !!PROJ[code] || DB.pendingProjects.some(function(x){return x.code===code && x.status!=='rejected';});
   if(codeTaken){alert('Project code "'+code+'" is already in use by another project. Please choose a different code — reusing one will overwrite the existing project\'s data.');return;}
   if(!$('pj-budget').value || parseInt($('pj-budget').value)<=0){alert('Please enter a budget greater than 0.');return;}
+  var goals=collectLFGoals();
+  var outcomes=collectLFGroup('pj-outcomes-wrap','pj-outcome-text','pj-outcome-ind-text');
+  var outputs=collectLFGroup('pj-outputs-wrap','pj-output-text','pj-output-ind-text');
   var data={code:code,name:n.value.trim(),donor:$('pj-donor').value,sector:$('pj-sector').value,
     budget:parseInt($('pj-budget').value)||0,spent:0,benef:parseInt($('pj-benef').value)||0,
     prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:$('pj-loc').value,
     mgr:SES.name,meal:'Kamil Sanzar',status:'pending',color:'var(--teal)',
-    goal:$('pj-goal').value.trim(),impact:$('pj-impact').value.trim(),indicators:$('pj-indicators').value.trim(),
+    goal:goals.join(' | '),impact:$('pj-impact').value.trim(),
+    indicators:outcomes.concat(outputs).map(function(o){return (o.text?o.text+': ':'')+o.indicators.join(', ');}).join('\n'),
+    logframe:{goals:goals,outcomes:outcomes,outputs:outputs},
     edApproved:false,mealApproved:false,financeApproved:false,mealComments:[],
     createdBy:SES.name,createdRole:SES.role};
   DB.pendingProjects.push(data);
-  closeM('m-project');n.value='';$('pj-goal').value='';$('pj-impact').value='';$('pj-indicators').value='';
+  closeM('m-project');n.value='';$('pj-impact').value='';initProjectLFFields();
   renderPendingProjects();
   queueCloudSave();
   alert('Project submitted. It requires approval from MEAL (indicators), Finance (budget), and the Executive Director before it goes live.');
@@ -3956,7 +4052,8 @@ function maybeActivateProject(code){
   PROJ[code]={name:p.name,donor:p.donor,sector:p.sector,budget:p.budget,spent:0,benef:p.benef,
     prog:0,start:p.start,end:p.end,loc:p.loc,mgr:p.mgr,meal:p.meal,status:'Active',color:'var(--teal)',
     goal:p.goal||('Improve outcomes for beneficiaries through '+p.sector.toLowerCase()+' programming in '+p.loc+'.'),
-    impact:p.impact||('Measurable improvement in '+p.sector.toLowerCase()+' outcomes for '+fmt(p.benef)+' beneficiaries.')};
+    impact:p.impact||('Measurable improvement in '+p.sector.toLowerCase()+' outcomes for '+fmt(p.benef)+' beneficiaries.'),
+    logframe:p.logframe||null};
   generateRoadmapTasks(code,p.start,p.end);
   refreshAllProjectDropdowns();
   renderProjectCards();
