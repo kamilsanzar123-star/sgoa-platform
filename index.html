@@ -720,7 +720,7 @@ tbody tr:hover td{background:var(--g50);}
   
   <div class="cd"><div class="cdh"><div class="cdt">Staff by Department</div></div><div class="cdb" id="hr-chart"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Register</div><button class="b bn bs" onclick="openM('m-staff')">+ Add Staff</button></div>
-  <div class="cdb tw"><table><thead><tr><th>Name</th><th>Position</th><th>Department</th><th>Location</th><th>Start Date</th><th>Status</th></tr></thead><tbody id="hr-staff"></tbody></table></div></div>
+  <div class="cdb tw"><table><thead><tr><th>Name</th><th>Position</th><th>Department</th><th>Location</th><th>Start Date</th><th>Status</th><th>Last Appraisal</th><th>Actions</th></tr></thead><tbody id="hr-staff"></tbody></table></div></div>
   <div class="stats" id="hr-stats"></div>
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="hr-tasks"></div></div>
@@ -1526,6 +1526,31 @@ tbody tr:hover td{background:var(--g50);}
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-staff')">Cancel</button><button class="b bn" onclick="saveStaff()">Add Staff</button></div>
 </div></div>
+<div class="mb" id="m-appraisal"><div class="md">
+<div class="mh"><h3>Performance Appraisal</h3><button class="mx" onclick="closeM('m-appraisal')">&times;</button></div>
+<div class="mbd">
+  <div id="ap-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr">
+    <div class="fg"><label>Review Period</label><input type="text" id="ap-period" placeholder="e.g. 2026 Annual, or Jan-Jun 2026"></div>
+    <div class="fg"><label>Overall Rating</label><select id="ap-rating"><option>Outstanding</option><option>Exceeds Expectations</option><option selected>Meets Expectations</option><option>Needs Improvement</option><option>Unsatisfactory</option></select></div>
+    <div class="fg"><label>Reviewer</label><input type="text" id="ap-reviewer"></div>
+    <div class="fg"><label>Next Review Date</label><input type="date" id="ap-next"></div>
+    <div class="fg ff"><label>Comments</label><textarea rows="3" id="ap-comments" placeholder="Strengths, areas for development, agreed action points..."></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-appraisal')">Cancel</button><button class="b bn" onclick="saveAppraisal()">Save Appraisal</button></div>
+</div></div>
+<div class="mb" id="m-offboard"><div class="md">
+<div class="mh"><h3>Offboard Staff Member</h3><button class="mx" onclick="closeM('m-offboard')">&times;</button></div>
+<div class="mbd">
+  <div id="ob-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div style="font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Exit Checklist &mdash; confirm each before completing</div>
+  <div id="ob-checklist" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+  <div class="fg"><label>Last Working Day</label><input type="date" id="ob-date"></div>
+  <div class="fg ff"><label>Exit Notes</label><textarea rows="2" id="ob-notes" placeholder="Reason for leaving, handover notes, etc. (optional)"></textarea></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-offboard')">Cancel</button><button class="b bn" style="background:var(--red)" onclick="confirmOffboard()">Complete Offboarding</button></div>
+</div></div>
 <div class="mb" id="m-proc"><div class="md">
 <div class="mh"><h3>New Procurement Request</h3><button class="mx" onclick="closeM('m-proc')">&times;</button></div>
 <div class="mbd"><div class="fr">
@@ -1676,6 +1701,7 @@ findings:[],
 risks:[],
 assets:[],
 fleet:[],
+appraisals:[],
 indicators:[],
 staff:[],
 dist:[],
@@ -3372,13 +3398,81 @@ function renderHRChart(){
   c.appendChild(t);
 }
 
+function lastAppraisal(staffId){
+  var mine=DB.appraisals.filter(function(a){return a.staffId===staffId;});
+  if(!mine.length)return null;
+  return mine.reduce(function(a,b){return a.date>b.date?a:b;});
+}
 function renderStaff(){
   var c=$('hr-staff');if(!c)return;c.innerHTML='';
   DB.staff.forEach(function(s){
     var r=el('tr');
-    r.innerHTML='<td><b>'+esc(s.name)+'</b></td><td>'+esc(s.pos)+'</td><td>'+esc(s.dept)+'</td><td>'+esc(s.loc)+'</td><td>'+dt(s.start)+'</td><td><span class="bdg bG">'+esc(s.status)+'</span></td>';
+    var statusBdg=s.status==='Offboarded'?'bY':'bG';
+    var la=lastAppraisal(s.id);
+    var apCell=la?(esc(la.rating)+'<div style="font-size:10px;color:var(--g400)">'+dt(la.date)+'</div>'):'<span style="color:var(--g400)">Not yet reviewed</span>';
+    var actions=s.status==='Offboarded'
+      ? '<span class="bdg bY">Offboarded '+dt(s.offboardedOn)+'</span>'
+      : '<button class="b bo bs" onclick="openAppraisalModal(\''+s.id+'\')">Appraise</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="openOffboardModal(\''+s.id+'\')">Offboard</button>';
+    r.innerHTML='<td><b>'+esc(s.name)+'</b></td><td>'+esc(s.pos)+'</td><td>'+esc(s.dept)+'</td><td>'+esc(s.loc)+'</td><td>'+dt(s.start)+'</td><td><span class="bdg '+statusBdg+'">'+esc(s.status)+'</span></td><td style="font-size:11.5px">'+apCell+'</td><td>'+actions+'</td>';
     c.appendChild(r);
   });
+}
+
+// ============ PERFORMANCE APPRAISALS ============
+var _appraisalStaffId=null;
+function openAppraisalModal(staffId){
+  var s=DB.staff.find(function(x){return x.id===staffId;});if(!s)return;
+  _appraisalStaffId=staffId;
+  $('ap-ctx').innerHTML='<b>'+esc(s.name)+'</b> &middot; '+esc(s.pos)+' &middot; '+esc(s.dept);
+  $('ap-period').value='';$('ap-rating').value='Meets Expectations';$('ap-reviewer').value=SES.name;
+  $('ap-next').value='';$('ap-comments').value='';
+  openM('m-appraisal');
+}
+function saveAppraisal(){
+  if(!_appraisalStaffId)return;
+  var period=$('ap-period').value.trim();
+  if(!period){alert('Please enter the review period.');return;}
+  DB.appraisals.push({id:nid('AP'),staffId:_appraisalStaffId,period:period,rating:$('ap-rating').value,
+    reviewer:$('ap-reviewer').value.trim()||SES.name,comments:$('ap-comments').value.trim(),
+    next:$('ap-next').value,date:today()});
+  closeM('m-appraisal');renderStaff();queueCloudSave();
+  alert('Appraisal recorded.');
+}
+
+// ============ OFFBOARDING ============
+var _offboardStaffId=null;
+function openOffboardModal(staffId){
+  var s=DB.staff.find(function(x){return x.id===staffId;});if(!s)return;
+  _offboardStaffId=staffId;
+  $('ob-ctx').innerHTML='<b>'+esc(s.name)+'</b> &middot; '+esc(s.pos)+' &middot; '+esc(s.dept);
+  var linkedAssets=DB.assets.filter(function(a){return a.assign===s.name;});
+  var linkedVehicles=DB.fleet.filter(function(v){return v.assign===s.name||v.driver===s.name;});
+  var linkedUser=DB.users.find(function(u){return u.name===s.name && u.status==='Active';});
+  var items=[];
+  items.push({key:'assets',label:linkedAssets.length?('Assets returned ('+linkedAssets.map(function(a){return esc(a.name);}).join(', ')+')'):'Assets returned (none currently assigned)'});
+  items.push({key:'vehicles',label:linkedVehicles.length?('Vehicle/fleet access returned ('+linkedVehicles.map(function(v){return esc(v.plate);}).join(', ')+')'):'Vehicle/fleet access returned (none assigned)'});
+  items.push({key:'access',label:linkedUser?('System account access revoked (will deactivate login: '+esc(linkedUser.username)+')'):'System account access revoked (no linked login account found)'});
+  items.push({key:'settlement',label:'Final leave balance / financial settlement completed'});
+  items.push({key:'handover',label:'Handover of duties and files confirmed'});
+  $('ob-checklist').innerHTML=items.map(function(it){
+    return '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px"><input type="checkbox" class="ob-check" data-key="'+it.key+'" style="margin-top:3px">'+it.label+'</label>';
+  }).join('');
+  $('ob-date').value=today();$('ob-notes').value='';
+  openM('m-offboard');
+}
+function confirmOffboard(){
+  if(!_offboardStaffId)return;
+  var boxes=Array.from(document.querySelectorAll('.ob-check'));
+  var unchecked=boxes.filter(function(b){return !b.checked;});
+  if(unchecked.length){alert('Please confirm every item on the exit checklist before completing offboarding.');return;}
+  var s=DB.staff.find(function(x){return x.id===_offboardStaffId;});if(!s)return;
+  s.status='Offboarded';s.offboardedOn=$('ob-date').value||today();s.offboardedBy=SES.name;s.exitNotes=$('ob-notes').value.trim();
+  // Actually revoke the linked login, not just check a box saying it was done.
+  var linkedUser=DB.users.find(function(u){return u.name===s.name && u.status==='Active';});
+  if(linkedUser)linkedUser.status='Inactive';
+  DB.deletionLog.unshift({type:'staff-offboard',recordId:s.id,reason:'Offboarding completed'+(linkedUser?' (login deactivated)':''),by:SES.name,at:new Date().toISOString()});
+  closeM('m-offboard');renderStaff();renderAllStaffDirectories();queueCloudSave();
+  alert('Offboarding completed for '+s.name+(linkedUser?'. Their login has been deactivated.':'.'));
 }
 
 // ============ PROGRAMS ============
