@@ -1189,6 +1189,10 @@ tbody tr:hover td{background:var(--g50);}
       </div>
     </div></div>
   </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Audit Log</div>
+    <input type="text" id="audit-search" oninput="renderAuditLog()" placeholder="Search by type, record, or person..." style="font-size:11px;padding:5px 8px;border:1px solid var(--g200);border-radius:6px;font-family:inherit;width:260px"></div>
+    <div class="cdb tw"><table><thead><tr><th>When</th><th>Action</th><th>Record</th><th>By</th><th>Detail</th></tr></thead><tbody id="audit-log-body"></tbody></table></div>
+  </div>
 </div>
 
 <!-- DENIED -->
@@ -2229,6 +2233,28 @@ function renderSettings(){
   $('org-info-depts').textContent=Object.keys(DEPTNAME).length;
   $('org-info-projects').textContent=Object.keys(PROJ).length;
   $('org-info-users').textContent=DB.users.length+Object.keys(CRED).length;
+  renderAuditLog();
+}
+function renderAuditLog(){
+  var c=$('audit-log-body');if(!c)return;
+  var q=($('audit-search')?$('audit-search').value:'').trim().toLowerCase();
+  var entries=DB.deletionLog||[];
+  if(q){
+    entries=entries.filter(function(e){
+      return (e.type||'').toLowerCase().indexOf(q)>=0 || (e.recordId||'').toLowerCase().indexOf(q)>=0 ||
+        (e.by||'').toLowerCase().indexOf(q)>=0 || (e.reason||'').toLowerCase().indexOf(q)>=0;
+    });
+  }
+  if(!entries.length){c.innerHTML='<tr><td colspan="5" class="empty">No audit entries'+(q?' match this search':' yet')+'</td></tr>';return;}
+  c.innerHTML='';
+  entries.slice(0,200).forEach(function(e){
+    var r=el('tr');
+    var when=new Date(e.at);
+    r.innerHTML='<td style="font-size:11px;white-space:nowrap">'+(isNaN(when)?esc(e.at):when.toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}))+'</td>'+
+      '<td><span class="bdg bN">'+esc(e.type)+'</span></td><td style="font-size:11.5px">'+esc(e.recordId)+'</td><td>'+esc(e.by)+'</td><td style="font-size:11.5px">'+esc(e.reason||'')+'</td>';
+    c.appendChild(r);
+  });
+  if(entries.length>200)c.innerHTML+='<tr><td colspan="5" style="text-align:center;color:var(--g400);font-size:11px;padding:8px">Showing the most recent 200 of '+entries.length+' entries. Narrow your search to see older ones.</td></tr>';
 }
 function saveOrgSettings(){
   DB.org={name:$('org-name').value.trim(),acronym:$('org-acronym').value.trim(),
@@ -4456,10 +4482,20 @@ function maybeActivateProject(code){
   alert('Project fully approved by MEAL, Finance, and the Executive Director. It is now live for all departments.');
 }
 
+// ============ AUDIT LOG ============
+// DB.deletionLog started out narrowly for deletions but is really the app's one central,
+// searchable audit trail — logAudit() is the general entry point new call sites should use so
+// approvals and edits land in the same place instead of only being visible inside each record's
+// own scattered history array. Viewable in Settings (see renderAuditLog).
+function logAudit(type,recordId,detail){
+  DB.deletionLog.unshift({type:type,recordId:recordId,reason:detail,by:SES.name,at:new Date().toISOString()});
+}
+
 function approveProjectED(code){
   var p=DB.pendingProjects.find(function(x){return x.code===code;});
   if(!p)return;
   p.edApproved=true;
+  logAudit('project-approval-ed',code,'Executive Director approval');
   renderPendingProjects();
   queueCloudSave();
   maybeActivateProject(code);
@@ -4469,6 +4505,7 @@ function approveProjectMEAL(code){
   var p=DB.pendingProjects.find(function(x){return x.code===code;});
   if(!p)return;
   p.mealApproved=true;
+  logAudit('project-approval-meal',code,'MEAL indicator/design approval');
   renderPendingProjects();
   queueCloudSave();
   maybeActivateProject(code);
@@ -4478,6 +4515,7 @@ function approveProjectFinance(code){
   var p=DB.pendingProjects.find(function(x){return x.code===code;});
   if(!p)return;
   p.financeApproved=true;
+  logAudit('project-approval-finance',code,'Finance budget approval');
   renderPendingProjects();
   queueCloudSave();
   maybeActivateProject(code);
@@ -5870,6 +5908,7 @@ function approveTAR(id){
   }
   t.status='Approved';
   t.hist.push({a:'Approved',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:(note||'Approved, safe travels')+assignedVehicleText});
+  logAudit('tar-approval',id,'TAR request approved.'+assignedVehicleText);
   renderTARQueue();
   queueCloudSave();
   alert('TAR approved.'+assignedVehicleText+' '+t.dept+' has been notified.');
@@ -5883,6 +5922,7 @@ function denyTAR(id){
   if(!note){alert('Please add a comment explaining why this is denied.');return;}
   t.status='Denied';
   t.hist.push({a:'Denied',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:note});
+  logAudit('tar-denial',id,'TAR request denied: '+note);
   renderTARQueue();
   queueCloudSave();
   alert('TAR denied. '+t.dept+' has been notified with your comment.');
@@ -6021,6 +6061,7 @@ function approveLeave(id){
   if(!l)return;
   l.status='Approved';
   l.hist.push({a:'Approved',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Enjoy your leave'});
+  logAudit('leave-approval',id,'Leave request approved for '+l.requestedBy);
   renderLeaveQueue();
   queueCloudSave();
   alert('Leave approved. '+l.requestedBy+' has been notified.');
@@ -6033,6 +6074,7 @@ function rejectLeave(id){
   if(!reason)return;
   l.status='Rejected';
   l.hist.push({a:'Rejected',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:reason});
+  logAudit('leave-rejection',id,'Leave request rejected for '+l.requestedBy+': '+reason);
   renderLeaveQueue();
   queueCloudSave();
   alert('Leave rejected. '+l.requestedBy+' has been notified with your reason.');
@@ -6472,6 +6514,7 @@ document.addEventListener('click',function(e){
     var pp=DB.proc.find(function(x){return x.id===v;});
     if(pp && confirm('Approve procurement request '+pp.id+' — '+pp.item+' ('+money(pp.cost,projCurrency(pp.proj))+')?')){
       pp.status='Approved';pp.approvedBy=SES.name;pp.approvedOn=today();
+      logAudit('procurement-approval',pp.id,'Procurement request approved: '+pp.item+' ('+money(pp.cost,projCurrency(pp.proj))+')');
       renderProc();queueCloudSave();
     }
     return;
@@ -7597,6 +7640,7 @@ function doTSDecision(decision){
   TS_TARGET.status = decision;
   TS_TARGET.approvedBy = SES.name;
   TS_TARGET.hrNote = document.getElementById('m-ts-note').value||'';
+  logAudit('timesheet-'+decision.toLowerCase(),TS_TARGET.staff+' / '+TS_TARGET.month,'Timesheet '+decision.toLowerCase()+(TS_TARGET.hrNote?': '+TS_TARGET.hrNote:''));
   queueCloudSave();
   closeM('m-ts-approve');
   renderTimesheetApprovals();
