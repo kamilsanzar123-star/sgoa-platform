@@ -592,7 +592,7 @@ tbody tr:hover td{background:var(--g50);}
       <div class="cd"><div class="cdh"><div class="cdt"><span class="dot"></span>Active Alerts</div></div><div class="cdb" id="meal-alerts"></div></div>
     </div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-meal"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
 </div>
 
 <!-- MEAL INDICATORS -->
@@ -711,7 +711,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="finance-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="finance-alerts"></div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-finance"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-finance"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-finance"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Finance Department documents</b></p></div></div></div>
 </div>
@@ -734,7 +734,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Monthly Attendance Summary</div><button class="b bn bs" onclick="openM('m-attendance')">+ Log Attendance</button></div>
   <div class="cdb tw"><table><thead><tr><th>Staff Name</th><th>Department</th><th>Month</th><th>Present</th><th>Absent</th><th>Late</th><th>On Leave</th></tr></thead><tbody id="hr-attendance"></tbody></table></div></div>
 
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-hr"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-hr"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-hr"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Human Resources documents</b></p></div></div></div>
 </div>
@@ -773,7 +773,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="programs-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="programs-alerts"></div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-programs"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-programs"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-programs"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Programs Department documents</b></p></div></div></div>
 </div>
@@ -791,7 +791,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="supply-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="supply-alerts"></div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-supply"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-supply"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-supply"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Supply Chain Department documents</b></p></div></div></div>
 </div>
@@ -803,7 +803,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="admin-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="admin-alerts"></div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-admin"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-admin"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-admin"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Administration Department documents</b></p></div></div></div>
 </div>
@@ -817,7 +817,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="safeguarding-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="safeguarding-alerts"></div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-safeguarding"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-safeguarding"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-safeguarding"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Safeguarding Department documents</b></p></div></div></div>
 </div>
@@ -837,7 +837,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt clk" onclick="go('ops-fleet')">Fleet Quick View</div><button class="b bo bs" onclick="go('ops-fleet')">Full Fleet</button></div>
   <div class="stats" id="ops-fleet-mini-stats" style="padding:0 15px"></div>
   <div class="cdb tw"><table><thead><tr><th>Plate</th><th>Model</th><th>Assigned</th><th>Location</th><th>Status</th></tr></thead><tbody id="fleet-quick"></tbody></table></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-operations"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-operations"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-operations"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Operations documents</b></p></div></div></div>
 </div>
@@ -2234,7 +2234,27 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task')populateAssignToDropdown();if(id==='m-project')initProjectLFFields();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();}
+
+// A department head could previously pick ANY department in the Add Task modal and assign
+// work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
+// already have cross-department oversight) may still target any department; everyone else is
+// locked to their own, so "Assigned To" can only ever list their own staff.
+var TASK_DEPT_OPTIONS=['MEAL','Finance','HR','Programs','Supply Chain','Admin','Safeguarding','Operations'];
+function restrictTaskDeptField(){
+  var sel=$('t-dept');
+  if(!sel)return;
+  var crossDept=(SES.role==='executive'||SES.role==='progdeputy'||SES.role==='deputy');
+  var ownDept=DEPTNAME[SES.role];
+  if(crossDept || TASK_DEPT_OPTIONS.indexOf(ownDept)===-1){
+    sel.disabled=false;
+    sel.innerHTML=TASK_DEPT_OPTIONS.map(function(d){return '<option>'+d+'</option>';}).join('');
+  } else {
+    sel.innerHTML='<option>'+ownDept+'</option>';
+    sel.value=ownDept;
+    sel.disabled=true;
+  }
+}
 
 // ============ ADD-PROJECT LOGFRAME BUILDER (dynamic Goals / Outcomes+Indicators / Outputs+Indicators) ============
 function lfRow(cls,placeholder,nested){
@@ -4753,6 +4773,39 @@ function saveNewUser(){
   alert('User created successfully. They can now log in with the credentials provided.');
 }
 
+// ============ DEPARTMENT-SCOPED STAFF ACCOUNT CREATION ============
+// Lets a department head create a login for their own staff without needing the Executive
+// Director to do it via full User Management. The department is inferred from whichever
+// department home page the button was clicked on (currentPageId), not from the clicker's own
+// role, so this also works correctly for Executive/Deputy roles browsing another department.
+var _deptAddUserKey=null;
+function openDeptAddUser(){
+  var deptKey=currentPageId;
+  if(!DEPTNAME[deptKey]){alert('Open your department\'s home page to add a staff account there.');return;}
+  _deptAddUserKey=deptKey;
+  $('du-name').value='';$('du-username').value='';$('du-password').value='';$('du-position').value='';$('du-loc').value='';$('du-status').value='Active';
+  $('du-note').textContent='This account will have full '+DEPTNAME[deptKey]+' section access — the same dashboard and permissions as the '+DEPTNAME[deptKey]+' department head. There is currently no way to give a staff account narrower access than that; contact the platform administrator if finer-grained restrictions are needed.';
+  openM('m-dept-add-user');
+}
+function saveDeptUser(){
+  if(!_deptAddUserKey)return;
+  var name=$('du-name'),user=$('du-username'),pass=$('du-password');
+  if(!name.value.trim()||!user.value.trim()||!pass.value.trim()){alert('Please fill in name, username, and password.');return;}
+  var dup=DB.users.some(function(u){return u.username===user.value.trim();}) || Object.keys(CRED).some(function(k){return CRED[k].u===user.value.trim();});
+  if(dup){alert('This username already exists. Please choose another.');return;}
+  DB.users.push({
+    id:nid('U'),name:name.value.trim(),username:user.value.trim(),password:pass.value.trim(),
+    roleTemplate:_deptAddUserKey,position:$('du-position').value.trim()||(DEPTNAME[_deptAddUserKey]+' Officer'),
+    loc:$('du-loc').value.trim()||'Kabul',projects:['All'],status:$('du-status').value,
+    createdBy:SES.name,created:today()
+  });
+  closeM('m-dept-add-user');
+  renderAllStaffDirectories();
+  renderUserMgmt();
+  queueCloudSave();
+  alert('Staff account created. They can now log in with the credentials provided.');
+}
+
 function editUser(id){
   var u=DB.users.find(function(x){return x.id===id;});if(!u)return;
   $('eu-id').value=u.id;$('eu-name').value=u.name;$('eu-password').value=u.password;$('eu-status').value=u.status;
@@ -6139,6 +6192,22 @@ document.addEventListener('keydown',function(e){
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-add-user')">Cancel</button><button class="b bn" onclick="saveNewUser()">Create User</button></div>
+</div></div>
+
+<div class="mb" id="m-dept-add-user"><div class="md">
+<div class="mh"><h3>Add Staff Account</h3><button class="mx" onclick="closeM('m-dept-add-user')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Full Name *</label><input type="text" id="du-name" placeholder="e.g. Zahara Ali Zada"></div>
+    <div class="fg"><label>Username *</label><input type="text" id="du-username" placeholder="e.g. zahara.alizada"></div>
+    <div class="fg"><label>Password *</label><div style="display:flex;gap:6px"><input type="password" id="du-password" placeholder="e.g. Field@sgoa26" style="flex:1"><button type="button" class="b bo bs" onclick="var f=$('du-password');f.type=f.type==='password'?'text':'password';">Show</button></div></div>
+    <div class="fg"><label>Position / Title</label><input type="text" id="du-position" placeholder="e.g. MEAL Officer"></div>
+    <div class="fg"><label>Province / Location</label><input type="text" id="du-loc" placeholder="e.g. Kandahar"></div>
+    <div class="fg"><label>Status</label><select id="du-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+  </div>
+  <div style="background:var(--g50);padding:10px;border-radius:7px;font-size:11.5px;color:var(--g600);margin-top:10px" id="du-note"></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-dept-add-user')">Cancel</button><button class="b bn" onclick="saveDeptUser()">Create Account</button></div>
 </div></div>
 
 <div class="mb" id="m-edit-user"><div class="md">
