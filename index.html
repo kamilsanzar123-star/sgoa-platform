@@ -1310,6 +1310,21 @@ tbody tr:hover td{background:var(--g50);}
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-ind')">Cancel</button><button class="b bn" onclick="saveInd()">Save Indicator</button></div>
 </div></div>
+<div class="mb" id="m-ind-update"><div class="md">
+<div class="mh"><h3>Update Indicator Progress</h3><button class="mx" onclick="closeM('m-ind-update')">&times;</button></div>
+<div class="mbd">
+  <div id="iu-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr">
+    <div class="fg"><label>New Actual Value *</label><input type="number" id="iu-actual"></div>
+    <div class="fg"><label>Reporting Date</label><input type="date" id="iu-date"></div>
+    <div class="fg"><label>Female <span style="font-weight:400;color:var(--g500)">(optional breakdown)</span></label><input type="number" id="iu-female" placeholder="e.g. 60"></div>
+    <div class="fg"><label>Male <span style="font-weight:400;color:var(--g500)">(optional breakdown)</span></label><input type="number" id="iu-male" placeholder="e.g. 55"></div>
+    <div class="fg ff"><label>Note</label><input type="text" id="iu-note" placeholder="e.g. Term 2 attendance registers"></div>
+  </div>
+  <div style="font-size:10.5px;color:var(--g500);margin-top:2px">If both Female and Male are entered, they must add up to the New Actual Value — this is how progress gets reported disaggregated by sex, matching donor reporting requirements, instead of one undifferentiated total.</div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-ind-update')">Cancel</button><button class="b bn" onclick="saveIndicatorUpdate()">Save Update</button></div>
+</div></div>
 <div class="mb" id="m-cfrm"><div class="md">
 <div class="mh"><h3>Register CFRM Case</h3><button class="mx" onclick="closeM('m-cfrm')">&times;</button></div>
 <div class="mbd"><div class="fr">
@@ -3103,9 +3118,13 @@ function renderInd(){
     var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
     var bdg=pct>=90?'<span class="bdg bG">On Track</span>':pct>=70?'<span class="bdg bO">At Risk</span>':pct>0?'<span class="bdg bR">Off Track</span>':'<span class="bdg bY">Baseline Pending</span>';
     var d=el('div','ind');
+    var sexBreakdown=(i.actualFemale!=null||i.actualMale!=null)?
+      ' <span style="color:var(--g500)">(F: '+fmt(i.actualFemale||0)+' &middot; M: '+fmt(i.actualMale||0)+')</span>':'';
     d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:5px"><div class="indn">'+i.id+' — '+esc(i.name)+'</div>'+bdg+'</div>'+
-      '<div class="indm"><span><b>Project:</b> '+esc(i.proj)+'</span><span><b>Level:</b> '+esc(i.level)+'</span><span><b>Target:</b> '+fmt(i.target)+' '+esc(i.unit)+'</span><span><b>Actual:</b> '+(i.actual>0?fmt(i.actual):'Pending')+'</span><span><b>MoV:</b> '+esc(i.mov)+'</span><span><b>Frequency:</b> '+esc(i.freq)+'</span></div>'+
-      (i.actual>0?'<div class="indp"><div class="pw" style="flex:1"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><div class="indv" style="color:'+col+'">'+pct+'%</div></div>':'');
+      '<div class="indm"><span><b>Project:</b> '+esc(i.proj)+'</span><span><b>Level:</b> '+esc(i.level)+'</span><span><b>Baseline:</b> '+fmt(i.baseline||0)+'</span><span><b>Target:</b> '+fmt(i.target)+' '+esc(i.unit)+'</span><span><b>Actual:</b> '+(i.actual>0?fmt(i.actual):'Pending')+sexBreakdown+'</span><span><b>MoV:</b> '+esc(i.mov)+'</span><span><b>Frequency:</b> '+esc(i.freq)+'</span></div>'+
+      (i.actual>0?'<div class="indp"><div class="pw" style="flex:1"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><div class="indv" style="color:'+col+'">'+pct+'%</div></div>':'')+
+      '<div style="margin-top:6px"><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button>'+
+      (i.updates&&i.updates.length?' <span style="font-size:10.5px;color:var(--g400)">'+i.updates.length+' update'+(i.updates.length>1?'s':'')+' logged · last: '+dt(i.updates[i.updates.length-1].date)+'</span>':'')+'</div>';
     c.appendChild(d);
   });
 }
@@ -4003,10 +4022,42 @@ async function saveDoc(){
 function saveInd(){
   var n=$('i-name');
   if(!n||!n.value.trim()){alert('Please enter indicator name.');return;}
+  // Baseline used to be stored directly into "actual" and then overwritten by the next progress
+  // update, silently losing the starting point — kept as its own field now so a report can still
+  // show "started at X, now at Y, target Z" after progress has moved on.
+  var baseline=parseInt($('i-base').value)||0;
   DB.indicators.push({id:nid('I'),name:n.value.trim(),proj:$('i-proj').value,level:$('i-level').value,
-    target:parseInt($('i-target').value)||0,actual:parseInt($('i-base').value)||0,
-    unit:$('i-unit').value||'#',mov:$('i-mov').value,freq:$('i-freq').value});
+    target:parseInt($('i-target').value)||0,baseline:baseline,actual:baseline,
+    unit:$('i-unit').value||'#',mov:$('i-mov').value,freq:$('i-freq').value,updates:[]});
   closeM('m-ind');n.value='';renderInd();queueCloudSave();
+}
+
+// ============ INDICATOR PROGRESS UPDATES (with sex disaggregation) ============
+var _indUpdateId=null;
+function openIndicatorUpdateModal(id){
+  var i=DB.indicators.find(function(x){return x.id===id;});if(!i)return;
+  _indUpdateId=id;
+  $('iu-ctx').innerHTML='<b>'+esc(i.name)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
+  $('iu-actual').value=i.actual;$('iu-date').value=today();$('iu-female').value='';$('iu-male').value='';$('iu-note').value='';
+  openM('m-ind-update');
+}
+function saveIndicatorUpdate(){
+  if(!_indUpdateId)return;
+  var i=DB.indicators.find(function(x){return x.id===_indUpdateId;});if(!i)return;
+  var actual=parseInt($('iu-actual').value);
+  if(isNaN(actual)){alert('Please enter the new actual value.');return;}
+  var femaleStr=$('iu-female').value.trim(),maleStr=$('iu-male').value.trim();
+  var female=femaleStr?parseInt(femaleStr):null, male=maleStr?parseInt(maleStr):null;
+  if(female!==null && male!==null && (female+male)!==actual){
+    alert('Female ('+female+') + Male ('+male+') = '+(female+male)+', which does not match the New Actual Value ('+actual+'). Please correct the breakdown or the total.');
+    return;
+  }
+  i.updates=i.updates||[];
+  i.updates.push({date:$('iu-date').value||today(),actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name});
+  i.actual=actual;
+  if(female!==null)i.actualFemale=female;
+  if(male!==null)i.actualMale=male;
+  closeM('m-ind-update');renderInd();queueCloudSave();
 }
 
 function saveCFRM(){
