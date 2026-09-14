@@ -619,16 +619,11 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL LOGFRAME -->
 <div class="pg" id="p-meal-lf">
-  <div class="ph"><div><h1>Logical Framework</h1><p>GPE-STG results chain</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button></div></div>
-  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Level</th><th>Statement</th><th>Indicator</th><th>Target</th><th>Actual</th><th>MoV</th></tr></thead><tbody>
-    <tr style="background:rgba(26,58,107,.04)"><td><span class="bdg bN">Impact</span></td><td>Improved learning outcomes for out-of-school children</td><td>% with improved literacy</td><td>75%</td><td>-</td><td>Endline</td></tr>
-    <tr style="background:rgba(200,146,42,.04)"><td><span class="bdg bD">Outcome</span></td><td>Children demonstrate foundational literacy &amp; numeracy</td><td>% reaching competency</td><td>70%</td><td>68%</td><td>CBS tool</td></tr>
-    <tr><td><span class="bdg bB">Output 1</span></td><td>65 CBS classes operational in 3 districts</td><td># classes operational</td><td>65</td><td>65</td><td>Registers</td></tr>
-    <tr><td><span class="bdg bB">Output 2</span></td><td>Teachers trained in STG methodology</td><td># teachers trained</td><td>65</td><td>58</td><td>Certificates</td></tr>
-    <tr><td><span class="bdg bB">Output 3</span></td><td>Children enrolled disaggregated by sex</td><td># enrolled</td><td>3,900</td><td>3,629</td><td>Enrollment records</td></tr>
-    <tr><td><span class="bdg bB">Output 4</span></td><td>Learning materials distributed</td><td># kits distributed</td><td>3,900</td><td>3,900</td><td>Distribution lists</td></tr>
-  </tbody></table></div></div>
+  <div class="ph"><div><h1>Logical Framework</h1><p>Results chain built live from project indicators</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-ind')">+ Add Indicator</button></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Results Chain</div>
+    <select id="lf-proj" onchange="renderLF()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"><option value="all">All Projects</option></select>
+  </div><div class="cdb tw"><table><thead><tr><th>Level</th><th>Statement / Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>MoV</th></tr></thead><tbody id="lf-body"></tbody></table></div></div>
 </div>
 
 <!-- MEAL FINDINGS -->
@@ -1158,18 +1153,19 @@ tbody tr:hover td{background:var(--g50);}
   <div class="ph"><div><h1>Settings</h1><p>Organization and platform configuration</p></div></div>
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Organization Information</div></div><div class="cdb">
-      <div class="fg"><label>Organization Name</label><input type="text" value="Sustainable Goals Organization for Afghanistan"></div>
-      <div class="fg"><label>Acronym</label><input type="text" value="SGOA"></div>
-      <div class="fg"><label>Country</label><input type="text" value="Afghanistan"></div>
-      <div class="fg"><label>Head Office</label><input type="text" value="Kabul"></div>
-      <div class="fg"><label>Email</label><input type="email" value="info@sgoa.org.af"></div>
-      <button class="b bn bs">Save Changes</button>
+      <div class="fg"><label>Organization Name</label><input type="text" id="org-name"></div>
+      <div class="fg"><label>Acronym</label><input type="text" id="org-acronym"></div>
+      <div class="fg"><label>Country</label><input type="text" id="org-country"></div>
+      <div class="fg"><label>Head Office</label><input type="text" id="org-hq"></div>
+      <div class="fg"><label>Email</label><input type="email" id="org-email"></div>
+      <button class="b bn bs" onclick="saveOrgSettings()">Save Changes</button>
+      <span id="org-msg" style="margin-left:10px;font-size:12px;color:var(--green)"></span>
     </div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Platform Information</div></div><div class="cdb">
       <div style="font-size:13px;line-height:2.2;color:var(--g600)">
         <div><b>Version:</b> 4.0</div><div><b>Build:</b> August 2026</div>
-        <div><b>Departments:</b> 8</div><div><b>Projects:</b> 4</div>
-        <div><b>Total Users:</b> 9</div><div><b>Data Storage:</b> Session-based</div>
+        <div><b>Departments:</b> <span id="org-info-depts">-</span></div><div><b>Projects:</b> <span id="org-info-projects">-</span></div>
+        <div><b>Total Users:</b> <span id="org-info-users">-</span></div><div><b>Data Storage:</b> Cloud (Supabase)</div>
       </div>
     </div></div>
   </div>
@@ -1569,12 +1565,12 @@ executive:['exec','projects','project-detail','roadmap','all-tasks','all-challen
 'admin','safeguarding','operations','ops-assets','ops-fleet','it','access','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 finance:['finance','projects','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-hr:['hr','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+hr:['hr','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','projects','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-supply:['supply','supply-proc','supply-dist','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-admin:['admin','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-safeguarding:['safeguarding','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-operations:['operations','ops-assets','ops-fleet','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+supply:['supply','supply-proc','supply-dist','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
@@ -1583,8 +1579,8 @@ deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','hr','programs','prog-activities','prog-benef','prog-analysis','supply','supply-proc','supply-dist',
   'admin','safeguarding','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
-it:['it','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
-access:['access','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
+it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
+access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
 };
 
 var SIDEBAR={
@@ -1597,20 +1593,20 @@ meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tr
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'}]},
 {l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-dist',n:'Distribution'}]},
-{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 operations:[{l:'OPERATIONS',i:[{p:'operations',n:'Operations Home'},{p:'ops-assets',n:'Asset Register'},{p:'ops-fleet',n:'Fleet Management'}]},
-{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 progdeputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
@@ -1620,8 +1616,8 @@ deputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-appr
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'safeguarding',n:'Safeguarding'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
+it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
 };
 var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations',progdeputy:'pr-approvals',deputy:'pr-approvals',it:'it',access:'access'};
 
@@ -1663,7 +1659,8 @@ contracts:[],
 leaveRequests:[],
 attendance:[],
 expenditures:[],
-timesheets:[]
+timesheets:[],
+org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
 DB.visits=[];
@@ -1995,6 +1992,23 @@ function renderMySettings(){
   document.getElementById('ms-info-role').textContent=SES.position||'-';
   document.getElementById('ms-info-user').textContent=(u&&u.username)||'-';
 }
+function renderSettings(){
+  var o=DB.org||{};
+  $('org-name').value=o.name||'';
+  $('org-acronym').value=o.acronym||'';
+  $('org-country').value=o.country||'';
+  $('org-hq').value=o.hq||'';
+  $('org-email').value=o.email||'';
+  $('org-info-depts').textContent=Object.keys(DEPTNAME).length;
+  $('org-info-projects').textContent=Object.keys(PROJ).length;
+  $('org-info-users').textContent=DB.users.length+Object.keys(CRED).length;
+}
+function saveOrgSettings(){
+  DB.org={name:$('org-name').value.trim(),acronym:$('org-acronym').value.trim(),
+    country:$('org-country').value.trim(),hq:$('org-hq').value.trim(),email:$('org-email').value.trim()};
+  queueCloudSave();
+  var m=$('org-msg');m.textContent='✅ Saved!';setTimeout(function(){m.textContent='';},2500);
+}
 function saveMyProfile(){
   var u=DB.users.find(function(x){return x.name===SES.name;});
   if(u){
@@ -2142,8 +2156,10 @@ function render(pg){
       else if(pg==='tar-request'){initTARForm();renderMyTARs();}
       else if(pg==='leave-request'){renderMyLeaveRequests();}
       else if(pg==='users'){renderUsers();renderUserMgmt();}
+      else if(pg==='settings'){renderSettings();}
       else if(pg==='meal'){renderMealHome();}
       else if(pg==='meal-ind'){renderInd();}
+      else if(pg==='meal-lf'){renderLF();}
       else if(pg==='meal-cfrm'){renderCFRM();}
       else if(pg==='meal-visits'){renderVisits();}
       else if(pg==='meal-find'){renderFindings();}
@@ -2810,6 +2826,31 @@ function renderInd(){
       '<div class="indm"><span><b>Project:</b> '+i.proj+'</span><span><b>Level:</b> '+i.level+'</span><span><b>Target:</b> '+fmt(i.target)+' '+i.unit+'</span><span><b>Actual:</b> '+(i.actual>0?fmt(i.actual):'Pending')+'</span><span><b>MoV:</b> '+i.mov+'</span><span><b>Frequency:</b> '+i.freq+'</span></div>'+
       (i.actual>0?'<div class="indp"><div class="pw" style="flex:1"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><div class="indv" style="color:'+col+'">'+pct+'%</div></div>':'');
     c.appendChild(d);
+  });
+}
+
+function renderLF(){
+  var sel=$('lf-proj');
+  if(sel){
+    var cur=sel.value;
+    sel.innerHTML='<option value="all">All Projects</option>';
+    Object.keys(PROJ).forEach(function(k){
+      var o=document.createElement('option');o.value=k;o.textContent=k+' — '+PROJ[k].name;
+      sel.appendChild(o);
+    });
+    if(cur&&(cur==='all'||PROJ[cur]))sel.value=cur;
+  }
+  var c=$('lf-body');if(!c)return;c.innerHTML='';
+  var pf=sel?sel.value:'all';
+  var inds=pf==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===pf;});
+  if(!inds.length){c.innerHTML='<tr><td colspan="6" class="empty">No indicators recorded yet</td></tr>';return;}
+  var order={Impact:0,Outcome:1,Output:2};
+  inds=inds.slice().sort(function(a,b){return (order[a.level]||9)-(order[b.level]||9);});
+  var badge={Impact:'bN',Outcome:'bD',Output:'bB'};
+  inds.forEach(function(i){
+    var r=el('tr');
+    r.innerHTML='<td><span class="bdg '+(badge[i.level]||'bB')+'">'+i.level+'</span></td><td>'+i.name+'</td><td>'+i.proj+'</td><td>'+fmt(i.target)+' '+i.unit+'</td><td>'+(i.actual>0?fmt(i.actual)+' '+i.unit:'-')+'</td><td>'+i.mov+'</td>';
+    c.appendChild(r);
   });
 }
 
