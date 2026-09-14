@@ -830,6 +830,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="operations-alerts"></div></div>
   </div>
   <div class="cd"><div class="cdh"><div class="cdt clk" onclick="go('ops-fleet')">Fleet Quick View</div><button class="b bo bs" onclick="go('ops-fleet')">Full Fleet</button></div>
+  <div class="stats" id="ops-fleet-mini-stats" style="padding:0 15px"></div>
   <div class="cdb tw"><table><thead><tr><th>Plate</th><th>Model</th><th>Assigned</th><th>Location</th><th>Status</th></tr></thead><tbody id="fleet-quick"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-operations"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
@@ -926,7 +927,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Upcoming Activities (Next 30 Days)</div></div><div class="cdb" id="an-upcoming"></div></div>
-    <div class="cd"><div class="cdh"><div class="cdt">Donor Reporting Deadlines</div></div><div class="cdb" id="an-donor-deadlines"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Donor Reporting Deadlines</div><button class="b bo bs" onclick="addDonorDeadline()">+ Add</button></div><div class="cdb" id="an-donor-deadlines"></div></div>
   </div>
 </div>
 
@@ -1990,8 +1991,20 @@ function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=c
 function fmt(n){return n.toLocaleString();}
 function money(n){return '$'+n.toLocaleString();}
 function dt(s){if(!s)return '-';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
-function today(){return new Date().toISOString().split('T')[0];}
-function overdue(d){if(!d)return false;return new Date(d)<new Date();}
+function today(){
+  // toISOString() is always UTC. Kabul is UTC+4:30, so between midnight and 4:30am local
+  // time this used to date everything as the previous day — including safeguarding and
+  // finance records, where the date matters. Build the date from local components instead.
+  var d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function overdue(d){
+  if(!d)return false;
+  // Compare calendar dates, not full Date/time instants — comparing instants meant a
+  // task due "today" was already flagged OVERDUE from 4:30am onward (Kabul is UTC+4:30,
+  // and new Date("2026-09-14") parses as 2026-09-14 00:00 UTC).
+  return d<today();
+}
 
 function doLogin(){
   var u=$('lu').value.trim(),p=$('lp').value.trim(),e=$('lerr');
@@ -2604,7 +2617,7 @@ function openProject(k){
   h+='<div class="stats" style="grid-template-columns:repeat(4,1fr)">'+
   '<div class="st nv"><div class="stl">Overall Progress</div><div class="stv">'+p.prog+'%</div></div>'+
   '<div class="st gr"><div class="stl">Beneficiaries</div><div class="stv">'+fmt(p.benef)+'</div><div class="sts">'+bens.length+' registered in system</div></div>'+
-  '<div class="st gd"><div class="stl">Budget Utilized</div><div class="stv">'+Math.round(p.spent/p.budget*100)+'%</div><div class="sts">'+money(p.spent)+' of '+money(p.budget)+'</div></div>'+
+  '<div class="st gd"><div class="stl">Budget Utilized</div><div class="stv">'+(p.budget?Math.round(p.spent/p.budget*100):0)+'%</div><div class="sts">'+money(p.spent)+' of '+money(p.budget)+'</div></div>'+
   '<div class="st bl"><div class="stl">Activities</div><div class="stv">'+acts.length+'</div><div class="sts">'+done+' completed</div></div></div>';
 
   h+='<div class="cd" style="border-left:4px solid '+p.color+'"><div class="cdh"><div class="cdt">Goal &amp; Impact</div></div><div class="cdb">'+
@@ -2618,7 +2631,7 @@ function openProject(k){
   var delivs=DB.deliverables.filter(function(dl){return dl.proj===k;});
   var msColor={'Achieved':'var(--green)','In Progress':'var(--blue)','Delayed':'var(--red)','Not Started':'var(--g300)'};
   var msBdg={'Achieved':'bG','In Progress':'bB','Delayed':'bR','Not Started':'bY'};
-  h+='<div class="g2"><div class="cd"><div class="cdh"><div class="cdt">Milestones</div></div><div class="cdb">';
+  h+='<div class="g2"><div class="cd"><div class="cdh"><div class="cdt">Milestones</div><button class="b bo bs" onclick="addMilestone(\''+k+'\')">+ Add</button></div><div class="cdb">';
   if(mstones.length){mstones.forEach(function(m){
     h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--g100)">'+
       '<div><div style="font-size:12.5px;font-weight:600;color:var(--g700)">'+m.title+'</div><div style="font-size:10.5px;color:var(--g500)">Target: '+dt(m.targetDate)+'</div></div>'+
@@ -2629,7 +2642,7 @@ function openProject(k){
   h+='</div></div>';
 
   var dlBdg={'Pending':'bY','In Progress':'bB','Submitted':'bO','Approved':'bG'};
-  h+='<div class="cd"><div class="cdh"><div class="cdt">Deliverables</div></div><div class="cdb">';
+  h+='<div class="cd"><div class="cdh"><div class="cdt">Deliverables</div><button class="b bo bs" onclick="addDeliverable(\''+k+'\')">+ Add</button></div><div class="cdb">';
   if(delivs.length){delivs.forEach(function(dl){
     h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--g100)">'+
       '<div><div style="font-size:12.5px;font-weight:600;color:var(--g700)">'+dl.title+'</div><div style="font-size:10.5px;color:var(--g500)">'+dl.dept+' \u00b7 Due: '+dt(dl.dueDate)+'</div></div>'+
@@ -2718,6 +2731,23 @@ function openProject(k){
   go('project-detail');
 }
 
+function addMilestone(proj){
+  var title=window.prompt('Milestone title:','');
+  if(!title||!title.trim())return;
+  var target=window.prompt('Target date (YYYY-MM-DD):',today());
+  DB.milestones.push({id:nid('MS'),proj:proj,title:title.trim(),targetDate:target||today(),status:'Not Started'});
+  if(curProjectCode)openProject(curProjectCode);
+  queueCloudSave();
+}
+function addDeliverable(proj){
+  var title=window.prompt('Deliverable title:','');
+  if(!title||!title.trim())return;
+  var dept=window.prompt('Responsible department:','');
+  var due=window.prompt('Due date (YYYY-MM-DD):',today());
+  DB.deliverables.push({id:nid('DL'),proj:proj,title:title.trim(),dept:dept||'',dueDate:due||today(),status:'Pending'});
+  if(curProjectCode)openProject(curProjectCode);
+  queueCloudSave();
+}
 function updateMilestoneStatus(sel){
   var id=sel.getAttribute('data-milestoneid');
   var m=DB.milestones.find(function(x){return x.id===id;});
@@ -2770,7 +2800,11 @@ function renderAllTasks(){
   ts.forEach(function(t){
     var r=el('tr');if(t.done)r.style.opacity='.5';
     var pb=t.prio==='high'?'bR':t.prio==='medium'?'bO':'bB';
-    var canEditTask=(t.createdBy===SES.name||!t.createdBy);
+    // Auto-generated roadmap tasks have no createdBy — previously that fell through to
+    // "editable by everyone." Now it only falls through for the task's own department
+    // (or org-wide roles), not literally anyone logged in.
+    var orgWide=['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+    var canEditTask=(t.createdBy===SES.name)||(!t.createdBy&&(orgWide||DEPTNAME[SES.role]===t.dept));
     var taskActions='';
     if(!t.done){taskActions+='<button class="b bo bs" data-task="'+t.id+'">Mark Done</button> ';}
     if(canEditTask){taskActions+='<button class="b bo bs" onclick="openEditTask(\''+t.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'task\',\''+t.id+'\')">Del</button>';}
@@ -2910,11 +2944,22 @@ function renderCFRM(){
     var cls=x.status==='Escalated'?'es':x.status==='Resolved'?'cl':'op';
     var bd=x.status==='Escalated'?'bR':x.status==='Resolved'?'bG':'bO';
     var d=el('div','cf '+cls);
-    d.innerHTML='<div style="display:flex;justify-content:space-between;gap:9px"><div><b style="font-size:12.5px">'+x.id+'</b><div style="font-size:12px;color:var(--g600);margin-top:3px">'+x.desc+'</div></div><span class="bdg '+bd+'">'+x.status+'</span></div>'+
+    d.innerHTML='<div style="display:flex;justify-content:space-between;gap:9px"><div><b style="font-size:12.5px">'+x.id+'</b><div style="font-size:12px;color:var(--g600);margin-top:3px">'+x.desc+'</div></div>'+
+      '<select data-cfrmstatus="'+x.id+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit;height:fit-content">'+
+      ['Open','Escalated','Resolved'].map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+
+      '</select></div>'+
       '<div style="font-size:10.5px;color:var(--g400);margin-top:6px">'+dt(x.date)+' · '+x.dist+' · '+x.chan+' · '+x.type+' · Assigned: '+x.assign+' · '+x.proj+'</div>';
     c.appendChild(d);
   });
 }
+
+document.addEventListener('change',function(e){
+  var cid=e.target.getAttribute && e.target.getAttribute('data-cfrmstatus');
+  if(cid){
+    var x=DB.cfrm.find(function(r){return r.id===cid;});
+    if(x){x.status=e.target.value;renderCFRM();queueCloudSave();}
+  }
+});
 
 function renderVisits(){
   var c=$('visits-body');if(!c)return;c.innerHTML='';
@@ -2973,10 +3018,21 @@ function renderRisks(){
     var d=el('div','rk '+cls);
     d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:6px"><div><b style="font-size:13px">'+r.id+' · '+r.title+'</b><div style="font-size:11px;color:var(--g500);margin-top:2px">Likelihood '+r.like+'/5 × Impact '+r.imp+'/5 = <b>'+r.score+'</b> — '+r.lvl.toUpperCase()+' · '+r.cat+' · '+r.proj+'</div></div><div class="rs '+rc+'">'+r.score+'</div></div>'+
       '<div style="font-size:12px;color:var(--g700)">'+r.desc+'</div>'+
-      '<div style="background:var(--g50);border-radius:6px;padding:8px 10px;font-size:11.5px;color:var(--g600);margin-top:8px"><b>Mitigation:</b> '+r.mit+'<br><b style="color:var(--navy)">Owner:</b> '+r.owner+' · <span class="bdg bO">'+r.status+'</span></div>';
+      '<div style="background:var(--g50);border-radius:6px;padding:8px 10px;font-size:11.5px;color:var(--g600);margin-top:8px"><b>Mitigation:</b> '+r.mit+'<br><b style="color:var(--navy)">Owner:</b> '+r.owner+' · '+
+      '<select data-riskstatus="'+r.id+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit">'+
+      ['Active Risk','Monitoring','Controlled','Closed'].map(function(s){return '<option'+(s===r.status?' selected':'')+'>'+s+'</option>';}).join('')+
+      '</select></div>';
     c.appendChild(d);
   });
 }
+
+document.addEventListener('change',function(e){
+  var rid=e.target.getAttribute && e.target.getAttribute('data-riskstatus');
+  if(rid){
+    var r=DB.risks.find(function(x){return x.id===rid;});
+    if(r){r.status=e.target.value;queueCloudSave();}
+  }
+});
 
 // ============ DOCUMENTS ============
 function renderDocs(cid,dept){
@@ -3094,7 +3150,7 @@ function renderDeptTasks(cid,dept){
 function renderFinBudget(){
   var c=$('fin-budget');if(!c)return;c.innerHTML='';
   Object.keys(PROJ).forEach(function(k){
-    var p=PROJ[k],pct=Math.round(p.spent/p.budget*100);
+    var p=PROJ[k],pct=p.budget?Math.round(p.spent/p.budget*100):0;
     var d=el('div','cbar');
     d.innerHTML='<div class="cbl">'+k+'</div><div class="cbt"><div class="cbf" style="width:'+pct+'%;background:'+p.color+'"></div></div><div class="cbv">'+pct+'%</div>';
     c.appendChild(d);
@@ -3460,8 +3516,11 @@ function renderFleetQuick(){
     r.innerHTML='<td><b>'+v.plate+'</b></td><td>'+v.model+'</td><td>'+v.assign+'</td><td>'+v.loc+'</td><td><span class="bdg '+sb+'">'+v.status+'</span></td>';
     c.appendChild(r);
   });
-  if($('operations-stats')){
-    var s=$('operations-stats');
+  if($('ops-fleet-mini-stats')){
+    // Was previously overwriting #operations-stats — the same element renderDept() uses
+    // for Open Tasks/Completed/Documents/Open Findings — so the Operations home page's
+    // own department stats never actually showed, only these fleet numbers.
+    var s=$('ops-fleet-mini-stats');
     var ok=DB.fleet.filter(function(v){return v.status==='Operational';}).length;
     var due=DB.fleet.filter(function(v){return v.status==='Service Due';}).length;
     var mt=DB.fleet.filter(function(v){return v.status==='Maintenance';}).length;
@@ -4165,7 +4224,7 @@ function prFinalStep(track,amount){
     if(amount<50000) return {role:'deputy',label:'Deputy / Country Director approves'};
     return {role:'executive',label:'Executive Director / Board approves'};
   } else {
-    if(amount<9999) return {role:'operations',label:'Operations approves'};
+    if(amount<10000) return {role:'operations',label:'Operations approves'};
     if(amount<50000) return {role:'progdeputy',label:'Program Deputy Director approves'};
     return {role:'executive',label:'Executive Director / Board approves'};
   }
@@ -4260,10 +4319,12 @@ function updatePRHeadStatus(){
 
 var prfCounters={};
 function nextPRFNumber(projCode){
+  // Recomputed fresh from DB.pr every time rather than an incrementing counter that
+  // consumed a number just from opening the form or changing the project dropdown,
+  // which produced gaps in what Finance reads as a sequential document series.
   var prefix = projCode && projCode!=='Core/Admin' ? projCode.replace(/[^A-Z0-9]/gi,'').toUpperCase().slice(0,6) : 'GEN';
-  if(!prfCounters[prefix])prfCounters[prefix]=DB.pr.filter(function(p){return p.prf&&p.prf.indexOf('PR-'+prefix)===0;}).length;
-  prfCounters[prefix]++;
-  return 'PR-'+prefix+String(prfCounters[prefix]).padStart(3,'0');
+  var n = DB.pr.filter(function(p){return p.prf&&p.prf.indexOf('PR-'+prefix)===0;}).length + 1;
+  return 'PR-'+prefix+String(n).padStart(3,'0');
 }
 
 var prItemSeq=0;
@@ -4374,6 +4435,13 @@ function submitPR(){
   var isHead=track==='ops'?'yes':($('pr-ishead')?$('pr-ishead').value:'yes');
   var chain=buildPRChain(track,total,dept,isHead);
   var prf=$('pr-prf-display').value||$('pr-prf-display').textContent;
+  // Belt-and-suspenders: if another submission (this tab or another device) already
+  // took this exact reference number since the form last computed it, bump past it
+  // rather than filing two purchase requests under the same PRF number.
+  while(DB.pr.some(function(p){return p.prf===prf;})){
+    var m=prf.match(/^(PR-[A-Z0-9]+)(\d{3})$/);
+    prf=m?m[1]+String(parseInt(m[2],10)+1).padStart(3,'0'):prf+'-2';
+  }
   var pr={
     id:nid('PR'),prf:prf,dept:dept,track:track,items:validItems,total:total,
     project:$('pr-project').value,donor:$('pr-donor').value.trim(),
@@ -4616,7 +4684,7 @@ function generateSignedDoc(type,id){
     rec=DB.wf.find(function(x){return x.id===id;});
     if(!rec)return;
     title='Workflow '+rec.id;
-    sub=rec.proj+' \\u2014 '+rec.title;
+    sub=rec.proj+' — '+rec.title;
     details=[
       ['Activity',rec.title],
       ['Project',rec.proj],
@@ -4642,10 +4710,10 @@ function generateSignedDoc(type,id){
     var histEntry = hist.find(function(hh){return c.label && hh.a && (c.status==='done'||c.status==='rejected') && hist.indexOf(hh)===i;}) || hist[i+ (type==='wf'?0:0)];
     var matchHist = hist[i] || null;
     var decision = c.status==='done'?'Approved':c.status==='rejected'?'Rejected':c.status==='active'?'Pending':'Not Reached';
-    var approverName = matchHist ? matchHist.by : (c.status==='done'||c.status==='rejected' ? 'Recorded' : '\\u2014');
-    var dateStr = matchHist ? matchHist.dt : '\\u2014';
+    var approverName = matchHist ? matchHist.by : (c.status==='done'||c.status==='rejected' ? 'Recorded' : '—');
+    var dateStr = matchHist ? matchHist.dt : '—';
     var comment = matchHist ? matchHist.n : '';
-    var sigMark = (c.status==='done') ? '<span style="font-family:cursive;font-size:14px;color:#1A3A6B">'+(matchHist?matchHist.by:'Signed')+'</span>' : (c.status==='rejected'?'\\u2014':'Pending');
+    var sigMark = (c.status==='done') ? '<span style="font-family:cursive;font-size:14px;color:#1A3A6B">'+(matchHist?matchHist.by:'Signed')+'</span>' : (c.status==='rejected'?'—':'Pending');
     sigRows+='<tr><td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+c.label+'</td>'+
       '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+approverName+'</td>'+
       '<td style="padding:8px;border:1px solid #cbd5e1;font-size:11px">'+decision+'</td>'+
@@ -4794,7 +4862,7 @@ function renderUpcomingActivities(){
   var h='';
   items.forEach(function(t){
     h+='<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--g100);font-size:12px">'+
-      '<div>'+t.title+'<div style="font-size:10.5px;color:var(--g500)">'+t.dept+(t.proj?' \\u00b7 '+t.proj:'')+'</div></div>'+
+      '<div>'+t.title+'<div style="font-size:10.5px;color:var(--g500)">'+t.dept+(t.proj?' · '+t.proj:'')+'</div></div>'+
       '<div style="font-weight:600;color:var(--navy)">'+dt(t.due)+'</div></div>';
   });
   box.innerHTML=h;
@@ -4808,10 +4876,21 @@ function renderDonorDeadlines(){
   sorted.forEach(function(d){
     var isNear=overdue(d.due) || (new Date(d.due)-new Date())/86400000 < 30;
     h+='<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--g100);font-size:12px">'+
-      '<div>'+d.report+'<div style="font-size:10.5px;color:var(--g500)">'+d.proj+' \\u00b7 '+d.donor+'</div></div>'+
+      '<div>'+d.report+'<div style="font-size:10.5px;color:var(--g500)">'+d.proj+' · '+d.donor+'</div></div>'+
       '<div style="font-weight:600;color:'+(isNear?'var(--red)':'var(--navy)')+'">'+dt(d.due)+'</div></div>';
   });
   box.innerHTML=h||'<div class="empty">No donor deadlines recorded</div>';
+}
+
+function addDonorDeadline(){
+  var report=window.prompt('Report name (e.g. "Q3 Narrative Report"):','');
+  if(!report||!report.trim())return;
+  var proj=window.prompt('Project code:','');
+  var donor=window.prompt('Donor:','');
+  var due=window.prompt('Due date (YYYY-MM-DD):',today());
+  DB.donorDeadlines.push({id:nid('DD'),report:report.trim(),proj:proj||'',donor:donor||'',due:due||today()});
+  renderDonorDeadlines();
+  queueCloudSave();
 }
 
 function renderProgramAnalysisFull(){
@@ -4938,14 +5017,14 @@ function renderITTicketCard(tk,showITActions){
   var card=el('div','cd');
   var body='<div class="cdb">';
   body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
-  body+='<div><b>'+tk.id+'</b> \\u2014 '+tk.title+'<div style="font-size:11px;color:var(--g500);margin-top:3px">'+tk.dept+' \\u00b7 Reported by '+tk.raisedBy+' \\u00b7 '+dt(tk.created)+'</div></div>';
+  body+='<div><b>'+tk.id+'</b> — '+tk.title+'<div style="font-size:11px;color:var(--g500);margin-top:3px">'+tk.dept+' · Reported by '+tk.raisedBy+' · '+dt(tk.created)+'</div></div>';
   body+='<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="bdg '+(tk.prio==='high'?'bR':tk.prio==='medium'?'bO':'bY')+'">'+tk.prio+' priority</span><span class="bdg '+itStatusBdg[tk.status]+'">'+tk.status+'</span></div>';
   body+='</div>';
   body+='<div style="font-size:12px;color:var(--g600);margin-bottom:8px">'+tk.desc+'</div>';
   if(tk.hist.length){
     body+='<div style="margin-top:8px">';
     tk.hist.forEach(function(hh){
-      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' \\u2014 '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
+      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
     });
     body+='</div>';
   }
@@ -4959,7 +5038,7 @@ function renderITTicketCard(tk,showITActions){
   }
   if(!showITActions && tk.status==='Resolved'){
     body+='<div class="wfa"><span class="bdg bO" style="margin-right:8px">Please verify this is fixed</span>'+
-      '<button class="b bn bs" data-itverify="'+tk.id+'">Confirm \\u2014 Problem Solved</button>'+
+      '<button class="b bn bs" data-itverify="'+tk.id+'">Confirm — Problem Solved</button>'+
       '<button class="b bo bs" data-itreopen="'+tk.id+'">Still Not Working</button></div>';
   }
   body+='</div>';
@@ -5077,7 +5156,7 @@ function renderTARCard(tar,showActions){
   var card=el('div','cd');
   var body='<div class="cdb">';
   body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
-  body+='<div><b>'+tar.id+'</b> \\u2014 '+tar.purpose+'<div style="font-size:11px;color:var(--g500);margin-top:3px">'+tar.dept+(tar.proj?' \\u00b7 '+tar.proj:'')+' \\u00b7 Requested by '+tar.requestedBy+' \\u00b7 '+dt(tar.created)+'</div></div>';
+  body+='<div><b>'+tar.id+'</b> — '+tar.purpose+'<div style="font-size:11px;color:var(--g500);margin-top:3px">'+tar.dept+(tar.proj?' · '+tar.proj:'')+' · Requested by '+tar.requestedBy+' · '+dt(tar.created)+'</div></div>';
   body+='<span class="bdg '+tarStatusBdg[tar.status]+'">'+tar.status+'</span>';
   body+='</div>';
   body+='<div style="font-size:12px;color:var(--g600);margin-bottom:6px"><b>Destination:</b> '+tar.dest+' &nbsp; <b>Departure:</b> '+dt(tar.depart)+' &nbsp; <b>Return:</b> '+dt(tar.ret)+'</div>';
@@ -5085,7 +5164,7 @@ function renderTARCard(tar,showActions){
   if(tar.hist.length){
     body+='<div style="margin-top:8px">';
     tar.hist.forEach(function(hh){
-      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' \\u2014 '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
+      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
     });
     body+='</div>';
   }
@@ -5287,14 +5366,14 @@ function renderLeaveCard(lv,showActions){
   var card=el('div','cd');
   var body='<div class="cdb">';
   body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
-  body+='<div><b>'+lv.id+'</b> \\u2014 '+lv.type+' Leave<div style="font-size:11px;color:var(--g500);margin-top:3px">'+lv.dept+' \\u00b7 '+lv.requestedBy+' \\u00b7 '+dt(lv.start)+' to '+dt(lv.end)+' ('+lv.days+' days)</div></div>';
+  body+='<div><b>'+lv.id+'</b> — '+lv.type+' Leave<div style="font-size:11px;color:var(--g500);margin-top:3px">'+lv.dept+' · '+lv.requestedBy+' · '+dt(lv.start)+' to '+dt(lv.end)+' ('+lv.days+' days)</div></div>';
   body+='<span class="bdg '+lvStatusBdg[lv.status]+'">'+lv.status+'</span>';
   body+='</div>';
   body+='<div style="font-size:12px;color:var(--g600);margin-bottom:8px">'+lv.reason+'</div>';
   if(lv.hist.length){
     body+='<div style="margin-top:8px">';
     lv.hist.forEach(function(hh){
-      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' \\u2014 '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
+      body+='<div style="font-size:11px;color:var(--g500);background:var(--g50);padding:6px 9px;border-radius:6px;margin-bottom:5px">'+hh.dt+' — '+hh.a+' by '+hh.by+(hh.n?': '+hh.n:'')+'</div>';
     });
     body+='</div>';
   }
@@ -5813,7 +5892,7 @@ document.addEventListener('keydown',function(e){
       </select>
     </div>
     <div class="fg ff">
-      <label>Linked Projects (which projects this user can see data for)</label>
+      <label>Linked Projects (for reference only — does not currently restrict what this user can see or do)</label>
       <select id="nu-projects" multiple size="4" style="height:auto">
         <option value="All" selected>All Projects</option>
         <option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option>
@@ -6026,7 +6105,7 @@ function render(){
 
   var shown = selected ? list.filter(function(p){return key(p.province)===selected;}) : list;
   var name = selected ? (byKey.get(selected)?byKey.get(selected).properties.shapeName:selected) : null;
-  document.getElementById('afg-listttl').textContent = selected ? (name+' \\u2014 click map to clear') : 'All Projects';
+  document.getElementById('afg-listttl').textContent = selected ? (name+' — click map to clear') : 'All Projects';
   var listEl=document.getElementById('afg-list');
   if(!shown.length){ listEl.innerHTML='<div style="padding:14px;color:#94a3b8;font-size:12px;text-align:center">No projects here yet.</div>'; return; }
   var html='';
