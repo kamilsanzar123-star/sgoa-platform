@@ -515,6 +515,10 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cdh"><div class="cdt">Pending Executive Approval</div></div>
     <div class="cdb" id="pending-projects-list"></div>
   </div>
+  <div class="cd" id="deletion-requests-card" style="display:none;border-left:3px solid var(--red)">
+    <div class="cdh"><div class="cdt">Project Deletion Requests &mdash; Awaiting Executive Director Approval</div></div>
+    <div class="cdb" id="deletion-requests-list"></div>
+  </div>
   <div id="project-cards"></div>
 </div>
 
@@ -2682,6 +2686,11 @@ function renderProjectCards(){
       '<div class="pw" style="margin-bottom:11px"><div class="pb" style="width:'+p.prog+'%;background:'+p.color+'"></div></div>'+
       '<button class="b bn bs" data-proj="'+k+'">View Full Details</button>'+
       (SES.role==='executive'?'<button class="b bs" style="background:var(--red);color:#fff;margin-left:6px" onclick="deleteItem(\'project-live\',\''+k+'\')">Delete Project</button>':'')+
+      (SES.role!=='executive' && p.deletionRequest && p.deletionRequest.status==='pending'?
+        '<span class="bdg bO" style="margin-left:6px">Deletion requested — awaiting ED approval</span>'+
+        (p.deletionRequest.by===SES.name?' <button class="b bo bs" style="margin-left:6px" onclick="cancelProjectDeletionRequest(\''+k+'\')">Cancel Request</button>':'')
+        :(SES.role!=='executive' && (SES.role==='programs' || p.mgr===SES.name)?
+          '<button class="b bo bs" style="margin-left:6px;color:var(--red);border-color:var(--red)" onclick="requestProjectDeletion(\''+k+'\')">Request Deletion</button>':''))+
       '</div>';
     c.appendChild(card);
   });
@@ -3960,6 +3969,7 @@ function renderProjectAddBtn(){
     btnBox.innerHTML='';
   }
   renderPendingProjects();
+  renderProjectDeletionRequests();
 }
 
 function renderLogframeSummary(p){
@@ -5799,6 +5809,82 @@ function saveEditExpenditure(){
   alert('Expenditure updated successfully.');
 }
 
+// Remove every category of record linked to an active project — previously only 3 of
+// roughly 15 were cleaned up, leaving the Finance ledger and MEAL indicators still
+// counting against a project that no longer exists. Shared by the Executive's direct
+// delete and by an approved deletion request.
+function cascadeDeleteActiveProject(id){
+  delete PROJ[id];
+  DB.activities=DB.activities.filter(function(a){return a.proj!==id;});
+  DB.tasks=DB.tasks.filter(function(t){return t.proj!==id;});
+  DB.milestones=DB.milestones.filter(function(m){return m.proj!==id;});
+  DB.indicators=DB.indicators.filter(function(x){return x.proj!==id;});
+  DB.expenditures=DB.expenditures.filter(function(x){return x.proj!==id;});
+  DB.cfrm=DB.cfrm.filter(function(x){return x.proj!==id;});
+  DB.findings=DB.findings.filter(function(x){return x.proj!==id;});
+  DB.risks=DB.risks.filter(function(x){return x.proj!==id;});
+  DB.benef=DB.benef.filter(function(x){return x.proj!==id;});
+  DB.proc=DB.proc.filter(function(x){return x.proj!==id;});
+  DB.dist=DB.dist.filter(function(x){return x.proj!==id;});
+  DB.visits=DB.visits.filter(function(x){return x.proj!==id;});
+  DB.pr=DB.pr.filter(function(x){return x.project!==id;});
+  var pIdx=DB.pendingProjects.findIndex(function(x){return x.code===id;});
+  if(pIdx>-1){DB.pendingProjects.splice(pIdx,1);}
+}
+
+// ============ PROJECT DELETION REQUESTS (Programs/manager requests, Executive approves) ============
+function requestProjectDeletion(code){
+  var p=PROJ[code];if(!p)return;
+  if(p.deletionRequest && p.deletionRequest.status==='pending'){alert('A deletion request for this project is already awaiting Executive Director approval.');return;}
+  var reason=window.prompt('Reason for requesting this project be deleted:','');
+  if(!reason||!reason.trim())return;
+  p.deletionRequest={by:SES.name,reason:reason.trim(),requestedOn:today(),status:'pending'};
+  queueCloudSave();
+  renderProjectCards();renderProjectDeletionRequests();
+  alert('Deletion request sent to the Executive Director for approval.');
+}
+function cancelProjectDeletionRequest(code){
+  var p=PROJ[code];if(!p||!p.deletionRequest)return;
+  p.deletionRequest=null;
+  queueCloudSave();
+  renderProjectCards();renderProjectDeletionRequests();
+}
+function approveProjectDeletion(code){
+  var p=PROJ[code];if(!p||!p.deletionRequest)return;
+  var reason=p.deletionRequest.reason,requestedBy=p.deletionRequest.by;
+  cascadeDeleteActiveProject(code);
+  DB.deletionLog.unshift({type:'project-live',recordId:code,reason:'Requested by '+requestedBy+': '+reason,by:SES.name,at:new Date().toISOString()});
+  renderProjectCards();renderPendingProjects();renderProjectDeletionRequests();refreshAllProjectDropdowns();refreshAll();
+  queueCloudSave();
+  alert('Project deleted (requested by '+requestedBy+', approved by '+SES.name+').');
+}
+function denyProjectDeletion(code){
+  var p=PROJ[code];if(!p||!p.deletionRequest)return;
+  var note=window.prompt('Reason for denying this deletion request (optional):','');
+  p.deletionRequest.status='denied';
+  p.deletionRequest.deniedBy=SES.name;
+  p.deletionRequest.denyNote=note||'';
+  renderProjectCards();renderProjectDeletionRequests();
+  queueCloudSave();
+  alert('Deletion request denied.');
+}
+function renderProjectDeletionRequests(){
+  var box=$('deletion-requests-card'),list=$('deletion-requests-list');
+  if(!box||!list)return;
+  var codes=Object.keys(PROJ).filter(function(k){return PROJ[k].deletionRequest && PROJ[k].deletionRequest.status==='pending';});
+  if(!codes.length || SES.role!=='executive'){box.style.display='none';return;}
+  box.style.display='block';
+  list.innerHTML='';
+  codes.forEach(function(k){
+    var p=PROJ[k],r=p.deletionRequest;
+    var d=el('div','cd');d.style.marginBottom='10px';
+    d.innerHTML='<div class="cdb"><div><b>'+esc(p.name)+'</b> ('+esc(k)+')<div style="font-size:11px;color:var(--g500);margin-top:3px">Requested by '+esc(r.by)+' on '+dt(r.requestedOn)+'</div>'+
+      '<div style="font-size:12px;color:var(--g700);margin-top:6px;background:var(--g50);padding:8px;border-radius:6px"><b>Reason:</b> '+esc(r.reason)+'</div></div>'+
+      '<div class="wfa" style="margin-top:9px"><button class="b bs" style="background:var(--red);color:#fff" onclick="approveProjectDeletion(\''+k+'\')">Approve Deletion</button><button class="b bo bs" onclick="denyProjectDeletion(\''+k+'\')">Deny</button></div></div>';
+    list.appendChild(d);
+  });
+}
+
 function deleteItem(type,id){
   var m=document.getElementById('m-delete-confirm');
   if(!m){
@@ -5834,26 +5920,8 @@ function confirmDelete(){
     if(idx>-1){DB.pendingProjects.splice(idx,1);}
     closeM('m-delete-confirm');renderPendingProjects();refreshAll();
   } else if(type==='project-live'){
-    delete PROJ[id];
-    // Remove every category of record linked to this project — previously only 3 of
-    // roughly 15 were cleaned up, leaving the Finance ledger and MEAL indicators still
-    // counting against a project that no longer exists.
-    DB.activities=DB.activities.filter(function(a){return a.proj!==id;});
-    DB.tasks=DB.tasks.filter(function(t){return t.proj!==id;});
-    DB.milestones=DB.milestones.filter(function(m){return m.proj!==id;});
-    DB.indicators=DB.indicators.filter(function(x){return x.proj!==id;});
-    DB.expenditures=DB.expenditures.filter(function(x){return x.proj!==id;});
-    DB.cfrm=DB.cfrm.filter(function(x){return x.proj!==id;});
-    DB.findings=DB.findings.filter(function(x){return x.proj!==id;});
-    DB.risks=DB.risks.filter(function(x){return x.proj!==id;});
-    DB.benef=DB.benef.filter(function(x){return x.proj!==id;});
-    DB.proc=DB.proc.filter(function(x){return x.proj!==id;});
-    DB.dist=DB.dist.filter(function(x){return x.proj!==id;});
-    DB.visits=DB.visits.filter(function(x){return x.proj!==id;});
-    DB.pr=DB.pr.filter(function(x){return x.project!==id;});
-    var pIdx=DB.pendingProjects.findIndex(function(x){return x.code===id;});
-    if(pIdx>-1){DB.pendingProjects.splice(pIdx,1);}
-    closeM('m-delete-confirm');renderProjectCards();renderPendingProjects();refreshAllProjectDropdowns();refreshAll();
+    cascadeDeleteActiveProject(id);
+    closeM('m-delete-confirm');renderProjectCards();renderPendingProjects();renderProjectDeletionRequests();refreshAllProjectDropdowns();refreshAll();
   } else if(type==='pr'){
     idx=DB.pr.findIndex(function(x){return x.id===id;});
     if(idx>-1){DB.pr.splice(idx,1);}
