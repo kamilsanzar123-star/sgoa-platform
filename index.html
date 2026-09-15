@@ -1190,7 +1190,7 @@ tbody tr:hover td{background:var(--g50);}
         <div style="font-size:12.5px;font-weight:600;color:var(--navy);margin-bottom:8px">Apply <span id="cc-cur-label">this currency</span> to Existing Projects</div>
         <div class="fr">
           <div class="fg"><label>Apply To</label><select id="cc-proj"></select></div>
-          <div class="fg" id="cc-fx-wrap" style="display:none"><label>Exchange Rate to USD</label><input type="number" step="0.0001" id="cc-fx" placeholder="e.g. 0.0140 (1 AFN = $0.0140)"></div>
+          <div class="fg" id="cc-fx-wrap" style="display:none"><label id="cc-fx-label">Exchange Rate</label><input type="number" step="0.0001" id="cc-fx" placeholder="e.g. 70 (1 USD = 70 AFN)"></div>
         </div>
         <div style="font-size:10.5px;color:var(--g500);margin-bottom:8px">Converts the project's budget, spent-to-date, and every expenditure/procurement amount already recorded against it, so the real-world value is preserved and everywhere it's shown &mdash; the project card, its detail page, Finance, Procurement &mdash; updates to the new currency.</div>
         <div id="cc-preview" style="font-size:12px;color:var(--g700);margin-bottom:8px"></div>
@@ -1519,7 +1519,7 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Sector</label><select id="pj-sector"><option>Education</option><option>Health</option><option>Livelihoods</option><option>WASH</option><option>Protection</option><option>Food Security</option></select></div>
 <div class="fg"><label>Currency</label><select id="pj-currency" onchange="togglePjFxField()"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select></div>
 <div class="fg"><label>Budget</label><input type="number" id="pj-budget"></div>
-<div class="fg ff" id="pj-fx-wrap" style="display:none"><label>Exchange Rate to USD</label><input type="number" step="0.0001" id="pj-fx" placeholder="e.g. 0.0140 (1 AFN = $0.0140)"><div style="font-size:10px;color:var(--g500);margin-top:3px">Used only to combine this project's budget into org-wide USD totals &mdash; the project itself is tracked and reported in the currency above.</div></div>
+<div class="fg ff" id="pj-fx-wrap" style="display:none"><label id="pj-fx-label">Exchange Rate</label><input type="number" step="0.0001" id="pj-fx" placeholder="e.g. 70 (1 USD = 70 AFN)"><div style="font-size:10px;color:var(--g500);margin-top:3px">Used only to combine this project's budget into org-wide USD totals &mdash; the project itself is tracked and reported in the currency above.</div></div>
 <div class="fg"><label>Target Beneficiaries</label><input type="number" id="pj-benef"></div>
 <div class="fg"><label>Start Date</label><input type="date" id="pj-start"></div>
 <div class="fg"><label>End Date</label><input type="date" id="pj-end"></div>
@@ -2266,6 +2266,12 @@ function renderSettings(){
   $('org-info-users').textContent=DB.users.length+Object.keys(CRED).length;
   if($('org-info-lastbackup'))$('org-info-lastbackup').textContent=o.lastBackupAt?new Date(o.lastBackupAt).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Never';
   if($('org-logo-preview'))$('org-logo-preview').src=(o.logo)||DEFAULT_LOGO_SRC;
+  // The currency-conversion panel below must never persist stale state across a re-render
+  // (navigating away and back, or the periodic cross-department refresh) — it used to stay
+  // visible showing whichever currency was last picked while the dropdown itself silently
+  // reverted to the saved value, so Preview/Apply would silently act on the wrong currency.
+  if($('cc-box'))$('cc-box').style.display='none';
+  _ccPending=null;_ccTargetCurrency=null;
   renderAuditLog();
 }
 function renderAuditLog(){
@@ -2307,19 +2313,31 @@ function saveOrgSettings(){
 // currency. This box appears under the picker so that's a deliberate, previewed action instead
 // of silently relabeling numbers.
 var _ccPending=null;
+// Captured the moment a currency is picked, and used by preview/apply instead of re-reading
+// the dropdown live — if the Settings page re-renders in between (navigating away and back,
+// the periodic cross-department refresh) the dropdown silently resets to the last-saved value,
+// which used to make Preview/Apply act on the wrong (unchanged) currency with no visible error.
+var _ccTargetCurrency=null;
 function onDefaultCurrencyChanged(){
   var cur=$('org-currency').value;
+  _ccTargetCurrency=cur;
   $('cc-cur-label').textContent=(CURRENCIES[cur]||{}).name?(CURRENCIES[cur].name+' ('+cur+')'):cur;
   $('cc-fx-wrap').style.display=cur==='USD'?'none':'block';
+  if($('cc-fx-label'))$('cc-fx-label').textContent='Exchange Rate (1 USD = how many '+cur+')';
+  if($('cc-fx')){$('cc-fx').placeholder='e.g. 70 (1 USD = 70 '+cur+')';$('cc-fx').value='';}
   $('cc-box').style.display='block';
   $('cc-preview').innerHTML='';
   $('cc-apply-btn').style.display='none';
   _ccPending=null;
 }
 function previewCurrencyChange(){
-  var newCur=$('org-currency').value;
-  var newFx=newCur==='USD'?1:(parseFloat($('cc-fx').value)||0);
-  if(newCur!=='USD' && newFx<=0){alert('Please enter the exchange rate to USD for '+newCur+' (how many US dollars is 1 '+newCur+' worth).');return;}
+  var newCur=_ccTargetCurrency;
+  if(!newCur){alert('Please choose a currency from the Default Currency dropdown above first.');return;}
+  // Asked as "1 USD = how many [currency]" (e.g. 70 for AFN) — the natural way this is quoted
+  // — then inverted into the USD-per-unit rate (fxToUSD) the rest of the app works with.
+  var rateFromUSD=newCur==='USD'?1:(parseFloat($('cc-fx').value)||0);
+  if(newCur!=='USD' && rateFromUSD<=0){alert('Please enter the exchange rate (how many '+newCur+' equal 1 US dollar).');return;}
+  var newFx=newCur==='USD'?1:(1/rateFromUSD);
   var projSel=$('cc-proj').value;
   var codes=projSel==='all'?Object.keys(PROJ):[projSel];
   if(!codes.length || !PROJ[codes[0]]){alert('No project selected to convert.');return;}
@@ -2597,7 +2615,10 @@ function initProjectLFFields(){
 function togglePjFxField(){
   var sel=$('pj-currency'),wrap=$('pj-fx-wrap');
   if(!sel||!wrap)return;
-  wrap.style.display=sel.value==='USD'?'none':'block';
+  var cur=sel.value;
+  wrap.style.display=cur==='USD'?'none':'block';
+  if($('pj-fx-label'))$('pj-fx-label').textContent='Exchange Rate (1 USD = how many '+cur+')';
+  if($('pj-fx'))$('pj-fx').placeholder='e.g. 70 (1 USD = 70 '+cur+')';
 }
 function collectLFGoals(){
   return Array.from(document.querySelectorAll('#pj-goals-wrap .pj-goal-input')).map(function(i){return i.value.trim();}).filter(Boolean);
@@ -4599,8 +4620,12 @@ function saveProject(){
   if(codeTaken){alert('Project code "'+code+'" is already in use by another project. Please choose a different code — reusing one will overwrite the existing project\'s data.');return;}
   if(!$('pj-budget').value || parseInt($('pj-budget').value)<=0){alert('Please enter a budget greater than 0.');return;}
   var currency=$('pj-currency')?$('pj-currency').value:'USD';
-  var fxToUSD=currency==='USD'?1:(parseFloat($('pj-fx').value)||0);
-  if(currency!=='USD' && fxToUSD<=0){alert('Please enter the exchange rate to USD for '+currency+' (e.g. how many US dollars is 1 '+currency+' worth).');return;}
+  // Asked as "1 USD = how many [currency]" (e.g. 70 for AFN) since that's how exchange rates
+  // are naturally quoted for this currency, not the other way round — fxToUSD (USD per unit)
+  // is derived from it for the rest of the app, which only ever consumes fxToUSD.
+  var rateFromUSD=currency==='USD'?1:(parseFloat($('pj-fx').value)||0);
+  if(currency!=='USD' && rateFromUSD<=0){alert('Please enter the exchange rate for '+currency+' (how many '+currency+' equal 1 US dollar).');return;}
+  var fxToUSD=currency==='USD'?1:(1/rateFromUSD);
   var goals=collectLFGoals();
   var outcomes=collectLFGroup('pj-outcomes-wrap','pj-outcome-text','pj-outcome-ind-text');
   var outputs=collectLFGroup('pj-outputs-wrap','pj-output-text','pj-output-ind-text');
