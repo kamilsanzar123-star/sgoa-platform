@@ -5605,9 +5605,14 @@ function renderUserMgmt(){
 // per account, whether they logged in today and how often over the week/month/year, plus a
 // drill-down chart of their login history at daily/weekly/monthly/yearly granularity.
 function loginAccountsList(){
-  var list=[];
-  Object.keys(CRED).forEach(function(k){list.push({username:CRED[k].u,name:CRED[k].n,role:CRED[k].r});});
-  DB.users.forEach(function(u){list.push({username:u.username,name:u.name,role:ROLE_TEMPLATE_LABEL[u.roleTemplate]||u.roleTemplate});});
+  // Every one of the 13 built-in CRED accounts gets copied into DB.users the first time the
+  // app loads (see migrateCredAccounts()) so edits like a username/password change stick.
+  // After that, the same real person exists in both places -- list DB.users first (the
+  // up-to-date copy) and only fall back to CRED for an account that somehow hasn't migrated
+  // yet, so nobody shows up twice.
+  var list=[],seen={};
+  DB.users.forEach(function(u){list.push({username:u.username,name:u.name,role:ROLE_TEMPLATE_LABEL[u.roleTemplate]||u.roleTemplate});seen[u.username]=true;});
+  Object.keys(CRED).forEach(function(k){if(!seen[CRED[k].u])list.push({username:CRED[k].u,name:CRED[k].n,role:CRED[k].r});});
   return list;
 }
 function renderLoginActivity(){
