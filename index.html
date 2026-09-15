@@ -2809,14 +2809,22 @@ function shadeColor(hex,pct){
 function bars(cid,labels,sets,axisFmt){
   var c=$(cid);if(!c)return;var x=c.getContext('2d');
   x.clearRect(0,0,c.width,c.height);
-  var W=c.width,H=c.height,P={t:14,r:8,b:26,l:44};
-  var cw=W-P.l-P.r,ch=H-P.t-P.b;
+  var W=c.width,H=c.height;
   var all=[];sets.forEach(function(s){s.d.forEach(function(v){all.push(v);});});
   var mx=Math.max.apply(null,all)*1.18||1;
   // axisFmt lets a non-money chart (e.g. a plain count) supply its own y-axis label instead
   // of the dollar-millions format every existing money chart here still relies on by default.
   axisFmt=axisFmt||function(v){return '$'+(v/1000000).toFixed(1)+'M';};
-  x.strokeStyle='#eef1f5';x.lineWidth=1;x.font='9px Arial';x.fillStyle='#94a3b8';
+  x.font='9px Arial';
+  // The left margin used to be a fixed 44px, sized only for a single-character "$" symbol --
+  // a multi-character currency label like "AFG 107.2M" is wider than that and was getting
+  // clipped against the canvas's left edge (the start of the string simply falls off-canvas).
+  // Measure the actual labels that will be drawn and size the margin to fit the widest one.
+  var maxLabelW=0;
+  for(var mi=0;mi<=4;mi++){ maxLabelW=Math.max(maxLabelW,x.measureText(axisFmt(mx*mi/4)).width); }
+  var P={t:14,r:8,b:26,l:Math.max(44,maxLabelW+13)};
+  var cw=W-P.l-P.r,ch=H-P.t-P.b;
+  x.strokeStyle='#eef1f5';x.lineWidth=1;x.fillStyle='#94a3b8';
   for(var i=0;i<=4;i++){
     var y=P.t+ch-(i/4)*ch;
     x.beginPath();x.moveTo(P.l,y);x.lineTo(W-P.r,y);x.stroke();
