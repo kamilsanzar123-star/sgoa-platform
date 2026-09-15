@@ -1181,29 +1181,47 @@ tbody tr:hover td{background:var(--g50);}
 
 <div class="pg" id="p-deputy">
   <div class="ph"><div><h1>Deputy Director</h1><p>Org-wide Purchase Request and Timesheet approvals, cross-department oversight</p></div></div>
-  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+  <div class="stats">
     <div class="st og"><div class="stl">PR Approvals Pending</div><div class="stv" id="deputy-pr-pending">0</div></div>
     <div class="st bl"><div class="stl">Timesheets Pending</div><div class="stv" id="deputy-ts-pending">0</div></div>
     <div class="st nv"><div class="stl">Active Projects</div><div class="stv" id="deputy-projects">0</div></div>
+    <div class="st rd"><div class="stl">Open Commitments (USD equiv.)</div><div class="stv" id="deputy-cmt-open">$0</div></div>
+    <div class="st gr"><div class="stl">Open Vacancies</div><div class="stv" id="deputy-vac-open">0</div></div>
+    <div class="st og"><div class="stl">POs Awaiting Receipt</div><div class="stv" id="deputy-po-open">0</div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Quick Links</div></div><div class="cdb" style="display:flex;gap:10px">
+  <div class="cd"><div class="cdh"><div class="cdt">Quick Links</div></div><div class="cdb" style="display:flex;flex-wrap:wrap;gap:10px">
     <button class="b bn bs" onclick="go('pr-approvals')">PR Approvals</button>
     <button class="b bn bs" onclick="go('timesheet-approve')">Approve Timesheets</button>
+    <button class="b bo bs" onclick="go('finance-commitments')">Commitments</button>
+    <button class="b bo bs" onclick="go('hr-recruitment')">Recruitment</button>
+    <button class="b bo bs" onclick="go('supply-po')">Purchase Orders</button>
+    <button class="b bo bs" onclick="go('supply-suppliers')">Suppliers</button>
   </div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Department Snapshot</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Department</th><th>Staff</th><th>Open Tasks</th><th>Pending PRs</th></tr></thead><tbody id="deputy-dept-snapshot"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-deputy"></div></div>
 </div>
 
 <div class="pg" id="p-progdeputy">
   <div class="ph"><div><h1>Program Deputy Director</h1><p>Org-wide Purchase Request and Timesheet approvals, cross-department oversight</p></div></div>
-  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+  <div class="stats">
     <div class="st og"><div class="stl">PR Approvals Pending</div><div class="stv" id="progdeputy-pr-pending">0</div></div>
     <div class="st bl"><div class="stl">Timesheets Pending</div><div class="stv" id="progdeputy-ts-pending">0</div></div>
     <div class="st nv"><div class="stl">Active Projects</div><div class="stv" id="progdeputy-projects">0</div></div>
+    <div class="st rd"><div class="stl">Open Commitments (USD equiv.)</div><div class="stv" id="progdeputy-cmt-open">$0</div></div>
+    <div class="st gr"><div class="stl">Open Vacancies</div><div class="stv" id="progdeputy-vac-open">0</div></div>
+    <div class="st og"><div class="stl">POs Awaiting Receipt</div><div class="stv" id="progdeputy-po-open">0</div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Quick Links</div></div><div class="cdb" style="display:flex;gap:10px">
+  <div class="cd"><div class="cdh"><div class="cdt">Quick Links</div></div><div class="cdb" style="display:flex;flex-wrap:wrap;gap:10px">
     <button class="b bn bs" onclick="go('pr-approvals')">PR Approvals</button>
     <button class="b bn bs" onclick="go('timesheet-approve')">Approve Timesheets</button>
+    <button class="b bo bs" onclick="go('finance-commitments')">Commitments</button>
+    <button class="b bo bs" onclick="go('hr-recruitment')">Recruitment</button>
+    <button class="b bo bs" onclick="go('supply-po')">Purchase Orders</button>
+    <button class="b bo bs" onclick="go('supply-suppliers')">Suppliers</button>
   </div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Department Snapshot</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Department</th><th>Staff</th><th>Open Tasks</th><th>Pending PRs</th></tr></thead><tbody id="progdeputy-dept-snapshot"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-progdeputy"></div></div>
 </div>
 
@@ -1883,11 +1901,11 @@ supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','pro
 admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
+progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
-deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
+deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
   'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
@@ -1920,12 +1938,14 @@ safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'
 operations:[{l:'OPERATIONS',i:[{p:'operations',n:'Operations Home'},{p:'ops-assets',n:'Asset Register'},{p:'ops-fleet',n:'Fleet Management'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-progdeputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
+progdeputy:[{l:'MAIN',i:[{p:'progdeputy',n:'Program Deputy Director Home'}]},
+{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'}]},
 {l:'CROSS-DEPT',i:[{p:'tar-request',n:'Raise TAR'},{p:'it-tickets',n:'IT Support'},{p:'timesheet',n:'⏱ My Timesheet'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-deputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
+deputy:[{l:'MAIN',i:[{p:'deputy',n:'Deputy Director Home'}]},
+{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
 {l:'PROJECTS',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'}]},
 {l:'CROSS-DEPT',i:[{p:'tar-request',n:'Raise TAR'},{p:'it-tickets',n:'IT Support'},{p:'timesheet',n:'⏱ My Timesheet'}]},
@@ -1933,7 +1953,7 @@ deputy:[{l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-appr
 it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
 };
-var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations',progdeputy:'pr-approvals',deputy:'pr-approvals',it:'it',access:'access'};
+var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations',progdeputy:'progdeputy',deputy:'deputy',it:'it',access:'access'};
 
 // A single "My Work" page belongs to every role -- rather than hand-editing 13 separate
 // ACCESS and SIDEBAR array literals (and risking a role getting missed), grant it and link
@@ -6488,7 +6508,25 @@ function renderApprovalRoleHome(roleKey){
   if($(roleKey+'-pr-pending'))$(roleKey+'-pr-pending').textContent=prPending;
   if($(roleKey+'-ts-pending'))$(roleKey+'-ts-pending').textContent=tsPending;
   if($(roleKey+'-projects'))$(roleKey+'-projects').textContent=Object.keys(PROJ).length;
+  if($(roleKey+'-cmt-open'))$(roleKey+'-cmt-open').textContent=money(DB.commitments.filter(function(c){return c.status==='Open';}).reduce(function(s,c){return s+prAmountUSD(c.project,c.amount);},0),'USD');
+  if($(roleKey+'-vac-open'))$(roleKey+'-vac-open').textContent=DB.vacancies.filter(function(v){return v.status==='Open';}).length;
+  if($(roleKey+'-po-open'))$(roleKey+'-po-open').textContent=DB.po.filter(function(p){return p.status==='Draft'||p.status==='Issued';}).length;
   renderStaffDirectory(DEPTNAME[roleKey],'staffdir-'+roleKey);
+  renderDeptSnapshot(roleKey);
+}
+
+function renderDeptSnapshot(roleKey){
+  var body=$(roleKey+'-dept-snapshot');if(!body)return;
+  var depts=['MEAL','Finance','HR','Programs','Supply Chain','Admin','Safeguarding','Operations'];
+  body.innerHTML='';
+  depts.forEach(function(d){
+    var staffCount=getDeptStaffList(d).length;
+    var openTasks=DB.tasks.filter(function(t){return t.dept===d && !t.done;}).length;
+    var pendingPRs=DB.pr.filter(function(p){return p.status==='progress' && p.dept===d;}).length;
+    var r=el('tr');
+    r.innerHTML='<td><b>'+esc(d)+'</b></td><td>'+staffCount+'</td><td>'+openTasks+'</td><td>'+pendingPRs+'</td>';
+    body.appendChild(r);
+  });
 }
 
 function renderAllStaffDirectories(){
