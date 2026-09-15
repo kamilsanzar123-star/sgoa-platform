@@ -409,7 +409,7 @@ tbody tr:hover td{background:var(--g50);}
     </div>
 
     <div class="cd">
-      <div class="cdh"><div class="cdt">Budget vs Actual (USD)</div></div>
+      <div class="cdh"><div class="cdt">Budget vs Actual</div></div>
       <div class="cdb">
         <canvas id="c-bar" width="250" height="150"></canvas>
         <div style="display:flex;justify-content:space-around;margin-top:10px;font-size:10.5px;text-align:center">
@@ -2167,12 +2167,19 @@ function fmt(n){return n.toLocaleString();}
 // exactly as before, so none of the ~19 existing call sites needed to change to keep working.
 var CURRENCIES={
   USD:{sym:'$',name:'US Dollar'},
-  AFN:{sym:'؋',name:'Afghani'},
+  AFN:{sym:'AFG',name:'Afghani'},
   EUR:{sym:'€',name:'Euro'},
   GBP:{sym:'£',name:'British Pound'},
   PKR:{sym:'₨',name:'Pakistani Rupee'}
 };
-function money(n,cur){var sym=(CURRENCIES[cur||'USD']||CURRENCIES.USD).sym;return sym+n.toLocaleString();}
+function money(n,cur){var sym=(CURRENCIES[cur||'USD']||CURRENCIES.USD).sym;return sym+(sym.length>1?' ':'')+n.toLocaleString();}
+// Shrinks a figure's font size as its text gets longer, so a large converted amount
+// (e.g. a USD budget expressed in AFN) still fits its fixed-width box instead of overflowing.
+function setFitText(id,text){
+  var el=$(id);if(!el)return;
+  el.textContent=text;
+  el.style.fontSize=text.length>13?'11px':text.length>9?'13px':'16px';
+}
 // A project's currency, falling back to the org's default currency, then USD.
 function projCurrency(code){return (PROJ[code]&&PROJ[code].currency) || (DB.org&&DB.org.currency) || 'USD';}
 function projFxToUSD(code){return (PROJ[code]&&PROJ[code].fxToUSD)||1;}
@@ -2829,7 +2836,7 @@ function getProjData(pf){
   var budget=0,spent=0,benef=0;
   // Summing "all" projects' budgets only makes sense in one common currency — each project's
   // own fxToUSD rate converts it before adding, so a mix of USD/AFN/etc. projects still totals
-  // correctly (see money(...,'USD') and the "(USD equiv.)" labeling in drawAll below).
+  // correctly (see money(...,'USD') in drawAll below).
   if(pf==='all'){for(var k in PROJ){var fx=projFxToUSD(k);budget+=PROJ[k].budget*fx;spent+=PROJ[k].spent*fx;benef+=PROJ[k].benef;}}
   else if(PROJ[pf]){budget=PROJ[pf].budget;spent=PROJ[pf].spent;benef=PROJ[pf].benef;}
   var tot=acts.length||1;
@@ -2850,12 +2857,11 @@ function drawAll(){
   // getProjData already converts every project to USD when pf is 'all', so the display
   // currency here is USD for that view and the project's own currency for a single project.
   var dispCur=pf==='all'?'USD':((PROJ[pf]&&PROJ[pf].currency)||'USD');
-  var fxNote=pf==='all'?' (USD equiv.)':'';
   if($('k-ben'))$('k-ben').textContent=fmt(d.benef);
   if($('k-act'))$('k-act').textContent=d.tot;
   if($('k-act-s'))$('k-act-s').textContent=d.done+' done · '+d.prog+' in progress';
   if($('k-bud'))$('k-bud').textContent=d.budget?Math.round(d.spent/d.budget*100)+'%':'0%';
-  if($('k-bud-s'))$('k-bud-s').textContent=money(Math.round(d.spent/1000),dispCur)+'K of '+money(Math.round(d.budget/1000),dispCur)+'K'+fxNote;
+  if($('k-bud-s'))$('k-bud-s').textContent=money(Math.round(d.spent),dispCur)+' of '+money(Math.round(d.budget),dispCur);
   if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).length:1;
 
   donut('c-donut',[{v:d.done,c:'#16a34a'},{v:d.prog,c:'#2563eb'},{v:d.behind,c:'#dc2626'},{v:d.not,c:'#e2e8f0'}],26);
@@ -2877,9 +2883,9 @@ function drawAll(){
   }else{
     bars('c-bar',['Planned','Spent','Balance'],[{d:[d.budget,d.spent,d.budget-d.spent],c:['#1A3A6B','#C8922A','#16a34a']}]);
   }
-  if($('b-plan'))$('b-plan').textContent=money(Math.round(d.budget/1000),dispCur)+'K'+fxNote;
-  if($('b-spent'))$('b-spent').textContent=money(Math.round(d.spent/1000),dispCur)+'K'+fxNote;
-  if($('b-bal'))$('b-bal').textContent=money(Math.round((d.budget-d.spent)/1000),dispCur)+'K'+fxNote;
+  setFitText('b-plan',money(Math.round(d.budget),dispCur));
+  setFitText('b-spent',money(Math.round(d.spent),dispCur));
+  setFitText('b-bal',money(Math.round(d.budget-d.spent),dispCur));
 
   // Build live expenditure by category from DB.expenditures + approved DB.pr items
   var catColors={'Personnel':'#1A3A6B','Operations':'#2563eb','Activities':'#16a34a','Travel':'#ea580c','Supplies':'#f59e0b','Other':'#94a3b8'};
