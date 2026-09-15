@@ -7193,9 +7193,15 @@ function counts(list){
 }
 
 function colorScale(max){
-  var range=["#dce7f5","#a9c4e8","#6f9bd6","#3d6fb8","#1A3A6B"];
+  // The old formula divided by a floor of 4 regardless of the real max, so with a typical
+  // handful of projects (max 1 or 2 per province) every highlighted province landed on the
+  // palest shade in the range -- barely visible against the "no projects" gray. A province
+  // with any project at all should read as clearly blue; darker shades are reserved for
+  // provinces that clearly have more projects than others.
+  var range=["#a9c4e8","#6f9bd6","#3d6fb8","#1A3A6B"];
+  if(max<=1) return function(){ return range[range.length-1]; };
   return function(n){
-    var idx=Math.min(range.length-1,Math.floor((n-1)/Math.max(max,4)*range.length));
+    var idx=Math.min(range.length-1,Math.round((n-1)/(max-1)*(range.length-1)));
     return range[Math.max(0,idx)];
   };
 }
