@@ -724,7 +724,12 @@ tbody tr:hover td{background:var(--g50);}
 </div>
 <div class="pg" id="p-hr">
   <div class="wb" style="background:linear-gradient(135deg,#4c1d95,#7c3aed)"><div><div class="wbt">Human Resources</div><div class="wbs">Staff · Recruitment · Performance</div></div><div class="wbi">&#128101;</div></div>
-  
+  <div class="qn">
+    <div class="qi" onclick="go('hr-recruitment')"><div class="qii">&#128188;</div><div class="qil">Recruitment</div></div>
+    <div class="qi" onclick="openM('m-staff')"><div class="qii">&#128101;</div><div class="qil">Add Staff</div></div>
+    <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
+    <div class="qi" onclick="openM('m-doc')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
+  </div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff by Department</div></div><div class="cdb" id="hr-chart"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Register</div><button class="b bn bs" onclick="openM('m-staff')">+ Add Staff</button></div>
   <div class="cdb tw"><table><thead><tr><th>Name</th><th>Position</th><th>Department</th><th>Location</th><th>Start Date</th><th>Status</th><th>Last Appraisal</th><th>Actions</th></tr></thead><tbody id="hr-staff"></tbody></table></div></div>
@@ -745,6 +750,26 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-hr"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Human Resources documents</b></p></div></div></div>
 </div>
+
+<div class="pg" id="p-hr-recruitment">
+  <div class="ph"><div><h1>Recruitment Pipeline</h1><p>Open vacancies and the candidates moving through them</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('hr')">Back</button><button class="b bn bs" onclick="openM('m-vacancy')">+ Post Vacancy</button></div></div>
+  <div class="stats">
+    <div class="st nv"><div class="stl">Open Vacancies</div><div class="stv" id="rc-open">0</div></div>
+    <div class="st bl"><div class="stl">Total Candidates</div><div class="stv" id="rc-cand">0</div></div>
+    <div class="st og"><div class="stl">In Interview</div><div class="stv" id="rc-interview">0</div></div>
+    <div class="st gr"><div class="stl">Hired (All Time)</div><div class="stv" id="rc-hired">0</div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Vacancies</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Position</th><th>Department</th><th>Hiring Manager</th><th>Opened</th><th>Status</th><th>Candidates</th><th>Action</th></tr></thead><tbody id="vacancies-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Candidate Pipeline</div>
+    <div style="display:flex;gap:7px">
+      <select id="rc-vacancy" onchange="renderCandidatePipeline()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"><option value="">Select a vacancy…</option></select>
+      <button class="b bn bs" onclick="openCandidateModal()">+ Add Candidate</button>
+    </div></div>
+    <div class="cdb tw"><table><thead><tr><th>Candidate</th><th>Contact</th><th>Applied</th><th>Stage</th><th>Action</th></tr></thead><tbody id="candidates-body"></tbody></table></div></div>
+</div>
+
 <div class="pg" id="p-programs">
   <div class="wb" style="background:linear-gradient(135deg,#1e3a8a,#2563eb)"><div><div class="wbt">Programs Department</div><div class="wbs">Implementation · Activities · Beneficiaries</div></div><div class="wbi">&#127919;</div></div>
   
@@ -1830,11 +1855,11 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+'finance','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
 'admin','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 finance:['finance','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-hr:['hr','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+hr:['hr','hr-recruitment','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
@@ -1842,11 +1867,11 @@ safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','a
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+  'finance','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+  'finance','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
 access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
@@ -1862,7 +1887,7 @@ meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tr
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'hr-recruitment',n:'Recruitment'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'},{p:'prog-partners',n:'Partners'}]},
 {l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -2946,6 +2971,7 @@ function render(pg){
       else if(pg==='meal-data'){renderDataHistory();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();}
       else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();}
+      else if(pg==='hr-recruitment'){renderVacancies();renderCandidatePipeline();}
       else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();}
       else if(pg==='prog-activities'){renderActivities();}
       else if(pg==='prog-benef'){renderBenef();renderDocs('benef','Programs');}
@@ -6798,6 +6824,107 @@ function renderContracts(){
   });
 }
 
+// ============ HR: RECRUITMENT ============
+DB.vacancies=[];
+DB.candidates=[];
+var RECRUIT_STAGES=['Applied','Shortlisted','Interview','Offer','Hired'];
+
+function saveVacancy(){
+  var t=$('vc-title');
+  if(!t.value.trim()){alert('Please enter the position title.');return;}
+  DB.vacancies.push({id:nid('VAC'),title:t.value.trim(),dept:$('vc-dept').value,count:parseInt($('vc-count').value)||1,
+    manager:$('vc-manager').value.trim(),opened:$('vc-opened').value||today(),notes:$('vc-notes').value.trim(),status:'Open',createdBy:SES.name});
+  closeM('m-vacancy');t.value='';$('vc-manager').value='';$('vc-notes').value='';$('vc-count').value='1';$('vc-opened').value='';
+  renderVacancies();queueCloudSave();
+}
+
+function closeVacancy(id){
+  var v=DB.vacancies.find(function(x){return x.id===id;});
+  if(!v)return;
+  v.status=v.status==='Open'?'Closed':'Open';
+  renderVacancies();queueCloudSave();
+}
+
+function refreshVacancyDropdowns(){
+  var opts=DB.vacancies.map(function(v){return '<option value="'+v.id+'">'+esc(v.title)+' ('+esc(v.dept)+')</option>';}).join('');
+  var pipeSel=$('rc-vacancy');
+  if(pipeSel){var cur=pipeSel.value;pipeSel.innerHTML='<option value="">Select a vacancy…</option>'+opts;if(cur)pipeSel.value=cur;}
+  var modalSel=$('cd-vacancy');
+  if(modalSel)modalSel.innerHTML=opts;
+}
+
+function openCandidateModal(){
+  refreshVacancyDropdowns();
+  var pipeSel=$('rc-vacancy'),modalSel=$('cd-vacancy');
+  if(pipeSel&&pipeSel.value&&modalSel)modalSel.value=pipeSel.value;
+  openM('m-candidate');
+}
+
+function saveCandidate(){
+  var vac=$('cd-vacancy').value,name=$('cd-name');
+  if(!vac){alert('Please select the vacancy this candidate applied for.');return;}
+  if(!name.value.trim()){alert('Please enter the candidate name.');return;}
+  DB.candidates.push({id:nid('CAND'),vacancyId:vac,name:name.value.trim(),phone:$('cd-phone').value.trim(),
+    email:$('cd-email').value.trim(),applied:$('cd-applied').value||today(),notes:$('cd-notes').value.trim(),stage:'Applied'});
+  closeM('m-candidate');name.value='';$('cd-phone').value='';$('cd-email').value='';$('cd-notes').value='';$('cd-applied').value='';
+  $('rc-vacancy').value=vac;
+  renderCandidatePipeline();renderVacancies();queueCloudSave();
+}
+
+function advanceCandidate(id){
+  var c=DB.candidates.find(function(x){return x.id===id;});
+  if(!c)return;
+  var idx=RECRUIT_STAGES.indexOf(c.stage);
+  if(idx>=0&&idx<RECRUIT_STAGES.length-1)c.stage=RECRUIT_STAGES[idx+1];
+  renderCandidatePipeline();renderVacancies();queueCloudSave();
+}
+
+function rejectCandidate(id){
+  var c=DB.candidates.find(function(x){return x.id===id;});
+  if(!c)return;
+  c.stage='Rejected';
+  renderCandidatePipeline();renderVacancies();queueCloudSave();
+}
+
+function renderVacancies(){
+  var body=$('vacancies-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.vacancies.length){body.innerHTML='<tr><td colspan="7" class="empty">No vacancies posted yet</td></tr>';}
+  else{
+    DB.vacancies.forEach(function(v){
+      var cnt=DB.candidates.filter(function(c){return c.vacancyId===v.id;}).length;
+      var r=el('tr');
+      r.innerHTML='<td><b>'+esc(v.title)+'</b></td><td>'+esc(v.dept)+'</td><td>'+esc(v.manager||'-')+'</td><td>'+dt(v.opened)+'</td>'+
+        '<td><span class="bdg '+(v.status==='Open'?'bG':'bD')+'">'+esc(v.status)+'</span></td><td>'+cnt+'</td>'+
+        '<td><button class="b bo bs" onclick="closeVacancy(\''+v.id+'\')">'+(v.status==='Open'?'Close':'Reopen')+'</button></td>';
+      body.appendChild(r);
+    });
+  }
+  $('rc-open').textContent=DB.vacancies.filter(function(v){return v.status==='Open';}).length;
+  $('rc-cand').textContent=DB.candidates.length;
+  $('rc-interview').textContent=DB.candidates.filter(function(c){return c.stage==='Interview';}).length;
+  $('rc-hired').textContent=DB.candidates.filter(function(c){return c.stage==='Hired';}).length;
+  refreshVacancyDropdowns();
+}
+
+function renderCandidatePipeline(){
+  var body=$('candidates-body');if(!body)return;
+  var vacId=$('rc-vacancy').value;
+  body.innerHTML='';
+  if(!vacId){body.innerHTML='<tr><td colspan="5" class="empty">Select a vacancy above to see its candidates</td></tr>';return;}
+  var list=DB.candidates.filter(function(c){return c.vacancyId===vacId;});
+  if(!list.length){body.innerHTML='<tr><td colspan="5" class="empty">No candidates yet for this vacancy</td></tr>';return;}
+  var stageColor={Applied:'bY',Shortlisted:'bO',Interview:'bB',Offer:'bN',Hired:'bG',Rejected:'bR'};
+  list.forEach(function(c){
+    var r=el('tr');
+    var actions=(c.stage==='Hired'||c.stage==='Rejected')?'<span style="color:var(--g400);font-size:11px">-</span>':
+      '<button class="b bn bs" onclick="advanceCandidate(\''+c.id+'\')">Advance</button> <button class="b bo bs" onclick="rejectCandidate(\''+c.id+'\')">Reject</button>';
+    r.innerHTML='<td>'+esc(c.name)+'</td><td>'+esc(c.phone||c.email||'-')+'</td><td>'+dt(c.applied)+'</td>'+
+      '<td><span class="bdg '+(stageColor[c.stage]||'bY')+'">'+esc(c.stage)+'</span></td><td>'+actions+'</td>';
+    body.appendChild(r);
+  });
+}
+
 // ============ HR: ATTENDANCE ============
 DB.attendance=[];
 
@@ -7747,6 +7874,32 @@ if(document.getElementById('afg-map')) initMap();
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-contract')">Cancel</button><button class="b bn" onclick="saveContract()">Save Contract</button></div>
+</div></div>
+
+<div class="mb" id="m-vacancy"><div class="md">
+<div class="mh"><h3>Post Vacancy</h3><button class="mx" onclick="closeM('m-vacancy')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg ff"><label>Position Title *</label><input type="text" id="vc-title" placeholder="e.g. Field Monitor"></div>
+<div class="fg"><label>Department</label><select id="vc-dept"><option>MEAL</option><option>Finance</option><option>HR</option><option>Programs</option><option>Supply Chain</option><option>Admin</option><option>Safeguarding</option><option>Operations</option><option>IT</option><option>Access</option></select></div>
+<div class="fg"><label>Positions Available</label><input type="number" id="vc-count" value="1" min="1"></div>
+<div class="fg"><label>Hiring Manager</label><input type="text" id="vc-manager"></div>
+<div class="fg"><label>Opened</label><input type="date" id="vc-opened"></div>
+<div class="fg ff"><label>Job Summary / Notes</label><textarea rows="2" id="vc-notes"></textarea></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-vacancy')">Cancel</button><button class="b bn" onclick="saveVacancy()">Post Vacancy</button></div>
+</div></div>
+
+<div class="mb" id="m-candidate"><div class="md">
+<div class="mh"><h3>Add Candidate</h3><button class="mx" onclick="closeM('m-candidate')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg ff"><label>Vacancy *</label><select id="cd-vacancy"></select></div>
+<div class="fg ff"><label>Candidate Name *</label><input type="text" id="cd-name"></div>
+<div class="fg"><label>Phone</label><input type="text" id="cd-phone"></div>
+<div class="fg"><label>Email</label><input type="email" id="cd-email"></div>
+<div class="fg"><label>Applied Date</label><input type="date" id="cd-applied"></div>
+<div class="fg ff"><label>Notes</label><textarea rows="2" id="cd-notes"></textarea></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-candidate')">Cancel</button><button class="b bn" onclick="saveCandidate()">Add Candidate</button></div>
 </div></div>
 
 <div class="mb" id="m-attendance"><div class="md">
