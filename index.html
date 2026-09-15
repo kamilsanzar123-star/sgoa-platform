@@ -5426,7 +5426,8 @@ function saveDeptUser(){
 
 function editUser(id){
   var u=DB.users.find(function(x){return x.id===id;});if(!u)return;
-  $('eu-id').value=u.id;$('eu-name').value=u.name;$('eu-password').value=u.password;$('eu-status').value=u.status;
+  $('eu-id').value=u.id;$('eu-name').value=u.name;$('eu-username').value=u.username||'';
+  $('eu-password').value=u.password;$('eu-status').value=u.status;
   $('eu-role').value=u.roleTemplate||'meal';$('eu-position').value=u.position||'';
   openM('m-edit-user');
 }
@@ -5434,10 +5435,16 @@ function editUser(id){
 function saveEditUser(){
   var id=$('eu-id').value;
   var u=DB.users.find(function(x){return x.id===id;});
-  if(u){
-    u.name=$('eu-name').value.trim();u.password=$('eu-password').value.trim();u.status=$('eu-status').value;
-    u.roleTemplate=$('eu-role').value;u.position=$('eu-position').value.trim();
-  }
+  if(!u){closeM('m-edit-user');return;}
+  var newUsername=$('eu-username').value.trim();
+  if(!newUsername){alert('Username cannot be empty.');return;}
+  var taken = DB.users.some(function(x){return x.id!==id && x.username===newUsername;}) ||
+    Object.keys(CRED).some(function(k){return CRED[k].u===newUsername;});
+  if(taken){alert('That username is already in use by another account. Please choose a different one.');return;}
+  var oldUsername=u.username;
+  u.name=$('eu-name').value.trim();u.username=newUsername;u.password=$('eu-password').value.trim();u.status=$('eu-status').value;
+  u.roleTemplate=$('eu-role').value;u.position=$('eu-position').value.trim();
+  if(oldUsername!==newUsername)logAudit('user-username-change',id,'Username changed from "'+oldUsername+'" to "'+newUsername+'" for '+u.name);
   closeM('m-edit-user');renderUserMgmt();queueCloudSave();
 }
 
@@ -6842,6 +6849,7 @@ document.addEventListener('keydown',function(e){
   <input type="hidden" id="eu-id">
   <div class="fr">
     <div class="fg ff"><label>Full Name</label><input type="text" id="eu-name"></div>
+    <div class="fg"><label>Username</label><input type="text" id="eu-username"></div>
     <div class="fg"><label>Password</label><div style="display:flex;gap:6px"><input type="password" id="eu-password" style="flex:1"><button type="button" class="b bo bs" onclick="var f=$('eu-password');f.type=f.type==='password'?'text':'password';">Show</button></div></div>
     <div class="fg ff">
       <label>Role Template (defines what this user can do)</label>
