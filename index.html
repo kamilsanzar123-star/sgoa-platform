@@ -791,6 +791,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="qn">
     <div class="qi" onclick="go('supply-proc')"><div class="qii">&#128722;</div><div class="qil">Procurement</div></div>
     <div class="qi" onclick="go('supply-dist')"><div class="qii">&#128230;</div><div class="qil">Distribution</div></div>
+    <div class="qi" onclick="go('supply-suppliers')"><div class="qii">&#127970;</div><div class="qil">Suppliers</div></div>
     <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
     <div class="qi" onclick="openM('m-doc')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
   </div>
@@ -965,6 +966,16 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdb tw"><table><thead><tr><th>Date</th><th>Item</th><th>Project</th><th>District</th><th>Beneficiaries</th><th>Status</th></tr></thead><tbody id="dist-body"></tbody></table></div></div>
 </div>
 
+<div class="pg" id="p-supply-suppliers">
+  <div class="ph"><div><h1>Supplier Directory</h1><p>Who SGOA actually buys from, and how reliable they've been</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('supply')">Back</button><button class="b bn bs" onclick="openM('m-supplier')">+ Add Supplier</button></div></div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="st nv"><div class="stl">Total Suppliers</div><div class="stv" id="sup-tot">0</div></div>
+    <div class="st gr"><div class="stl">Active</div><div class="stv" id="sup-active">0</div></div>
+    <div class="st rd"><div class="stl">With Disputes on Record</div><div class="stv" id="sup-disputed">0</div></div>
+  </div>
+  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Supplier</th><th>Category</th><th>Contact</th><th>Status</th><th>On-Time</th><th>Late</th><th>Disputed</th><th>Log Delivery</th></tr></thead><tbody id="suppliers-body"></tbody></table></div></div>
+</div>
 
 <div class="pg" id="p-roadmap">
   <div class="ph"><div><h1>Project Roadmap</h1><p>Full lifecycle from design to close-out, with your department's activities highlighted</p></div></div>
@@ -1690,6 +1701,7 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Project</label><select id="pr-proj" onchange="updateProcComplianceUI()"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option><option>Core/Admin</option></select></div>
 <div class="fg"><label>Quantity</label><input type="number" id="pr-qty"></div>
 <div class="fg"><label>Estimated Cost</label><input type="number" id="pr-cost" oninput="updateProcComplianceUI()"></div>
+<div class="fg"><label>Supplier</label><div style="display:flex;gap:6px"><select id="pr-supplier" style="flex:1"><option value="">Not specified yet</option></select><button type="button" class="b bo bs" onclick="openM('m-supplier')">+ New</button></div></div>
 <div class="fg"><label>Requested By</label><input type="text" id="pr-by"></div>
 <div class="fg ff"><label>Justification</label><textarea rows="2" id="pr-just"></textarea></div>
 </div>
@@ -1702,6 +1714,20 @@ tbody tr:hover td{background:var(--g50);}
   </div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-proc')">Cancel</button><button class="b bn" onclick="saveProc()">Submit Request</button></div>
+</div></div>
+<div class="mb" id="m-supplier"><div class="md">
+<div class="mh"><h3>Add Supplier</h3><button class="mx" onclick="closeM('m-supplier')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg ff"><label>Supplier / Company Name *</label><input type="text" id="sup-name"></div>
+<div class="fg"><label>Category</label><select id="sup-category"><option>Goods</option><option>Services</option><option>Works</option><option>Other</option></select></div>
+<div class="fg"><label>Status</label><select id="sup-status"><option>Active</option><option>Inactive</option></select></div>
+<div class="fg"><label>Contact Person</label><input type="text" id="sup-contact"></div>
+<div class="fg"><label>Phone</label><input type="text" id="sup-phone"></div>
+<div class="fg"><label>Email</label><input type="email" id="sup-email"></div>
+<div class="fg ff"><label>Address</label><input type="text" id="sup-address"></div>
+<div class="fg ff"><label>Notes</label><textarea rows="2" id="sup-notes"></textarea></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-supplier')">Cancel</button><button class="b bn" onclick="saveSupplier()">Save Supplier</button></div>
 </div></div>
 <div class="mb" id="m-dist"><div class="md">
 <div class="mh"><h3>Log Distribution</h3><button class="mx" onclick="closeM('m-dist')">&times;</button></div>
@@ -1780,23 +1806,23 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist',
+'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers',
 'admin','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 finance:['finance','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 hr:['hr','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-supply:['supply','supply-proc','supply-dist','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+supply:['supply','supply-proc','supply-dist','supply-suppliers','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist',
+  'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist',
+  'finance','hr','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
 access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
@@ -1817,7 +1843,7 @@ hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'projects',n:'Projects'},{p:
 programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'},{p:'prog-partners',n:'Partners'}]},
 {l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-dist',n:'Distribution'}]},
+supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-dist',n:'Distribution'},{p:'supply-suppliers',n:'Suppliers'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -1906,6 +1932,8 @@ DB.benef=[];
 DB.staff=[];
 
 DB.proc=[];
+
+DB.suppliers=[];
 
 DB.dist=[];
 
@@ -2751,7 +2779,7 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc')resetProcComplianceUI();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}}
 
 // A department head could previously pick ANY department in the Add Task modal and assign
 // work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
@@ -2901,6 +2929,7 @@ function render(pg){
       else if(pg==='supply'){renderDept('supply','Supply Chain');}
       else if(pg==='supply-proc'){renderProc();}
       else if(pg==='supply-dist'){renderDist();}
+      else if(pg==='supply-suppliers'){renderSuppliers();}
       else if(pg==='admin'){renderDept('admin','Admin');}
       else if(pg==='safeguarding'){renderDept('safeguarding','Safeguarding');renderSGCases();}
       else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();}
@@ -5085,8 +5114,64 @@ function saveProc(){
   DB.proc.push({id:nid('PR'),item:i.value.trim(),proj:proj,
     qty:parseInt($('pr-qty').value)||1,cost:cost,
     by:$('pr-by').value||SES.name,just:$('pr-just').value,
-    quotes:quotes,soleJust:soleJust,bidRef:bidRef,status:'Pending Finance'});
+    quotes:quotes,soleJust:soleJust,bidRef:bidRef,status:'Pending Finance',
+    supplier:$('pr-supplier')?$('pr-supplier').value:''});
   closeM('m-proc');i.value='';resetProcComplianceUI();renderProc();queueCloudSave();
+}
+
+function refreshSupplierDropdown(){
+  var s=$('pr-supplier');if(!s)return;
+  var cur=s.value;
+  s.innerHTML='<option value="">Not specified yet</option>'+
+    DB.suppliers.map(function(sup){return '<option value="'+esc(sup.id)+'">'+esc(sup.name)+'</option>';}).join('');
+  if(cur)s.value=cur;
+}
+
+function saveSupplier(){
+  var n=$('sup-name');
+  if(!n||!n.value.trim()){alert('Please enter the supplier / company name.');return;}
+  var sup={id:nid('SUP'),name:n.value.trim(),category:$('sup-category').value,status:$('sup-status').value,
+    contact:$('sup-contact').value.trim(),phone:$('sup-phone').value.trim(),email:$('sup-email').value.trim(),
+    address:$('sup-address').value.trim(),notes:$('sup-notes').value.trim(),onTime:0,late:0,disputed:0};
+  DB.suppliers.push(sup);
+  closeM('m-supplier');
+  ['sup-name','sup-contact','sup-phone','sup-email','sup-address','sup-notes'].forEach(function(id){var el=$(id);if(el)el.value='';});
+  $('sup-category').value='Goods';$('sup-status').value='Active';
+  refreshSupplierDropdown();
+  if($('pr-supplier'))$('pr-supplier').value=sup.id;
+  renderSuppliers();queueCloudSave();
+}
+
+function logSupplierDelivery(id,outcome){
+  var s=DB.suppliers.find(function(x){return x.id===id;});
+  if(!s)return;
+  if(outcome==='onTime')s.onTime=(s.onTime||0)+1;
+  else if(outcome==='late')s.late=(s.late||0)+1;
+  else if(outcome==='disputed')s.disputed=(s.disputed||0)+1;
+  renderSuppliers();queueCloudSave();
+}
+
+function renderSuppliers(){
+  var c=$('suppliers-body');if(!c)return;
+  c.innerHTML='';
+  if(!DB.suppliers.length){c.innerHTML='<tr><td colspan="8" class="empty">No suppliers recorded yet</td></tr>';}
+  else{
+    DB.suppliers.forEach(function(s){
+      var sb=s.status==='Active'?'bG':'bD';
+      var r=el('tr');
+      r.innerHTML='<td>'+esc(s.name)+'</td><td>'+esc(s.category)+'</td>'+
+        '<td>'+esc(s.contact||'-')+(s.phone?'<br><span style="font-size:11px;color:var(--g400)">'+esc(s.phone)+'</span>':'')+'</td>'+
+        '<td><span class="bdg '+sb+'">'+esc(s.status)+'</span></td>'+
+        '<td>'+(s.onTime||0)+'</td><td>'+(s.late||0)+'</td><td>'+(s.disputed||0)+'</td>'+
+        '<td><button class="b bo bs" onclick="logSupplierDelivery(\''+s.id+'\',\'onTime\')" title="Log on-time delivery">On-Time</button> '+
+        '<button class="b bo bs" onclick="logSupplierDelivery(\''+s.id+'\',\'late\')" title="Log late delivery">Late</button> '+
+        '<button class="b bo bs" onclick="logSupplierDelivery(\''+s.id+'\',\'disputed\')" title="Log disputed delivery">Dispute</button></td>';
+      c.appendChild(r);
+    });
+  }
+  $('sup-tot').textContent=DB.suppliers.length;
+  $('sup-active').textContent=DB.suppliers.filter(function(s){return s.status==='Active';}).length;
+  $('sup-disputed').textContent=DB.suppliers.filter(function(s){return (s.disputed||0)>0;}).length;
 }
 
 function saveDist(){
