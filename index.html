@@ -1520,7 +1520,8 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Currency</label><select id="pj-currency" onchange="togglePjFxField()"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select></div>
 <div class="fg"><label>Budget</label><input type="number" id="pj-budget"></div>
 <div class="fg ff" id="pj-fx-wrap" style="display:none"><label id="pj-fx-label">Exchange Rate</label><input type="number" step="0.0001" id="pj-fx" placeholder="e.g. 70 (1 USD = 70 AFN)"><div style="font-size:10px;color:var(--g500);margin-top:3px">Used only to combine this project's budget into org-wide USD totals &mdash; the project itself is tracked and reported in the currency above.</div></div>
-<div class="fg"><label>Target Beneficiaries</label><input type="number" id="pj-benef"></div>
+<div class="fg"><label>Direct Beneficiaries</label><input type="number" id="pj-benef-direct" min="0" placeholder="0"></div>
+<div class="fg"><label>Indirect Beneficiaries</label><input type="number" id="pj-benef-indirect" min="0" placeholder="0"></div>
 <div class="fg"><label>Start Date</label><input type="date" id="pj-start"></div>
 <div class="fg"><label>End Date</label><input type="date" id="pj-end"></div>
 <div class="fg ff"><label>Provinces/Districts</label><input type="text" id="pj-loc"></div>
@@ -3083,7 +3084,7 @@ function openProject(k){
 
   h+='<div class="stats" style="grid-template-columns:repeat(4,1fr)">'+
   '<div class="st nv"><div class="stl">Overall Progress</div><div class="stv">'+p.prog+'%</div></div>'+
-  '<div class="st gr"><div class="stl">Beneficiaries</div><div class="stv">'+fmt(p.benef)+'</div><div class="sts">'+bens.length+' registered in system</div></div>'+
+  '<div class="st gr"><div class="stl">Beneficiaries</div><div class="stv">'+fmt(p.benef)+'</div><div class="sts">'+fmt(p.benefDirect||0)+' direct, '+fmt(p.benefIndirect||0)+' indirect &middot; '+bens.length+' registered in system</div></div>'+
   '<div class="st gd"><div class="stl">Budget Utilized</div><div class="stv">'+(p.budget?Math.round(p.spent/p.budget*100):0)+'%</div><div class="sts">'+money(p.spent,p.currency)+' of '+money(p.budget,p.currency)+'</div></div>'+
   '<div class="st bl"><div class="stl">Activities</div><div class="stv">'+acts.length+'</div><div class="sts">'+done+' completed</div></div></div>';
 
@@ -4635,8 +4636,11 @@ function saveProject(){
   var goals=collectLFGoals();
   var outcomes=collectLFGroup('pj-outcomes-wrap','pj-outcome-text','pj-outcome-ind-text');
   var outputs=collectLFGroup('pj-outputs-wrap','pj-output-text','pj-output-ind-text');
+  var benefDirect=parseInt($('pj-benef-direct').value)||0;
+  var benefIndirect=parseInt($('pj-benef-indirect').value)||0;
   var data={code:code,name:n.value.trim(),donor:$('pj-donor').value,sector:$('pj-sector').value,
-    budget:parseInt($('pj-budget').value)||0,spent:0,benef:parseInt($('pj-benef').value)||0,
+    budget:parseInt($('pj-budget').value)||0,spent:0,
+    benefDirect:benefDirect,benefIndirect:benefIndirect,benef:benefDirect+benefIndirect,
     currency:currency,fxToUSD:fxToUSD,
     prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:$('pj-loc').value,
     mgr:SES.name,meal:'Kamil Sanzar',status:'pending',color:'var(--teal)',
@@ -4646,7 +4650,7 @@ function saveProject(){
     edApproved:false,mealApproved:false,financeApproved:false,mealComments:[],
     createdBy:SES.name,createdRole:SES.role};
   DB.pendingProjects.push(data);
-  closeM('m-project');n.value='';$('pj-impact').value='';initProjectLFFields();
+  closeM('m-project');n.value='';$('pj-impact').value='';$('pj-benef-direct').value='';$('pj-benef-indirect').value='';initProjectLFFields();
   renderPendingProjects();
   queueCloudSave();
   alert('Project submitted. It requires approval from MEAL (indicators), Finance (budget), and the Executive Director before it goes live.');
@@ -4657,6 +4661,7 @@ function maybeActivateProject(code){
   if(!p||!p.edApproved||!p.mealApproved||!p.financeApproved)return;
   p.status='approved';
   PROJ[code]={name:p.name,donor:p.donor,sector:p.sector,budget:p.budget,spent:0,benef:p.benef,
+    benefDirect:p.benefDirect||0,benefIndirect:p.benefIndirect||0,
     currency:p.currency||'USD',fxToUSD:p.fxToUSD||1,
     prog:0,start:p.start,end:p.end,loc:p.loc,mgr:p.mgr,meal:p.meal,status:'Active',color:'var(--teal)',
     goal:p.goal||('Improve outcomes for beneficiaries through '+p.sector.toLowerCase()+' programming in '+p.loc+'.'),
