@@ -2245,6 +2245,22 @@ function setFitText(id,text){
 // A project's currency, falling back to the org's default currency, then USD.
 function projCurrency(code){return (PROJ[code]&&PROJ[code].currency) || (DB.org&&DB.org.currency) || 'USD';}
 function projFxToUSD(code){return (PROJ[code]&&PROJ[code].fxToUSD)||1;}
+// A Purchase Request's amounts are entered and stored in whatever currency its selected
+// project uses (or the org default for "Core/Admin", which has no project of its own) --
+// same convention as a project's own budget/spent. Used everywhere a PR's totals are shown,
+// so a PR against an AFN project displays "AFG", not a hardcoded "$".
+function prProjectCurrency(projCode){
+  return (projCode && projCode!=='Core/Admin' && PROJ[projCode]) ? projCurrency(projCode) : ((DB.org&&DB.org.currency)||'USD');
+}
+// Approval-chain routing and the quote-requirement rule are written as USD thresholds
+// (matching the Supply Chain procurement thresholds elsewhere), so an amount entered in a
+// project's own currency must be converted to its USD equivalent before being compared --
+// otherwise, e.g., 50,000 AFN (~$714) would wrongly trigger the same tender/approval tier
+// as an actual $50,000 purchase.
+function prAmountUSD(projCode,amount){
+  var fx=(projCode && projCode!=='Core/Admin' && PROJ[projCode]) ? projFxToUSD(projCode) : 1;
+  return amount*fx;
+}
 // Program vs Operations budget-line card, shown on a project's detail page. Spend by line
 // comes only from completed Purchase Requests' Expense Type (see recalcProjectSpent()), so
 // the note below is there to explain why these two figures don't have to add up to the
@@ -5222,7 +5238,7 @@ function initRaisePR(){
   var pjSel=$('pr-project');
   pjSel.innerHTML='<option>Core/Admin</option>'+Object.keys(PROJ).map(function(k){return '<option>'+k+'</option>';}).join('');
   if($('pr-prf-display') && !$('pr-prf-display')._userChanged){$('pr-prf-display').value=nextPRFNumber(pjSel.value);}
-  pjSel.onchange=function(){ if($('pr-prf-display')&&!$('pr-prf-display')._userChanged)$('pr-prf-display').value=nextPRFNumber(pjSel.value); };
+  pjSel.onchange=function(){ if($('pr-prf-display')&&!$('pr-prf-display')._userChanged)$('pr-prf-display').value=nextPRFNumber(pjSel.value); recalcPRTotals(); };
   // Mark user changes
   [$('pr-position-display'),$('pr-prf-display')].forEach(function(el){if(el)el.addEventListener('input',function(){el._userChanged=true;},true);});
   if(isHeadSel)isHeadSel.addEventListener('change',function(){isHeadSel._userChanged=true;updatePRHeadStatus();},true);
@@ -5271,14 +5287,14 @@ function addPRItemRow(){
   tr.innerHTML=
     '<td style="text-align:center">'+sn+'</td>'+
     '<td><input type="text" class="pri-desc" style="width:150px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="Item description"></td>'+
-    '<td><input type="number" class="pri-qty" value="1" min="1" style="width:55px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" onchange="recalcPRTotals()"></td>'+
+    '<td><input type="number" class="pri-qty" value="1" min="1" style="width:55px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" oninput="recalcPRTotals()"></td>'+
     '<td><input type="text" class="pri-unit" style="width:60px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="Each"></td>'+
     '<td><input type="text" class="pri-projcode" style="width:75px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="0040011"></td>'+
     '<td><input type="text" class="pri-budgetcode" style="width:65px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="2.1.11"></td>'+
     '<td><input type="text" class="pri-deacode" style="width:55px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="-"></td>'+
     '<td><input type="text" class="pri-budgetline" style="width:100px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="e.g. Office Rent"></td>'+
-    '<td><input type="number" class="pri-unitprice" style="width:75px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="0" onchange="recalcPRTotals()"></td>'+
-    '<td class="pri-total" style="font-weight:700;color:var(--navy);white-space:nowrap">$0</td>'+
+    '<td><input type="number" class="pri-unitprice" style="width:75px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="0" oninput="recalcPRTotals()"></td>'+
+    '<td class="pri-total" style="font-weight:700;color:var(--navy);white-space:nowrap">'+money(0,prProjectCurrency($('pr-project')?$('pr-project').value:''))+'</td>'+
     '<td><input type="text" class="pri-remark" style="width:80px;padding:5px;border:1px solid var(--g200);border-radius:5px;font-family:inherit;font-size:12px" placeholder="Optional"></td>'+
     '<td><button class="b bo bs" onclick="removePRItemRow(this)">Remove</button></td>';
   tbody.appendChild(tr);
@@ -5292,17 +5308,20 @@ function removePRItemRow(btn){
 }
 function recalcPRTotals(){
   var rows=Array.from($('pr-items-body').children);
+  var projCode=$('pr-project')?$('pr-project').value:'';
+  var cur=prProjectCurrency(projCode);
   var grand=0;
   rows.forEach(function(tr){
     var qty=parseFloat(tr.querySelector('.pri-qty').value)||0;
     var up=parseFloat(tr.querySelector('.pri-unitprice').value)||0;
     var tot=qty*up;
-    tr.querySelector('.pri-total').textContent='$'+tot.toLocaleString();
+    tr.querySelector('.pri-total').textContent=money(tot,cur);
     grand+=tot;
   });
-  $('pr-grandtotal').textContent='$'+grand.toLocaleString();
-  $('pr-quotesreq').value=prQuotesRequired(grand);
-  updatePRChainPreview(grand);
+  $('pr-grandtotal').textContent=money(grand,cur);
+  var grandUSD=prAmountUSD(projCode,grand);
+  $('pr-quotesreq').value=prQuotesRequired(grandUSD);
+  updatePRChainPreview(grandUSD);
   return grand;
 }
 
@@ -5365,9 +5384,10 @@ function submitPR(){
   if(!$('pr-justification').value.trim()){alert('Please enter a justification.');return;}
   if(!$('pr-dateneeded').value){alert('Please enter the required date.');return;}
   var total=validItems.reduce(function(s,i){return s+i.total;},0);
+  var totalUSD=prAmountUSD($('pr-project').value,total);
   var track=prTrack(dept);
   var isHead=track==='ops'?'yes':($('pr-ishead')?$('pr-ishead').value:'yes');
-  var chain=buildPRChain(track,total,dept,isHead);
+  var chain=buildPRChain(track,totalUSD,dept,isHead);
   var prf=$('pr-prf-display').value||$('pr-prf-display').textContent;
   // Belt-and-suspenders: if another submission (this tab or another device) already
   // took this exact reference number since the form last computed it, bump past it
@@ -5383,7 +5403,7 @@ function submitPR(){
     expenseType:$('pr-expensetype').value,
     dateRequested:today(),dateNeeded:$('pr-dateneeded').value,urgency:$('pr-urgency').value,
     justification:$('pr-justification').value.trim(),notes:$('pr-notes').value.trim(),
-    quotesRequired:prQuotesRequired(total),
+    quotesRequired:prQuotesRequired(totalUSD),
     requestedBy:SES.name,requestedByPosition:($('pr-position-display').value||SES.position||''),requestedByRole:SES.role,
     chain:chain,step:0,
     status:'progress',created:today(),
@@ -5405,13 +5425,14 @@ var prStatusBdg={active:'bB',pending:'bY',done:'bG',rejected:'bR'};
 
 function renderPRCard(pr,showActions){
   var card=el('div','cd');
+  var cur=prProjectCurrency(pr.project);
   var itemsRows='';
   pr.items.forEach(function(it){
-    itemsRows+='<tr><td>'+it.sn+'</td><td>'+esc(it.desc)+'</td><td>'+it.qty+'</td><td>'+esc(it.unit)+'</td><td>'+(it.projCode?esc(it.projCode):'-')+'</td><td>'+(it.budgetCode?esc(it.budgetCode):'-')+'</td><td>'+(it.budgetLine?esc(it.budgetLine):'-')+'</td><td>$'+it.unitPrice.toLocaleString()+'</td><td style="font-weight:700">$'+it.total.toLocaleString()+'</td></tr>';
+    itemsRows+='<tr><td>'+it.sn+'</td><td>'+esc(it.desc)+'</td><td>'+it.qty+'</td><td>'+esc(it.unit)+'</td><td>'+(it.projCode?esc(it.projCode):'-')+'</td><td>'+(it.budgetCode?esc(it.budgetCode):'-')+'</td><td>'+(it.budgetLine?esc(it.budgetLine):'-')+'</td><td>'+money(it.unitPrice,cur)+'</td><td style="font-weight:700">'+money(it.total,cur)+'</td></tr>';
   });
   var body='<div class="cdb">';
   body+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:8px">';
-  body+='<div><b>'+esc(pr.prf)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(pr.dept)+' \u00b7 '+esc(pr.project)+' \u00b7 '+esc(pr.expenseType)+' \u00b7 $'+pr.total.toLocaleString()+' \u00b7 Requested by '+esc(pr.requestedBy)+(pr.requestedByPosition?' ('+esc(pr.requestedByPosition)+')':'')+' \u00b7 '+dt(pr.created)+'</div></div>';
+  body+='<div><b>'+esc(pr.prf)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(pr.dept)+' \u00b7 '+esc(pr.project)+' \u00b7 '+esc(pr.expenseType)+' \u00b7 '+money(pr.total,cur)+' \u00b7 Requested by '+esc(pr.requestedBy)+(pr.requestedByPosition?' ('+esc(pr.requestedByPosition)+')':'')+' \u00b7 '+dt(pr.created)+'</div></div>';
   body+='<span class="bdg '+(pr.status==='complete'?'bG':pr.status==='cancelled'?'bY':pr.status==='rejected'?'bR':'bO')+'">'+(pr.status==='complete'?'Approved':pr.status==='cancelled'?'Cancelled':pr.status==='rejected'?'Rejected':'In Progress')+'</span>';
   body+='</div>';
   body+='<div class="tw"><table style="margin-bottom:8px"><thead><tr><th>S/N</th><th>Description</th><th>Qty</th><th>Unit</th><th>Proj Code</th><th>Budget Code</th><th>Budget Line</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>'+itemsRows+'</tbody></table></div>';
@@ -5493,7 +5514,7 @@ function openPRAction(id,act){
   var t={approve:'Approve Purchase Request',reject:'Reject Purchase Request',comment:'Add Comment'};
   $('m-pr-action').querySelector('h3').textContent=t[act]||'Action';
   var itemsDesc=(p&&p.items&&p.items.length)?esc(p.items.map(function(x){return x.desc;}).join(', ')):'';
-  $('pra-ctx').innerHTML='<b>'+id+'</b> — '+(p?itemsDesc+' ($'+p.total.toLocaleString()+')':'');
+  $('pra-ctx').innerHTML='<b>'+id+'</b> — '+(p?itemsDesc+' ('+money(p.total,prProjectCurrency(p.project))+')':'');
   $('pra-note').value='';
   openM('m-pr-action');
 }
@@ -5740,7 +5761,8 @@ function generateSignedDoc(type,id){
     if(!rec)return;
     title='Purchase Request Form - '+rec.prf;
     sub=rec.dept+' Department - '+rec.project+' - '+rec.expenseType;
-    var itemsList=rec.items.map(function(it){return esc(it.sn+'. '+it.desc+' (Qty '+it.qty+' '+it.unit+' x $'+it.unitPrice.toLocaleString()+' = $'+it.total.toLocaleString()+')');}).join('\n');
+    var prCur=prProjectCurrency(rec.project);
+    var itemsList=rec.items.map(function(it){return esc(it.sn+'. '+it.desc+' (Qty '+it.qty+' '+it.unit+' x '+money(it.unitPrice,prCur)+' = '+money(it.total,prCur)+')');}).join('\n');
     details=[
       ['Requested Date',dt(rec.dateRequested)],
       ['Required Date',dt(rec.dateNeeded)],
@@ -5748,7 +5770,7 @@ function generateSignedDoc(type,id){
       ['Donor Source',esc(rec.donor||'-')],
       ['Special Instructions',esc(rec.instructions||'-')],
       ['Line Items',itemsList],
-      ['Grand Total','$'+rec.total.toLocaleString()],
+      ['Grand Total',money(rec.total,prCur)],
       ['Justification',esc(rec.justification)],
       ['Notes',esc(rec.notes||'-')],
       ['Quotes Required',esc(rec.quotesRequired)]
