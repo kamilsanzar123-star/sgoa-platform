@@ -1184,8 +1184,19 @@ tbody tr:hover td{background:var(--g50);}
       <div class="fg"><label>Country</label><input type="text" id="org-country"></div>
       <div class="fg"><label>Head Office</label><input type="text" id="org-hq"></div>
       <div class="fg"><label>Email</label><input type="email" id="org-email"></div>
-      <div class="fg"><label>Default Currency</label><select id="org-currency"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select>
-        <div style="font-size:10px;color:var(--g500);margin-top:3px">Used for new projects by default and for org-wide totals that combine multiple projects.</div></div>
+      <div class="fg"><label>Default Currency</label><select id="org-currency" onchange="onDefaultCurrencyChanged()"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select>
+        <div style="font-size:10px;color:var(--g500);margin-top:3px">Used for new projects by default. To change an <b>existing</b> project's currency, use "Apply to Existing Projects" below.</div></div>
+      <div class="fg ff" id="cc-box" style="display:none;background:var(--g50);padding:10px;border-radius:7px;border-left:3px solid var(--gold);margin-top:-4px">
+        <div style="font-size:12.5px;font-weight:600;color:var(--navy);margin-bottom:8px">Apply <span id="cc-cur-label">this currency</span> to Existing Projects</div>
+        <div class="fr">
+          <div class="fg"><label>Apply To</label><select id="cc-proj"></select></div>
+          <div class="fg" id="cc-fx-wrap" style="display:none"><label>Exchange Rate to USD</label><input type="number" step="0.0001" id="cc-fx" placeholder="e.g. 0.0140 (1 AFN = $0.0140)"></div>
+        </div>
+        <div style="font-size:10.5px;color:var(--g500);margin-bottom:8px">Converts the project's budget, spent-to-date, and every expenditure/procurement amount already recorded against it, so the real-world value is preserved and everywhere it's shown &mdash; the project card, its detail page, Finance, Procurement &mdash; updates to the new currency.</div>
+        <div id="cc-preview" style="font-size:12px;color:var(--g700);margin-bottom:8px"></div>
+        <button type="button" class="b bo bs" onclick="previewCurrencyChange()">Preview Change</button>
+        <button type="button" class="b bs" id="cc-apply-btn" style="background:var(--red);color:#fff;display:none;margin-left:6px" onclick="applyCurrencyChange()">Apply Currency Change</button>
+      </div>
       <div class="fg"><label>Competitive Quote Threshold (USD)</label><input type="number" id="org-proc-quote" placeholder="3000">
         <div style="font-size:10px;color:var(--g500);margin-top:3px">Purchases at or above this need 3 competitive quotes or a sole-source justification. USAID default: $3,000.</div></div>
       <div class="fg"><label>Formal Bidding Threshold (USD)</label><input type="number" id="org-proc-bid" placeholder="100000">
@@ -2288,6 +2299,71 @@ function saveOrgSettings(){
     procBidThreshold:parseFloat($('org-proc-bid').value)||100000});
   queueCloudSave();
   var m=$('org-msg');m.textContent='✅ Saved!';setTimeout(function(){m.textContent='';},2500);
+}
+
+// ============ APPLY A CURRENCY CHANGE TO EXISTING PROJECTS ============
+// Changing the Default Currency only ever affected brand-new projects — there was no way to
+// move an EXISTING project (and everything already recorded against it) into a different
+// currency. This box appears under the picker so that's a deliberate, previewed action instead
+// of silently relabeling numbers.
+var _ccPending=null;
+function onDefaultCurrencyChanged(){
+  var cur=$('org-currency').value;
+  $('cc-cur-label').textContent=(CURRENCIES[cur]||{}).name?(CURRENCIES[cur].name+' ('+cur+')'):cur;
+  $('cc-fx-wrap').style.display=cur==='USD'?'none':'block';
+  $('cc-box').style.display='block';
+  $('cc-preview').innerHTML='';
+  $('cc-apply-btn').style.display='none';
+  _ccPending=null;
+}
+function previewCurrencyChange(){
+  var newCur=$('org-currency').value;
+  var newFx=newCur==='USD'?1:(parseFloat($('cc-fx').value)||0);
+  if(newCur!=='USD' && newFx<=0){alert('Please enter the exchange rate to USD for '+newCur+' (how many US dollars is 1 '+newCur+' worth).');return;}
+  var projSel=$('cc-proj').value;
+  var codes=projSel==='all'?Object.keys(PROJ):[projSel];
+  if(!codes.length || !PROJ[codes[0]]){alert('No project selected to convert.');return;}
+  var lines=codes.map(function(code){
+    var p=PROJ[code];
+    var usdBudget=p.budget*(p.fxToUSD||1);
+    var newBudget=newCur==='USD'?usdBudget:usdBudget/newFx;
+    return '<b>'+esc(code)+'</b>: '+money(p.budget,p.currency)+' → '+money(Math.round(newBudget),newCur);
+  });
+  $('cc-preview').innerHTML=lines.join('<br>');
+  _ccPending={codes:codes,newCur:newCur,newFx:newFx};
+  $('cc-apply-btn').style.display='inline-flex';
+}
+function convertProjectCurrency(code,newCur,newFx){
+  var p=PROJ[code];if(!p)return;
+  var oldFx=p.fxToUSD||1;
+  function conv(amount){var usd=amount*oldFx;return newCur==='USD'?Math.round(usd):Math.round(usd/newFx);}
+  p.budget=conv(p.budget);
+  p.spent=conv(p.spent);
+  DB.expenditures.forEach(function(e){if(e.proj===code)e.amount=conv(e.amount);});
+  DB.proc.forEach(function(pr){if(pr.proj===code)pr.cost=conv(pr.cost);});
+  // The Finance "Purchase Request" chain (DB.pr) is a separate array from the Supply Chain
+  // procurement tracker (DB.proc) and is one of the two sources recalcProjectSpent() actually
+  // sums to derive p.spent — missing it here would leave completed PRs' amounts silently in
+  // the old currency even after everything else converted.
+  DB.pr.forEach(function(pr){
+    if(pr.project!==code)return;
+    pr.total=conv(pr.total);
+    (pr.items||[]).forEach(function(it){it.unitPrice=conv(it.unitPrice);it.total=conv(it.total);});
+  });
+  p.currency=newCur;
+  p.fxToUSD=newFx;
+  recalcProjectSpent();
+}
+function applyCurrencyChange(){
+  if(!_ccPending)return;
+  var codes=_ccPending.codes;
+  if(!confirm('This changes the recorded currency for '+codes.length+' project'+(codes.length>1?'s':'')+' and converts its budget, spent-to-date, and every expenditure/procurement amount already logged against it. This cannot be easily undone. Continue?'))return;
+  codes.forEach(function(code){convertProjectCurrency(code,_ccPending.newCur,_ccPending.newFx);});
+  logAudit('project-currency-change',codes.join(', '),'Converted to '+_ccPending.newCur+' by '+SES.name);
+  $('cc-preview').innerHTML='<span style="color:var(--green)">Done — '+codes.length+' project'+(codes.length>1?'s':'')+' now tracked in '+_ccPending.newCur+'.</span>';
+  $('cc-apply-btn').style.display='none';
+  _ccPending=null;
+  renderProjectCards();renderFinBudget();renderProc();renderExpenditureLedger();refreshAll();queueCloudSave();
 }
 
 // ============ ORGANIZATION LOGO ============
@@ -4412,7 +4488,8 @@ var PROJECT_SELECT_IDS=[
   {id:'pcf-proj',all:false,core:false,none:true,noneLabel:'Not sure / General'},
   {id:'tar-proj',all:false,core:false,none:true,noneLabel:'Not project-specific'},
   {id:'nu-projects',all:true,core:false},
-  {id:'pt-proj',all:false,core:false}
+  {id:'pt-proj',all:false,core:false},
+  {id:'cc-proj',all:true,core:false}
 ];
 
 function refreshAllProjectDropdowns(){
