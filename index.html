@@ -1524,7 +1524,10 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Indirect Beneficiaries</label><input type="number" id="pj-benef-indirect" min="0" placeholder="0"></div>
 <div class="fg"><label>Start Date</label><input type="date" id="pj-start"></div>
 <div class="fg"><label>End Date</label><input type="date" id="pj-end"></div>
-<div class="fg ff"><label>Provinces/Districts</label><input type="text" id="pj-loc"></div>
+<div class="fg ff"><label>Provinces &amp; Districts <span style="font-weight:400;color:var(--g500)">(add each province the project covers; list its districts in the box next to it)</span></label>
+  <div id="pj-provinces-wrap"></div>
+  <button type="button" class="b bo bs" onclick="addProvinceRow()">+ Add Province</button>
+</div>
 <div class="fg ff"><label>Description</label><textarea rows="2" id="pj-desc"></textarea></div>
 </div>
 <div style="background:var(--g50);padding:12px;border-radius:8px;margin-top:12px;border-left:3px solid var(--navy)">
@@ -2611,11 +2614,32 @@ function removeRow(btn,isBlock){
   var target=isBlock?btn.closest('.lf-block'):btn.closest('.lf-row');
   if(target)target.remove();
 }
+// A project can span several provinces, each with its own set of districts — one row per
+// province, with a free-text "comma-separated districts" field next to it so any number of
+// districts can be listed without a further layer of add/remove rows.
+function addProvinceRow(prov,dist){
+  var w=$('pj-provinces-wrap');if(!w)return;
+  var d=el('div','lf-row');
+  d.style.cssText='display:flex;gap:6px;margin-bottom:4px';
+  d.innerHTML='<input type="text" class="pj-prov-name" placeholder="Province, e.g. Kabul" style="flex:1" value="'+esc(prov||'')+'">'+
+    '<input type="text" class="pj-prov-dist" placeholder="Districts, e.g. Dand, Khost Wa Fereng" style="flex:2" value="'+esc(dist||'')+'">'+
+    '<button type="button" class="b bs" style="background:var(--red);color:#fff" onclick="removeRow(this)">&times;</button>';
+  w.appendChild(d);
+}
+function collectProjectProvinces(){
+  return Array.from(document.querySelectorAll('#pj-provinces-wrap .lf-row')).map(function(r){
+    var prov=r.querySelector('.pj-prov-name').value.trim();
+    var dist=r.querySelector('.pj-prov-dist').value.trim();
+    if(!prov)return null;
+    return dist?prov+' (Districts: '+dist+')':prov;
+  }).filter(Boolean).join('; ');
+}
 function initProjectLFFields(){
-  ['pj-goals-wrap','pj-outcomes-wrap','pj-outputs-wrap'].forEach(function(id){var w=$(id);if(w)w.innerHTML='';});
+  ['pj-goals-wrap','pj-outcomes-wrap','pj-outputs-wrap','pj-provinces-wrap'].forEach(function(id){var w=$(id);if(w)w.innerHTML='';});
   addGoalRow();
   addOutcomeBlock();
   addOutputBlock();
+  addProvinceRow();
   var curSel=$('pj-currency');if(curSel)curSel.value=(DB.org&&DB.org.currency)||'USD';
   var fx=$('pj-fx');if(fx)fx.value='';
   togglePjFxField();
@@ -4642,7 +4666,7 @@ function saveProject(){
     budget:parseInt($('pj-budget').value)||0,spent:0,
     benefDirect:benefDirect,benefIndirect:benefIndirect,benef:benefDirect+benefIndirect,
     currency:currency,fxToUSD:fxToUSD,
-    prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:$('pj-loc').value,
+    prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:collectProjectProvinces(),
     mgr:SES.name,meal:'Kamil Sanzar',status:'pending',color:'var(--teal)',
     goal:goals.join(' | '),impact:$('pj-impact').value.trim(),
     indicators:outcomes.concat(outputs).map(function(o){return (o.text?o.text+': ':'')+o.indicators.join(', ');}).join('\n'),
