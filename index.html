@@ -698,7 +698,12 @@ tbody tr:hover td{background:var(--g50);}
 
 <div class="pg" id="p-finance">
   <div class="wb" style="background:linear-gradient(135deg,#14532d,#16a34a)"><div><div class="wbt">Finance Department</div><div class="wbs">Budget · Expenditure · Financial Controls</div></div><div class="wbi">&#128176;</div></div>
-  
+  <div class="qn">
+    <div class="qi" onclick="go('finance-commitments')"><div class="qii">&#128203;</div><div class="qil">Commitments</div></div>
+    <div class="qi" onclick="openM('m-expenditure')"><div class="qii">&#128176;</div><div class="qil">Record Expenditure</div></div>
+    <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
+    <div class="qi" onclick="openM('m-doc')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
+  </div>
   <div class="cd"><div class="cdh"><div class="cdt">Budget by Project</div></div><div class="cdb" id="fin-budget"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Submit Budget Update to Director</div></div><div class="cdb">
     <div class="fr">
@@ -722,6 +727,19 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-finance"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Finance Department documents</b></p></div></div></div>
 </div>
+
+<div class="pg" id="p-finance-commitments">
+  <div class="ph"><div><h1>Commitment Register</h1><p>Funds already obligated against approved purchase requests, contracts and agreements — before cash actually leaves</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('finance')">Back</button><button class="b bn bs" onclick="openM('m-commitment')">+ Add Commitment</button></div></div>
+  <div class="stats">
+    <div class="st og"><div class="stl">Open Commitments</div><div class="stv" id="cmt-open-count">0</div></div>
+    <div class="st nv"><div class="stl">Total Committed (USD equiv.)</div><div class="stv" id="cmt-open-total">$0</div></div>
+    <div class="st gr"><div class="stl">Liquidated</div><div class="stv" id="cmt-liq-count">0</div></div>
+    <div class="st bl"><div class="stl">Total Liquidated (USD equiv.)</div><div class="stv" id="cmt-liq-total">$0</div></div>
+  </div>
+  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Source</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="commitments-body"></tbody></table></div></div>
+</div>
+
 <div class="pg" id="p-hr">
   <div class="wb" style="background:linear-gradient(135deg,#4c1d95,#7c3aed)"><div><div class="wbt">Human Resources</div><div class="wbs">Staff · Recruitment · Performance</div></div><div class="wbi">&#128101;</div></div>
   <div class="qn">
@@ -1855,10 +1873,10 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-'finance','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
 'admin','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-finance:['finance','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+finance:['finance','finance-commitments','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 hr:['hr','hr-recruitment','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
@@ -1867,11 +1885,11 @@ safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','a
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+  'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+  'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
 access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
@@ -1885,7 +1903,7 @@ executive:[
 meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'hr-recruitment',n:'Recruitment'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
@@ -2970,6 +2988,7 @@ function render(pg){
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
       else if(pg==='meal-data'){renderDataHistory();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();}
+      else if(pg==='finance-commitments'){renderCommitments();}
       else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();}
       else if(pg==='hr-recruitment'){renderVacancies();renderCandidatePipeline();}
       else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();}
@@ -4851,7 +4870,8 @@ var PROJECT_SELECT_IDS=[
   {id:'pt-proj',all:false,core:false},
   {id:'cc-proj',all:true,core:false},
   {id:'an-gender-proj',all:true,core:false},
-  {id:'mg-proj',all:true,core:false}
+  {id:'mg-proj',all:true,core:false},
+  {id:'cmt-proj',all:false,core:true}
 ];
 
 function refreshAllProjectDropdowns(){
@@ -5904,6 +5924,7 @@ function confirmPRAction(){
       else{
         p.status='complete';
         p.completedAt=today();
+        addCommitmentFromPR(p);
         refreshAll();
       }
     } else if(curPR.act==='reject'){
@@ -7120,6 +7141,66 @@ function renderExpenditureLedger(){
 }
 
 
+// ============ FINANCE: COMMITMENT TRACKING ============
+// A "commitment" is money already obligated -- an approved PR, a signed contract or
+// sub-grant -- before it is actually paid out. Tracking it separately from the
+// Expenditure Ledger (which only records money that has already left) gives Finance
+// visibility into funds that are spoken for but not yet disbursed.
+DB.commitments=[];
+
+function addCommitmentFromPR(pr){
+  DB.commitments.push({id:nid('CMT'),source:'PR',prId:pr.id,prf:pr.prf,project:pr.project,
+    description:pr.justification||('Purchase Request '+pr.prf),amount:pr.total,
+    currency:prProjectCurrency(pr.project),status:'Open',created:today(),createdBy:SES.name});
+}
+
+function saveCommitment(){
+  var amt=$('cmt-amount'),desc=$('cmt-desc');
+  if(!amt.value||parseFloat(amt.value)<=0){alert('Please enter a valid amount.');return;}
+  if(!desc.value.trim()){alert('Please enter a description.');return;}
+  var proj=$('cmt-proj').value;
+  DB.commitments.push({id:nid('CMT'),source:'Manual',project:proj,description:desc.value.trim(),
+    amount:parseFloat(amt.value),currency:prProjectCurrency(proj),status:'Open',
+    created:$('cmt-date').value||today(),createdBy:SES.name});
+  closeM('m-commitment');
+  amt.value='';desc.value='';$('cmt-date').value='';
+  renderCommitments();queueCloudSave();
+}
+
+function setCommitmentStatus(id,status){
+  var c=DB.commitments.find(function(x){return x.id===id;});
+  if(!c)return;
+  c.status=status;
+  if(status==='Liquidated')c.liquidatedAt=today();
+  renderCommitments();queueCloudSave();
+}
+
+function renderCommitments(){
+  var body=$('commitments-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.commitments.length){body.innerHTML='<tr><td colspan="7" class="empty">No commitments recorded yet</td></tr>';}
+  else{
+    DB.commitments.slice().reverse().forEach(function(c){
+      var sb=c.status==='Open'?'bO':c.status==='Liquidated'?'bG':'bD';
+      var actions='';
+      if(c.status==='Open')actions='<button class="b bn bs" onclick="setCommitmentStatus(\''+c.id+'\',\'Liquidated\')">Mark Liquidated</button> <button class="b bo bs" onclick="setCommitmentStatus(\''+c.id+'\',\'Cancelled\')">Cancel</button>';
+      else actions='<span style="color:var(--g400);font-size:11px">-</span>';
+      var r=el('tr');
+      r.innerHTML='<td>'+(c.source==='PR'?esc(c.prf):'Manual')+'</td><td>'+esc(c.project)+'</td><td>'+esc(c.description)+'</td>'+
+        '<td>'+money(c.amount,c.currency)+'</td><td>'+dt(c.created)+'</td>'+
+        '<td><span class="bdg '+sb+'">'+esc(c.status)+'</span></td><td>'+actions+'</td>';
+      body.appendChild(r);
+    });
+  }
+  var open=DB.commitments.filter(function(c){return c.status==='Open';});
+  var liq=DB.commitments.filter(function(c){return c.status==='Liquidated';});
+  $('cmt-open-count').textContent=open.length;
+  $('cmt-liq-count').textContent=liq.length;
+  $('cmt-open-total').textContent=money(open.reduce(function(s,c){return s+prAmountUSD(c.project,c.amount);},0),'USD');
+  $('cmt-liq-total').textContent=money(liq.reduce(function(s,c){return s+prAmountUSD(c.project,c.amount);},0),'USD');
+}
+
+
 // ============ EDIT / DELETE SYSTEM ============
 
 var _editingId=null;
@@ -7933,6 +8014,17 @@ if(document.getElementById('afg-map')) initMap();
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-expenditure')">Cancel</button><button class="b bn" onclick="saveExpenditure()">Record Expenditure</button></div>
+</div></div>
+
+<div class="mb" id="m-commitment"><div class="md">
+<div class="mh"><h3>Add Commitment</h3><button class="mx" onclick="closeM('m-commitment')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg"><label>Project</label><select id="cmt-proj"></select></div>
+<div class="fg"><label>Amount *</label><input type="number" id="cmt-amount" placeholder="0"></div>
+<div class="fg ff"><label>Description *</label><input type="text" id="cmt-desc" placeholder="e.g. Sub-grant agreement with Partner X"></div>
+<div class="fg"><label>Date</label><input type="date" id="cmt-date"></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-commitment')">Cancel</button><button class="b bn" onclick="saveCommitment()">Add Commitment</button></div>
 </div></div>
 
 
