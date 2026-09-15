@@ -1062,6 +1062,11 @@ tbody tr:hover td{background:var(--g50);}
     <div class="st bl"><div class="stl">Total In Progress</div><div class="stv" id="pra-total">0</div></div>
     <div class="st gr"><div class="stl">Completed</div><div class="stv" id="pra-done">0</div></div>
   </div>
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">PR Ageing (Open Requests)</div></div><div class="cdb" id="pr-ageing"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Cycle Time</div></div><div class="cdb" id="pr-cycletime"></div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Oldest Open Requests</div></div><div class="cdb tw" id="pr-oldest"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Requiring Your Action</div></div><div class="cdb" id="pr-my-turn"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">All Purchase Requests</div></div><div class="cdb" id="pr-all-list"></div></div>
 </div>
@@ -2775,7 +2780,7 @@ function render(pg){
         }
       }
       else if(pg==='raise-pr'){initRaisePR();renderMyPRs();}
-      else if(pg==='pr-approvals'){renderPRApprovals();}
+      else if(pg==='pr-approvals'){renderPRApprovals();renderPRAgeing();}
       else if(pg==='it'){renderITQueue();}
       else if(pg==='it-tickets'){renderMyITTickets();}
       else if(pg==='access'){renderTARQueue();}
@@ -5496,6 +5501,62 @@ function renderPRApprovals(){
   else DB.pr.forEach(function(p){allList.appendChild(renderPRCard(p,false));});
 }
 
+var PR_CHAIN_ROLE_LABEL={operations:'Operations',deputy:'Deputy Director',progdeputy:'Program Deputy Director',executive:'Executive Director',supply:'Supply Chain',finance:'Finance',meal:'MEAL Head',hr:'HR Head',admin:'Admin Head',safeguarding:'Safeguarding Head',programs:'Program Manager'};
+
+// PR ageing/cycle-time -- how long requests actually take, and which ones are stuck, since
+// the counts above (mine/total/done) say nothing about whether "in progress" means 2 days
+// or 2 months. completedAt is stamped in confirmPRAction() the moment a chain finishes.
+function renderPRAgeing(){
+  var open=DB.pr.filter(function(p){return p.status==='progress';});
+  var now=new Date();
+  open.forEach(function(p){ p._age=Math.floor((now-new Date(p.created))/86400000); });
+
+  var box=$('pr-ageing');
+  if(box){
+    if(!open.length){ box.innerHTML='<div class="empty">No open purchase requests.</div>'; }
+    else{
+      var buckets=[{lbl:'0-7 days',min:0,max:7,col:'var(--green)'},{lbl:'8-14 days',min:8,max:14,col:'var(--blue)'},{lbl:'15-30 days',min:15,max:30,col:'var(--orange)'},{lbl:'30+ days',min:31,max:Infinity,col:'var(--red)'}];
+      buckets.forEach(function(b){ b.n=open.filter(function(p){return p._age>=b.min&&p._age<=b.max;}).length; });
+      var mx=Math.max.apply(null,buckets.map(function(b){return b.n;}))||1;
+      box.innerHTML=buckets.map(function(b){
+        return '<div class="cbar"><div class="cbl">'+b.lbl+'</div><div class="cbt"><div class="cbf" style="width:'+(b.n/mx*100)+'%;background:'+b.col+'"></div></div><div class="cbv">'+b.n+'</div></div>';
+      }).join('');
+    }
+  }
+
+  var closed=DB.pr.filter(function(p){return (p.status==='complete'||p.status==='rejected') && p.completedAt;});
+  var cy=$('pr-cycletime');
+  if(cy){
+    if(!closed.length){ cy.innerHTML='<div class="empty">No closed purchase requests yet.</div>'; }
+    else{
+      var spans=closed.map(function(p){return Math.max(0,(new Date(p.completedAt)-new Date(p.created))/86400000);});
+      var avg=Math.round(spans.reduce(function(s,d){return s+d;},0)/spans.length*10)/10;
+      cy.innerHTML='<div style="display:flex;justify-content:space-around;text-align:center;padding:8px 0;flex-wrap:wrap;gap:10px">'+
+        '<div><div style="font-size:26px;font-weight:700;color:var(--navy)">'+avg+'</div><div style="font-size:11px;color:var(--g500)">Avg Days to Close</div></div>'+
+        '<div><div style="font-size:26px;font-weight:700;color:var(--green)">'+Math.round(Math.min.apply(null,spans))+'</div><div style="font-size:11px;color:var(--g500)">Fastest (days)</div></div>'+
+        '<div><div style="font-size:26px;font-weight:700;color:var(--red)">'+Math.round(Math.max.apply(null,spans))+'</div><div style="font-size:11px;color:var(--g500)">Slowest (days)</div></div>'+
+        '<div><div style="font-size:26px;font-weight:700;color:var(--g700)">'+closed.length+'</div><div style="font-size:11px;color:var(--g500)">Closed Total</div></div></div>';
+    }
+  }
+
+  var oldest=$('pr-oldest');
+  if(oldest){
+    var top5=open.slice().sort(function(a,b){return b._age-a._age;}).slice(0,5);
+    if(!top5.length){ oldest.innerHTML='<div class="empty">No open purchase requests.</div>'; }
+    else{
+      var h='<table><thead><tr><th>PRF</th><th>Project</th><th>Dept</th><th>Amount</th><th>Age</th><th>Awaiting</th></tr></thead><tbody>';
+      top5.forEach(function(p){
+        var waitingRole=p.chain[p.step]?(PR_CHAIN_ROLE_LABEL[p.chain[p.step].role]||p.chain[p.step].role):'-';
+        var ageCol=p._age>30?'var(--red)':p._age>14?'var(--orange)':'var(--g700)';
+        h+='<tr><td><b>'+esc(p.prf)+'</b></td><td>'+esc(p.project)+'</td><td>'+esc(p.dept)+'</td><td>'+money(p.total,prProjectCurrency(p.project))+'</td>'+
+           '<td style="color:'+ageCol+';font-weight:700">'+p._age+'d</td><td>'+esc(waitingRole)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      oldest.innerHTML=h;
+    }
+  }
+}
+
 function cancelPR(id){
   var p=DB.pr.find(function(x){return x.id===id;});
   if(!p)return;
@@ -5531,10 +5592,11 @@ function confirmPRAction(){
       if(p.step<p.chain.length-1){p.step++;p.chain[p.step].status='active';}
       else{
         p.status='complete';
+        p.completedAt=today();
         refreshAll();
       }
     } else if(curPR.act==='reject'){
-      p.chain[p.step].status='rejected';p.status='rejected';
+      p.chain[p.step].status='rejected';p.status='rejected';p.completedAt=today();
     }
   }
   closeM('m-pr-action');
