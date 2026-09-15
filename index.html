@@ -2958,7 +2958,13 @@ function drawAll(){
       [{d:pk.map(function(k){return PROJ[k].budget*projFxToUSD(k);}),c:'#1A3A6B'},
        {d:pk.map(function(k){return PROJ[k].spent*projFxToUSD(k);}),c:'#C8922A'}]);
   }else{
-    bars('c-bar',['Planned','Spent','Balance'],[{d:[d.budget,d.spent,d.budget-d.spent],c:['#1A3A6B','#C8922A','#16a34a']}]);
+    // The default axis formatter is hardcoded to '$' — fine for the "all projects" bar chart
+    // above (always converted to USD first), but wrong here: this single-project chart is in
+    // the project's own currency, so an AFN project would otherwise show a "$" axis next to
+    // AFG-labeled figures underneath it.
+    var curSym=(CURRENCIES[dispCur]||CURRENCIES.USD).sym;
+    bars('c-bar',['Planned','Spent','Balance'],[{d:[d.budget,d.spent,d.budget-d.spent],c:['#1A3A6B','#C8922A','#16a34a']}],
+      function(v){return curSym+(curSym.length>1?' ':'')+(v/1000000).toFixed(1)+'M';});
   }
   setFitText('b-plan',money(Math.round(d.budget),dispCur));
   setFitText('b-spent',money(Math.round(d.spent),dispCur));
