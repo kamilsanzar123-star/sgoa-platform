@@ -592,6 +592,9 @@ tbody tr:hover td{background:var(--g50);}
       <div class="cd"><div class="cdh"><div class="cdt"><span class="dot"></span>Active Alerts</div></div><div class="cdb" id="meal-alerts"></div></div>
     </div>
   </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Gender &amp; CWD Disaggregation</div>
+    <select id="mg-proj" onchange="renderMealHome()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+      <option value="all">All Projects</option></select></div><div class="cdb" id="meal-gender"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
 </div>
 
@@ -922,7 +925,9 @@ tbody tr:hover td{background:var(--g50);}
   </div>
 
   <div class="g2">
-    <div class="cd"><div class="cdh"><div class="cdt">Gender Disaggregation</div></div><div class="cdb" id="an-gender"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Gender &amp; CWD Disaggregation</div>
+      <select id="an-gender-proj" onchange="renderAnalysis()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+        <option value="all">All Projects</option></select></div><div class="cdb" id="an-gender"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Province / District Coverage</div></div><div class="cdb" id="an-geo"></div></div>
   </div>
 
@@ -1474,6 +1479,7 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Project</label><select id="bn-proj"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
 <div class="fg"><label>District</label><input type="text" id="bn-dist"></div>
 <div class="fg ff"><label>Selection Criteria Met</label><select id="bn-crit"><option>Out of school child</option><option>Female-headed household</option><option>IDP/Returnee</option><option>Disability</option><option>Extreme poverty</option><option>Other vulnerability</option></select></div>
+<div class="fg"><label style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" id="bn-disability"> Living with a disability</label><div style="font-size:10px;color:var(--g500);margin-top:3px">Feeds the CWD (Children With Disabilities) count in the gender/disability graphs.</div></div>
 <div class="fg"><label>Verification Status</label><select id="bn-stat"><option>Verified</option><option>Pending Verification</option><option>Rejected</option></select></div>
 <div class="fg"><label>Registration Date</label><input type="date" id="bn-date"></div>
 <div class="fg ff" style="background:var(--g50);padding:10px;border-radius:7px;margin-top:4px">
@@ -3368,6 +3374,7 @@ function renderMealHome(){
     c.appendChild(r);
   });}
   renderDeptTasks('meal-tasks','MEAL');
+  renderGenderCWD('meal-gender',$('mg-proj')?$('mg-proj').value:'all');
   var a=$('meal-alerts');
   if(a){a.innerHTML='';
     DB.findings.filter(function(f){return f.dept==='MEAL'&&f.sev!=='positive';}).slice(0,3).forEach(function(f){
@@ -4026,16 +4033,23 @@ function renderPartners(){
   });
 }
 
+// Male/Female/CWD breakdown for one project (or all of them) — reused by Programs Analysis
+// and the MEAL dashboard so the same numbers, sourced from beneficiary registration records,
+// show up in both places rather than needing separate manual entry.
+function renderGenderCWD(elId,pf){
+  var box=$(elId);if(!box)return;
+  var bs=(!pf||pf==='all')?DB.benef:DB.benef.filter(function(b){return b.proj===pf;});
+  var f=bs.filter(function(b){return b.sex==='Female';}).length;
+  var m=bs.length-f;
+  var cwd=bs.filter(function(b){return b.disability&&b.age<18;}).length;
+  box.innerHTML='<div style="display:flex;justify-content:space-around;text-align:center;padding:12px 0;flex-wrap:wrap;gap:12px">'+
+    '<div><div style="font-size:28px;font-weight:700;color:var(--purple)">'+f+'</div><div style="font-size:11px;color:var(--g500)">Female</div></div>'+
+    '<div><div style="font-size:28px;font-weight:700;color:var(--blue)">'+m+'</div><div style="font-size:11px;color:var(--g500)">Male</div></div>'+
+    '<div><div style="font-size:28px;font-weight:700;color:var(--orange)">'+cwd+'</div><div style="font-size:11px;color:var(--g500)">CWD (Children w/ Disability)</div></div>'+
+    '<div><div style="font-size:28px;font-weight:700;color:var(--navy)">'+(bs.length?Math.round(f/bs.length*100):0)+'%</div><div style="font-size:11px;color:var(--g500)">Female Ratio</div></div></div>';
+}
 function renderAnalysis(){
-  var g=$('an-gender');
-  if(g){
-    var f=DB.benef.filter(function(b){return b.sex==='Female';}).length;
-    var m=DB.benef.length-f;
-    g.innerHTML='<div style="display:flex;justify-content:space-around;text-align:center;padding:12px 0">'+
-      '<div><div style="font-size:28px;font-weight:700;color:var(--purple)">'+f+'</div><div style="font-size:11px;color:var(--g500)">Female</div></div>'+
-      '<div><div style="font-size:28px;font-weight:700;color:var(--blue)">'+m+'</div><div style="font-size:11px;color:var(--g500)">Male</div></div>'+
-      '<div><div style="font-size:28px;font-weight:700;color:var(--navy)">'+(DB.benef.length?Math.round(f/DB.benef.length*100):0)+'%</div><div style="font-size:11px;color:var(--g500)">Female Ratio</div></div></div>';
-  }
+  renderGenderCWD('an-gender',$('an-gender-proj')?$('an-gender-proj').value:'all');
   var geo=$('an-geo');
   if(geo){
     var dc={};DB.benef.forEach(function(b){dc[b.dist]=(dc[b.dist]||0)+1;});
@@ -4448,9 +4462,9 @@ function saveBenef(){
   if(!$('bn-consent').checked){alert('Consent from the beneficiary (or their guardian) must be obtained and confirmed before this record can be saved.');return;}
   DB.benef.push({id:nid('B'),name:n.value.trim(),father:$('bn-father').value,sex:$('bn-sex').value,
     age:parseInt($('bn-age').value)||0,proj:$('bn-proj').value,dist:$('bn-dist').value,
-    crit:$('bn-crit').value,status:$('bn-stat').value,date:$('bn-date').value||today(),
+    crit:$('bn-crit').value,disability:$('bn-disability').checked,status:$('bn-stat').value,date:$('bn-date').value||today(),
     consent:true,consentDate:$('bn-date').value||today(),registeredBy:SES.name});
-  closeM('m-benef');n.value='';$('bn-consent').checked=false;renderBenef();queueCloudSave();
+  closeM('m-benef');n.value='';$('bn-consent').checked=false;$('bn-disability').checked=false;renderBenef();queueCloudSave();
 }
 
 function saveActivity(){
@@ -4541,7 +4555,9 @@ var PROJECT_SELECT_IDS=[
   {id:'tar-proj',all:false,core:false,none:true,noneLabel:'Not project-specific'},
   {id:'nu-projects',all:true,core:false},
   {id:'pt-proj',all:false,core:false},
-  {id:'cc-proj',all:true,core:false}
+  {id:'cc-proj',all:true,core:false},
+  {id:'an-gender-proj',all:true,core:false},
+  {id:'mg-proj',all:true,core:false}
 ];
 
 function refreshAllProjectDropdowns(){
