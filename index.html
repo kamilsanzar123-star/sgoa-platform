@@ -796,6 +796,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="qi" onclick="go('prog-benef')"><div class="qii">&#128101;</div><div class="qil">Beneficiaries</div></div>
     <div class="qi" onclick="go('prog-analysis')"><div class="qii">&#128200;</div><div class="qil">Analysis</div></div>
     <div class="qi" onclick="go('prog-partners')"><div class="qii">&#129309;</div><div class="qil">Partners</div></div>
+    <div class="qi" onclick="go('prog-grants')"><div class="qii">&#128179;</div><div class="qil">Grants</div></div>
     <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
     <div class="qi" onclick="go('projects');setTimeout(function(){openM('m-project');},150)"><div class="qii">&#127919;</div><div class="qil">Add Project</div></div>
   </div>
@@ -995,6 +996,21 @@ tbody tr:hover td{background:var(--g50);}
   <div class="ph"><div><h1>Implementing Partners</h1><p>Local partners &amp; sub-grantees delivering SGOA-funded activities</p></div>
   <div class="pha"><button class="b bo bs" onclick="go('programs')">Back</button><button class="b bn bs" onclick="openM('m-partner')">+ Add Partner</button></div></div>
   <div class="cd"><div class="cdb tw"><table><thead><tr><th>Partner</th><th>Type</th><th>Project</th><th>Capacity Assessment</th><th>Sub-Grant Agreement</th><th>Amount</th><th>Reporting</th><th>Status</th><th>Action</th></tr></thead><tbody id="partners-body"></tbody></table></div></div>
+</div>
+
+<div class="pg" id="p-prog-grants">
+  <div class="ph"><div><h1>Grant Register</h1><p>Donor award agreements, funding periods and reporting compliance</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('programs')">Back</button><button class="b bn bs" onclick="openM('m-grant')">+ Add Grant</button></div></div>
+  <div class="stats">
+    <div class="st nv"><div class="stl">Active Grants</div><div class="stv" id="gr-active">0</div></div>
+    <div class="st gr"><div class="stl">Total Award (USD equiv.)</div><div class="stv" id="gr-total-award">$0</div></div>
+    <div class="st og"><div class="stl">Reports Due (Next 30 Days)</div><div class="stv" id="gr-due-soon">0</div></div>
+    <div class="st rd"><div class="stl">Overdue Reports</div><div class="stv" id="gr-overdue">0</div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Grant Agreements</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Grant Ref</th><th>Donor</th><th>Title</th><th>Project</th><th>Award Amount</th><th>Period</th><th>Status</th><th>Action</th></tr></thead><tbody id="grants-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Reporting Schedule</div><button class="b bn bs" onclick="openM('m-grant-report')">+ Add Report Due Date</button></div>
+    <div class="cdb tw"><table><thead><tr><th>Grant Ref</th><th>Report</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="grant-reports-body"></tbody></table></div></div>
 </div>
 
 <!-- SUPPLY SUB-PAGES -->
@@ -1853,6 +1869,33 @@ tbody tr:hover td{background:var(--g50);}
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-partner-report')">Cancel</button><button class="b bn" onclick="savePartnerReport()">Record Report</button></div>
 </div></div>
+
+<div class="mb" id="m-grant"><div class="md">
+<div class="mh"><h3>Add Grant</h3><button class="mx" onclick="closeM('m-grant')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg"><label>Grant Reference *</label><input type="text" id="gr-ref" placeholder="e.g. SCI-GPE-2026-01"></div>
+<div class="fg"><label>Donor *</label><input type="text" id="gr-donor" placeholder="e.g. Save the Children International"></div>
+<div class="fg ff"><label>Grant Title</label><input type="text" id="gr-title" placeholder="e.g. Girls' Primary Education Support"></div>
+<div class="fg"><label>Project</label><select id="gr-proj"></select></div>
+<div class="fg"><label>Award Amount *</label><input type="number" id="gr-amount" placeholder="0"></div>
+<div class="fg"><label>Start Date</label><input type="date" id="gr-start"></div>
+<div class="fg"><label>End Date</label><input type="date" id="gr-end"></div>
+<div class="fg"><label>Reporting Frequency</label><select id="gr-reportfreq"><option>Monthly</option><option>Quarterly</option><option>Annual</option><option>Ad-hoc</option></select></div>
+<div class="fg ff"><label>Compliance Notes</label><textarea rows="2" id="gr-notes" placeholder="e.g. USAID branding & marking requirements, 2 CFR 200 procurement thresholds"></textarea></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-grant')">Cancel</button><button class="b bn" onclick="saveGrant()">Add Grant</button></div>
+</div></div>
+
+<div class="mb" id="m-grant-report"><div class="md">
+<div class="mh"><h3>Add Report Due Date</h3><button class="mx" onclick="closeM('m-grant-report')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg ff"><label>Grant *</label><select id="grr-grant"></select></div>
+<div class="fg ff"><label>Report Name *</label><input type="text" id="grr-name" placeholder="e.g. Q3 Narrative & Financial Report"></div>
+<div class="fg"><label>Due Date *</label><input type="date" id="grr-due"></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-grant-report')">Cancel</button><button class="b bn" onclick="saveGrantReport()">Add Report Due Date</button></div>
+</div></div>
+
 <div class="mb" id="m-visit"><div class="md">
 <div class="mh"><h3>Log Field Visit</h3><button class="mx" onclick="closeM('m-visit')">&times;</button></div>
 <div class="mbd"><div class="fr">
@@ -1891,23 +1934,23 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
 'admin','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 finance:['finance','finance-commitments','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 hr:['hr','hr-recruitment','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
-programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+  'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
+  'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
 access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
@@ -1925,7 +1968,7 @@ finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments'
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'hr-recruitment',n:'Recruitment'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'},{p:'prog-partners',n:'Partners'}]},
+programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'},{p:'prog-partners',n:'Partners'},{p:'prog-grants',n:'Grants'}]},
 {l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-po',n:'Purchase Orders'},{p:'supply-dist',n:'Distribution'},{p:'supply-suppliers',n:'Suppliers'}]},
@@ -2867,7 +2910,7 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();}
 
 // A department head could previously pick ANY department in the Add Task modal and assign
 // work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
@@ -3016,6 +3059,7 @@ function render(pg){
       else if(pg==='prog-benef'){renderBenef();renderDocs('benef','Programs');}
       else if(pg==='prog-analysis'){renderAnalysis();}
       else if(pg==='prog-partners'){renderPartners();}
+      else if(pg==='prog-grants'){renderGrants();renderGrantReports();}
       else if(pg==='supply'){renderDept('supply','Supply Chain');}
       else if(pg==='supply-proc'){renderProc();}
       else if(pg==='supply-dist'){renderDist();}
@@ -4366,6 +4410,100 @@ function renderPartners(){
   });
 }
 
+// ============ GRANTS MANAGEMENT ============
+DB.grants=[];
+DB.grantReports=[];
+
+function saveGrant(){
+  var ref=$('gr-ref'),donor=$('gr-donor'),amt=$('gr-amount');
+  if(!ref.value.trim()){alert('Please enter the grant reference.');return;}
+  if(!donor.value.trim()){alert('Please enter the donor.');return;}
+  if(!amt.value||parseFloat(amt.value)<=0){alert('Please enter a valid award amount.');return;}
+  var proj=$('gr-proj').value;
+  DB.grants.push({id:nid('GRT'),ref:ref.value.trim(),donor:donor.value.trim(),title:$('gr-title').value.trim(),
+    project:proj,amount:parseFloat(amt.value),currency:projCurrency(proj),
+    start:$('gr-start').value,end:$('gr-end').value,reportFreq:$('gr-reportfreq').value,
+    notes:$('gr-notes').value.trim(),status:'Active',createdBy:SES.name,created:today()});
+  closeM('m-grant');ref.value='';donor.value='';amt.value='';$('gr-title').value='';$('gr-notes').value='';$('gr-start').value='';$('gr-end').value='';
+  renderGrants();queueCloudSave();
+}
+
+function toggleGrantStatus(id){
+  var g=DB.grants.find(function(x){return x.id===id;});
+  if(!g)return;
+  g.status=g.status==='Active'?'Closed':'Active';
+  renderGrants();queueCloudSave();
+}
+
+function refreshGrantDropdown(){
+  var sel=$('grr-grant');if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="">Select a grant…</option>'+
+    DB.grants.map(function(g){return '<option value="'+g.id+'">'+esc(g.ref)+' — '+esc(g.donor)+'</option>';}).join('');
+  if(cur)sel.value=cur;
+}
+
+function saveGrantReport(){
+  var grantId=$('grr-grant').value,name=$('grr-name'),due=$('grr-due');
+  if(!grantId){alert('Please select the grant this report belongs to.');return;}
+  if(!name.value.trim()){alert('Please enter the report name.');return;}
+  if(!due.value){alert('Please enter the due date.');return;}
+  DB.grantReports.push({id:nid('GRR'),grantId:grantId,name:name.value.trim(),due:due.value,status:'Pending'});
+  closeM('m-grant-report');name.value='';due.value='';
+  renderGrantReports();queueCloudSave();
+}
+
+function markReportSubmitted(id){
+  var r=DB.grantReports.find(function(x){return x.id===id;});
+  if(!r)return;
+  r.status='Submitted';r.submittedOn=today();
+  renderGrantReports();queueCloudSave();
+}
+
+function renderGrants(){
+  var body=$('grants-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.grants.length){body.innerHTML='<tr><td colspan="8" class="empty">No grants registered yet</td></tr>';}
+  else{
+    DB.grants.forEach(function(g){
+      var r=el('tr');
+      r.innerHTML='<td><b>'+esc(g.ref)+'</b></td><td>'+esc(g.donor)+'</td><td>'+esc(g.title||'-')+'</td><td>'+esc(g.project)+'</td>'+
+        '<td>'+money(g.amount,g.currency)+'</td><td>'+dt(g.start)+' – '+dt(g.end)+'</td>'+
+        '<td><span class="bdg '+(g.status==='Active'?'bG':'bD')+'">'+esc(g.status)+'</span></td>'+
+        '<td><button class="b bo bs" onclick="toggleGrantStatus(\''+g.id+'\')">'+(g.status==='Active'?'Close':'Reopen')+'</button></td>';
+      body.appendChild(r);
+    });
+  }
+  $('gr-active').textContent=DB.grants.filter(function(g){return g.status==='Active';}).length;
+  $('gr-total-award').textContent=money(DB.grants.filter(function(g){return g.status==='Active';}).reduce(function(s,g){return s+g.amount*projFxToUSD(g.project);},0),'USD');
+  refreshGrantDropdown();
+}
+
+function renderGrantReports(){
+  var body=$('grant-reports-body');if(!body)return;
+  body.innerHTML='';
+  var sorted=DB.grantReports.slice().sort(function(a,b){return new Date(a.due)-new Date(b.due);});
+  if(!sorted.length){body.innerHTML='<tr><td colspan="5" class="empty">No reporting deadlines recorded yet</td></tr>';}
+  else{
+    sorted.forEach(function(r){
+      var grant=DB.grants.find(function(g){return g.id===r.grantId;});
+      var overdue=r.status==='Pending'&&new Date(r.due)<new Date(today());
+      var status=r.status==='Submitted'?'Submitted':(overdue?'Overdue':'Pending');
+      var sb=status==='Submitted'?'bG':status==='Overdue'?'bR':'bY';
+      var actions=r.status==='Pending'?'<button class="b bn bs" onclick="markReportSubmitted(\''+r.id+'\')">Mark Submitted</button>':'<span style="color:var(--g400);font-size:11px">-</span>';
+      var tr=el('tr');
+      tr.innerHTML='<td>'+(grant?esc(grant.ref):'-')+'</td><td>'+esc(r.name)+'</td><td>'+dt(r.due)+'</td>'+
+        '<td><span class="bdg '+sb+'">'+status+'</span></td><td>'+actions+'</td>';
+      body.appendChild(tr);
+    });
+  }
+  var pending=DB.grantReports.filter(function(r){return r.status==='Pending';});
+  var in30=pending.filter(function(r){var d=new Date(r.due)-new Date(today());return d>=0 && d<=30*86400000;});
+  var overdue=pending.filter(function(r){return new Date(r.due)<new Date(today());});
+  $('gr-due-soon').textContent=in30.length;
+  $('gr-overdue').textContent=overdue.length;
+}
+
 // Male/Female/CWD breakdown for one project (or all of them) — reused by Programs Analysis
 // and the MEAL dashboard so the same numbers, sourced from beneficiary registration records,
 // show up in both places rather than needing separate manual entry.
@@ -4891,7 +5029,8 @@ var PROJECT_SELECT_IDS=[
   {id:'cc-proj',all:true,core:false},
   {id:'an-gender-proj',all:true,core:false},
   {id:'mg-proj',all:true,core:false},
-  {id:'cmt-proj',all:false,core:true}
+  {id:'cmt-proj',all:false,core:true},
+  {id:'gr-proj',all:false,core:false}
 ];
 
 function refreshAllProjectDropdowns(){
