@@ -1319,6 +1319,20 @@ tbody tr:hover td{background:var(--g50);}
   </div>
   <div id="tsa-container"></div>
 </div>
+<!-- MY WORK PAGE -->
+<div class="pg" id="p-my-work">
+  <div class="ph"><div><h1>My Work</h1><p>Everything of yours, in one place</p></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Needs Your Attention</div></div><div class="cdb" id="mw-attention"></div></div>
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">My Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="mw-tasks"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">My Approvals</div></div><div class="cdb" id="mw-approvals"></div></div>
+  </div>
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">My Purchase Requests</div><button class="b bo bs" onclick="go('raise-pr')">Raise PR</button></div><div class="cdb tw" id="mw-prs"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">My Leave Requests</div><button class="b bo bs" onclick="go('leave-request')">Request Leave</button></div><div class="cdb" id="mw-leave"></div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">My Timesheet</div><button class="b bo bs" onclick="go('timesheet')">Open Timesheet</button></div><div class="cdb" id="mw-timesheet"></div></div>
+</div>
 <!-- MY SETTINGS PAGE -->
 <div class="pg" id="p-my-settings">
 <div class="ph"><div><h1>⚙️ My Settings</h1><p>Manage your profile and preferences</p></div></div>
@@ -1827,6 +1841,15 @@ it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Tim
 access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
 };
 var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations',progdeputy:'pr-approvals',deputy:'pr-approvals',it:'it',access:'access'};
+
+// A single "My Work" page belongs to every role -- rather than hand-editing 13 separate
+// ACCESS and SIDEBAR array literals (and risking a role getting missed), grant it and link
+// it here, once, for whichever roles already exist above.
+Object.keys(ACCESS).forEach(function(r){ ACCESS[r].push('my-work'); });
+Object.keys(SIDEBAR).forEach(function(r){
+  var acctGroup=SIDEBAR[r].find(function(g){return g.l==='ACCOUNT';});
+  if(acctGroup) acctGroup.i.unshift({p:'my-work',n:'📋 My Work'});
+});
 
 var SES={role:null,name:'',init:''};
 
@@ -2341,6 +2364,75 @@ function doLogin(){
   applyOrgLogo();
   go(HOME[effRole]||'exec');
 }
+// MY WORK PAGE -- one place for everything tied to the logged-in person, filtered from the
+// same DB arrays every department page already reads, instead of hunting across pages.
+function renderMyWork(){
+  var myTasks=DB.tasks.filter(function(t){return t.assign===SES.name && !t.done;})
+    .sort(function(a,b){return new Date(a.due)-new Date(b.due);});
+  var tb=$('mw-tasks');
+  if(tb){
+    tb.innerHTML=!myTasks.length?'<div class="empty">No open tasks assigned to you.</div>':
+      myTasks.map(function(t){
+        var od=overdue(t.due);
+        return '<div class="mbr"><div class="mbl" style="font-size:12px">'+esc(t.title)+(t.proj?' <span style="color:var(--g400)">· '+esc(t.proj)+'</span>':'')+'</div>'+
+          '<div class="mbv" style="color:'+(od?'var(--red)':'var(--g500)')+';font-size:11px;font-weight:'+(od?'700':'400')+'">'+(od?'OVERDUE · ':'Due ')+dt(t.due)+'</div></div>';
+      }).join('');
+  }
+
+  var myPRs=DB.pr.filter(function(p){return p.requestedBy===SES.name;});
+  var pb=$('mw-prs');
+  if(pb){
+    if(!myPRs.length){ pb.innerHTML='<div class="empty">You haven\'t raised any purchase requests.</div>'; }
+    else{
+      var statusLbl={complete:'Approved',rejected:'Rejected',cancelled:'Cancelled',progress:'In Progress'};
+      var statusBdg={complete:'bG',rejected:'bR',cancelled:'bY',progress:'bO'};
+      pb.innerHTML='<table><thead><tr><th>PRF</th><th>Amount</th><th>Status</th></tr></thead><tbody>'+
+        myPRs.slice(0,8).map(function(p){
+          return '<tr><td>'+esc(p.prf)+'</td><td>'+money(p.total,prProjectCurrency(p.project))+'</td>'+
+            '<td><span class="bdg '+(statusBdg[p.status]||'bN')+'">'+(statusLbl[p.status]||p.status)+'</span></td></tr>';
+        }).join('')+'</tbody></table>';
+    }
+  }
+
+  var myApprovals=DB.pr.filter(function(p){return p.status==='progress' && p.chain[p.step] && p.chain[p.step].role===SES.role;});
+  var ab=$('mw-approvals');
+  if(ab){
+    ab.innerHTML=!myApprovals.length?'<div class="empty">Nothing awaiting your approval.</div>':
+      myApprovals.map(function(p){
+        return '<div class="mbr"><div class="mbl" style="font-size:12px">'+esc(p.prf)+' · '+money(p.total,prProjectCurrency(p.project))+'</div>'+
+          '<button class="b bn bs" onclick="go(\'pr-approvals\')">Review</button></div>';
+      }).join('');
+  }
+
+  var myLeave=(DB.leaveRequests||[]).filter(function(l){return l.requestedBy===SES.name;}).slice(0,5);
+  var lb=$('mw-leave');
+  if(lb){
+    lb.innerHTML=!myLeave.length?'<div class="empty">No leave requests on file.</div>':
+      myLeave.map(function(l){
+        var bd=l.status==='Approved'?'bG':l.status==='Rejected'?'bR':'bO';
+        return '<div class="mbr"><div class="mbl" style="font-size:12px">'+esc(l.type)+' · '+dt(l.start)+' → '+dt(l.end)+' ('+l.days+'d)</div><span class="bdg '+bd+'">'+esc(l.status)+'</span></div>';
+      }).join('');
+  }
+
+  var tsBox=$('mw-timesheet');
+  if(tsBox){
+    var monthKey=new Date().toISOString().slice(0,7);
+    var rec=(DB.timesheets||[]).find(function(r){return r.staff===SES.name && r.month===monthKey;});
+    var status=rec?rec.status:'Not started';
+    var bd=status==='Approved'?'bG':status==='Submitted'?'bO':status==='Rejected'?'bR':'bY';
+    tsBox.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px">This month ('+monthKey+')</div><span class="bdg '+bd+'">'+esc(status)+'</span></div>';
+  }
+
+  var needs=[];
+  myTasks.filter(function(t){return overdue(t.due);}).forEach(function(t){needs.push('Task overdue: '+esc(t.title));});
+  myApprovals.forEach(function(p){needs.push('Purchase request awaiting your approval: '+esc(p.prf));});
+  (DB.leaveRequests||[]).filter(function(l){return l.requestedBy===SES.name && l.status==='Pending';}).forEach(function(l){needs.push('Leave request still pending HR review: '+esc(l.type)+' ('+dt(l.start)+')');});
+  var nb=$('mw-attention');
+  if(nb){
+    nb.innerHTML=!needs.length?'<div class="empty">Nothing needs your attention right now.</div>':
+      needs.map(function(n){return '<div class="al alD" style="margin-bottom:6px">'+n+'</div>';}).join('');
+  }
+}
 // MY SETTINGS PAGE
 function renderMySettings(){
   var u=DB.users.find(function(x){return x.name===SES.name;});
@@ -2817,6 +2909,7 @@ function render(pg){
       else if(pg==='timesheet'){setTimeout(renderMyTimesheet,100);}
       else if(pg==='timesheet-approve'){setTimeout(renderTimesheetApprovals,100);}
       else if(pg==='my-settings'){renderMySettings();}
+      else if(pg==='my-work'){renderMyWork();}
     }catch(e){console.error('render error:',pg,e.message,e.stack);}
   },30);
 }
