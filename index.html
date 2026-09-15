@@ -417,6 +417,10 @@ tbody tr:hover td{background:var(--g50);}
           <div><div style="font-size:16px;font-weight:700;color:var(--gold)" id="b-spent">$1.54M</div><div style="color:var(--g500)">Spent</div></div>
           <div><div style="font-size:16px;font-weight:700;color:var(--green)" id="b-bal">$0.86M</div><div style="color:var(--g500)">Balance</div></div>
         </div>
+        <div style="display:flex;justify-content:space-around;margin-top:10px;padding-top:10px;border-top:1px solid var(--g100);font-size:10.5px;text-align:center">
+          <div><div style="font-size:14px;font-weight:700;color:var(--blue)" id="b-line-program">$0</div><div style="color:var(--g500)">Program Spent</div></div>
+          <div><div style="font-size:14px;font-weight:700;color:var(--orange)" id="b-line-operations">$0</div><div style="color:var(--g500)">Operations Spent</div></div>
+        </div>
       </div>
     </div>
 
@@ -1524,7 +1528,8 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Donor</label><input type="text" id="pj-donor"></div>
 <div class="fg"><label>Sector</label><select id="pj-sector"><option>Education</option><option>Health</option><option>Livelihoods</option><option>WASH</option><option>Protection</option><option>Food Security</option></select></div>
 <div class="fg"><label>Currency</label><select id="pj-currency" onchange="togglePjFxField()"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select></div>
-<div class="fg"><label>Budget</label><input type="number" id="pj-budget"></div>
+<div class="fg"><label>Program Budget</label><input type="number" id="pj-budget-program" min="0" placeholder="0"></div>
+<div class="fg"><label>Operations Budget</label><input type="number" id="pj-budget-operations" min="0" placeholder="0"></div>
 <div class="fg ff" id="pj-fx-wrap" style="display:none"><label id="pj-fx-label">Exchange Rate</label><input type="number" step="0.0001" id="pj-fx" placeholder="e.g. 70 (1 USD = 70 AFN)"><div style="font-size:10px;color:var(--g500);margin-top:3px">Used only to combine this project's budget into org-wide USD totals &mdash; the project itself is tracked and reported in the currency above.</div></div>
 <div class="fg"><label>Direct Beneficiaries</label><input type="number" id="pj-benef-direct" min="0" placeholder="0"></div>
 <div class="fg"><label>Indirect Beneficiaries</label><input type="number" id="pj-benef-indirect" min="0" placeholder="0"></div>
@@ -2193,6 +2198,21 @@ function setFitText(id,text){
 // A project's currency, falling back to the org's default currency, then USD.
 function projCurrency(code){return (PROJ[code]&&PROJ[code].currency) || (DB.org&&DB.org.currency) || 'USD';}
 function projFxToUSD(code){return (PROJ[code]&&PROJ[code].fxToUSD)||1;}
+// Program vs Operations budget-line card, shown on a project's detail page. Spend by line
+// comes only from completed Purchase Requests' Expense Type (see recalcProjectSpent()), so
+// the note below is there to explain why these two figures don't have to add up to the
+// project's total Spent whenever money moved through direct expenditures or Supply Chain
+// procurement instead of a PR.
+function budgetLineCardHTML(p){
+  var bp=p.budgetProgram||0,bo=p.budgetOperations||0,sp=p.spentProgram||0,so=p.spentOperations||0;
+  var progPct=bp?Math.min(Math.round(sp/bp*100),100):0;
+  var opsPct=bo?Math.min(Math.round(so/bo*100),100):0;
+  return '<div class="cd"><div class="cdh"><div class="cdt">Budget by Line: Program vs Operations</div></div><div class="cdb">'+
+    '<div class="cbar"><div class="cbl">Program</div><div class="cbt"><div class="cbf" style="width:'+progPct+'%;background:var(--blue)"></div></div><div class="cbv">'+money(sp,p.currency)+' of '+money(bp,p.currency)+'</div></div>'+
+    '<div class="cbar"><div class="cbl">Operations</div><div class="cbt"><div class="cbf" style="width:'+opsPct+'%;background:var(--orange)"></div></div><div class="cbv">'+money(so,p.currency)+' of '+money(bo,p.currency)+'</div></div>'+
+    '<div style="font-size:10px;color:var(--g500);margin-top:8px">Spend by line comes from the Expense Type on each Purchase Request. Direct expenditures and Supply Chain procurement records aren\'t tagged by line, so these two figures may not add up to total Spent above.</div>'+
+    '</div></div>';
+}
 function dt(s){if(!s)return '-';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 function esc(s){
   // Nothing in this file ever cleaned user-entered text before inserting it into the
@@ -2864,15 +2884,17 @@ function getProjData(pf){
   var not=acts.filter(function(a){return a.status==='Not Started';}).length;
   var behind=acts.filter(function(a){return a.status==='In Progress'&&a.target>0&&(a.actual/a.target)<0.5;}).length;
   prog=Math.max(0,prog-behind);
-  var budget=0,spent=0,benef=0;
+  var budget=0,spent=0,benef=0,spentProgram=0,spentOperations=0;
   // Summing "all" projects' budgets only makes sense in one common currency — each project's
   // own fxToUSD rate converts it before adding, so a mix of USD/AFN/etc. projects still totals
   // correctly (see money(...,'USD') in drawAll below).
-  if(pf==='all'){for(var k in PROJ){var fx=projFxToUSD(k);budget+=PROJ[k].budget*fx;spent+=PROJ[k].spent*fx;benef+=PROJ[k].benef;}}
-  else if(PROJ[pf]){budget=PROJ[pf].budget;spent=PROJ[pf].spent;benef=PROJ[pf].benef;}
+  if(pf==='all'){for(var k in PROJ){var fx=projFxToUSD(k);budget+=PROJ[k].budget*fx;spent+=PROJ[k].spent*fx;benef+=PROJ[k].benef;
+    spentProgram+=(PROJ[k].spentProgram||0)*fx;spentOperations+=(PROJ[k].spentOperations||0)*fx;}}
+  else if(PROJ[pf]){budget=PROJ[pf].budget;spent=PROJ[pf].spent;benef=PROJ[pf].benef;
+    spentProgram=PROJ[pf].spentProgram||0;spentOperations=PROJ[pf].spentOperations||0;}
   var tot=acts.length||1;
   var comp=Math.round((done/tot)*100);
-  return {done:done,prog:prog,behind:behind,not:not,tot:acts.length,budget:budget,spent:spent,benef:benef,comp:comp};
+  return {done:done,prog:prog,behind:behind,not:not,tot:acts.length,budget:budget,spent:spent,benef:benef,comp:comp,spentProgram:spentProgram,spentOperations:spentOperations};
 }
 
 var PERF={
@@ -2917,6 +2939,8 @@ function drawAll(){
   setFitText('b-plan',money(Math.round(d.budget),dispCur));
   setFitText('b-spent',money(Math.round(d.spent),dispCur));
   setFitText('b-bal',money(Math.round(d.budget-d.spent),dispCur));
+  setFitText('b-line-program',money(Math.round(d.spentProgram),dispCur));
+  setFitText('b-line-operations',money(Math.round(d.spentOperations),dispCur));
 
   // Build live expenditure by category from DB.expenditures + approved DB.pr items
   var catColors={'Personnel':'#1A3A6B','Operations':'#2563eb','Activities':'#16a34a','Travel':'#ea580c','Supplies':'#f59e0b','Other':'#94a3b8'};
@@ -3117,6 +3141,8 @@ function openProject(k){
   '<div class="st gr"><div class="stl">Beneficiaries</div><div class="stv">'+fmt(p.benef)+'</div><div class="sts">'+fmt(p.benefDirect||0)+' direct, '+fmt(p.benefIndirect||0)+' indirect &middot; '+bens.length+' registered in system</div></div>'+
   '<div class="st gd"><div class="stl">Budget Utilized</div><div class="stv">'+(p.budget?Math.round(p.spent/p.budget*100):0)+'%</div><div class="sts">'+money(p.spent,p.currency)+' of '+money(p.budget,p.currency)+'</div></div>'+
   '<div class="st bl"><div class="stl">Activities</div><div class="stv">'+acts.length+'</div><div class="sts">'+done+' completed</div></div></div>';
+
+  h+=budgetLineCardHTML(p);
 
   h+='<div class="cd" style="border-left:4px solid '+p.color+'"><div class="cdh"><div class="cdt">Logframe: Goal, Impact, Outcomes &amp; Outputs</div></div><div class="cdb">'+renderLogframeSummary(p)+'</div></div>';
 
@@ -3661,10 +3687,11 @@ function renderFinBudget(){
   // Projects can each carry their own currency, so combining them into one total requires
   // converting every project through its own fxToUSD rate first — summing raw numbers across
   // different currencies would silently produce a meaningless figure.
-  var tot=0,sp=0,mixedCurrency=false;
+  var tot=0,sp=0,spProgram=0,spOperations=0,mixedCurrency=false;
   for(var k in PROJ){
     var fx=projFxToUSD(k);
     tot+=PROJ[k].budget*fx;sp+=PROJ[k].spent*fx;
+    spProgram+=(PROJ[k].spentProgram||0)*fx;spOperations+=(PROJ[k].spentOperations||0)*fx;
     if(PROJ[k].currency&&PROJ[k].currency!=='USD')mixedCurrency=true;
   }
   var totalLabel='Total Budget'+(mixedCurrency?' (USD equiv.)':'');
@@ -3673,6 +3700,10 @@ function renderFinBudget(){
     '<div><div style="font-size:18px;font-weight:700;color:var(--gold)">'+money(sp,'USD')+'</div><div style="font-size:10px;color:var(--g500)">Spent'+(mixedCurrency?' (USD equiv.)':'')+'</div></div>'+
     '<div><div style="font-size:18px;font-weight:700;color:var(--green)">'+money(tot-sp,'USD')+'</div><div style="font-size:10px;color:var(--g500)">Balance</div></div>';
   c.appendChild(t);
+  var t2=el('div');t2.style.cssText='margin-top:10px;padding-top:10px;border-top:1px solid var(--g100);display:flex;justify-content:space-around;text-align:center';
+  t2.innerHTML='<div><div style="font-size:15px;font-weight:700;color:var(--blue)">'+money(spProgram,'USD')+'</div><div style="font-size:10px;color:var(--g500)">Program Spent'+(mixedCurrency?' (USD equiv.)':'')+'</div></div>'+
+    '<div><div style="font-size:15px;font-weight:700;color:var(--orange)">'+money(spOperations,'USD')+'</div><div style="font-size:10px;color:var(--g500)">Operations Spent'+(mixedCurrency?' (USD equiv.)':'')+'</div></div>';
+  c.appendChild(t2);
 }
 
 // ============ HR ============
@@ -4665,7 +4696,9 @@ function saveProject(){
   var code=$('pj-code').value.trim()||n.value.trim().slice(0,10);
   var codeTaken = !!PROJ[code] || DB.pendingProjects.some(function(x){return x.code===code && x.status!=='rejected';});
   if(codeTaken){alert('Project code "'+code+'" is already in use by another project. Please choose a different code — reusing one will overwrite the existing project\'s data.');return;}
-  if(!$('pj-budget').value || parseInt($('pj-budget').value)<=0){alert('Please enter a budget greater than 0.');return;}
+  var budgetProgram=parseInt($('pj-budget-program').value)||0;
+  var budgetOperations=parseInt($('pj-budget-operations').value)||0;
+  if(budgetProgram+budgetOperations<=0){alert('Please enter a Program Budget and/or Operations Budget totalling more than 0.');return;}
   var currency=$('pj-currency')?$('pj-currency').value:'USD';
   // Asked as "1 USD = how many [currency]" (e.g. 70 for AFN) since that's how exchange rates
   // are naturally quoted for this currency, not the other way round — fxToUSD (USD per unit)
@@ -4679,7 +4712,7 @@ function saveProject(){
   var benefDirect=parseInt($('pj-benef-direct').value)||0;
   var benefIndirect=parseInt($('pj-benef-indirect').value)||0;
   var data={code:code,name:n.value.trim(),donor:$('pj-donor').value,sector:$('pj-sector').value,
-    budget:parseInt($('pj-budget').value)||0,spent:0,
+    budgetProgram:budgetProgram,budgetOperations:budgetOperations,budget:budgetProgram+budgetOperations,spent:0,
     benefDirect:benefDirect,benefIndirect:benefIndirect,benef:benefDirect+benefIndirect,
     currency:currency,fxToUSD:fxToUSD,
     prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:collectProjectProvinces(),
@@ -4690,7 +4723,7 @@ function saveProject(){
     edApproved:false,mealApproved:false,financeApproved:false,mealComments:[],
     createdBy:SES.name,createdRole:SES.role};
   DB.pendingProjects.push(data);
-  closeM('m-project');n.value='';$('pj-impact').value='';$('pj-benef-direct').value='';$('pj-benef-indirect').value='';initProjectLFFields();
+  closeM('m-project');n.value='';$('pj-impact').value='';$('pj-benef-direct').value='';$('pj-benef-indirect').value='';$('pj-budget-program').value='';$('pj-budget-operations').value='';initProjectLFFields();
   renderPendingProjects();
   queueCloudSave();
   alert('Project submitted. It requires approval from MEAL (indicators), Finance (budget), and the Executive Director before it goes live.');
@@ -4702,6 +4735,7 @@ function maybeActivateProject(code){
   p.status='approved';
   PROJ[code]={name:p.name,donor:p.donor,sector:p.sector,budget:p.budget,spent:0,benef:p.benef,
     benefDirect:p.benefDirect||0,benefIndirect:p.benefIndirect||0,
+    budgetProgram:p.budgetProgram||0,budgetOperations:p.budgetOperations||0,
     currency:p.currency||'USD',fxToUSD:p.fxToUSD||1,
     prog:0,start:p.start,end:p.end,loc:p.loc,mgr:p.mgr,meal:p.meal,status:'Active',color:'var(--teal)',
     goal:p.goal||('Improve outcomes for beneficiaries through '+p.sector.toLowerCase()+' programming in '+p.loc+'.'),
@@ -4952,11 +4986,17 @@ function recalcProjectSpent(){
   // out of sync with the ledger. It's now always derived fresh from the two real sources
   // of truth: approved purchase requests and recorded expenditures.
   Object.keys(PROJ).forEach(function(k){
-    var prTotal=DB.pr.filter(function(p){return p.project===k && p.status==='complete';})
-      .reduce(function(s,p){return s+(p.total||0);},0);
+    var prs=DB.pr.filter(function(p){return p.project===k && p.status==='complete';});
+    var prTotal=prs.reduce(function(s,p){return s+(p.total||0);},0);
     var expTotal=DB.expenditures.filter(function(e){return e.proj===k;})
       .reduce(function(s,e){return s+(e.amount||0);},0);
     PROJ[k].spent = prTotal+expTotal;
+    // Spend by budget line (Program vs Operations) is only known for Purchase Requests,
+    // since "Expense Type" is captured there and nowhere else (not on direct expenditures
+    // or Supply Chain procurement) -- these two figures won't sum to the total spent above
+    // whenever spending was recorded through one of those other channels instead.
+    PROJ[k].spentProgram=prs.filter(function(p){return p.expenseType==='Direct Program Expense';}).reduce(function(s,p){return s+(p.total||0);},0);
+    PROJ[k].spentOperations=prs.filter(function(p){return p.expenseType==='Operation Cost';}).reduce(function(s,p){return s+(p.total||0);},0);
   });
 }
 
