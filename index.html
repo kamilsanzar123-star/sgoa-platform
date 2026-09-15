@@ -1169,6 +1169,24 @@ tbody tr:hover td{background:var(--g50);}
   </div>
   <div class="cd"><div class="cdh"><div class="cdt">Original System Accounts</div></div><div class="cdb tw"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Access Scope</th></tr></thead><tbody id="users-body"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Additional Users Created</div></div><div class="cdb tw"><table><thead><tr><th>Name</th><th>Username</th><th>Role Template</th><th>Linked Projects</th><th>Status</th><th>Created</th><th>Action</th></tr></thead><tbody id="users-extra-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Login Activity</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Name</th><th>Role</th><th>Today</th><th>This Week</th><th>This Month</th><th>This Year</th><th>Last Login</th></tr></thead><tbody id="login-activity-body"></tbody></table></div>
+  </div>
+  <div class="cd">
+    <div class="cdh"><div class="cdt">Login History</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <select id="la-staff" onchange="renderLoginChart()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"></select>
+        <button class="b bn bs" id="la-tab-day" onclick="setLoginChartPeriod('day')">Daily</button>
+        <button class="b bo bs" id="la-tab-week" onclick="setLoginChartPeriod('week')">Weekly</button>
+        <button class="b bo bs" id="la-tab-month" onclick="setLoginChartPeriod('month')">Monthly</button>
+        <button class="b bo bs" id="la-tab-year" onclick="setLoginChartPeriod('year')">Yearly</button>
+      </div>
+    </div>
+    <div class="cdb" style="text-align:center">
+      <canvas id="la-chart" width="700" height="180"></canvas>
+    </div>
+  </div>
 </div>
 
 <!-- SETTINGS -->
@@ -1819,6 +1837,7 @@ attendance:[],
 expenditures:[],
 timesheets:[],
 deletionLog:[],
+loginLog:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -2259,6 +2278,8 @@ function doLogin(){
   }
   SES.role=effRole;SES.name=effName;SES.init=effName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
   SES.position=effPosition;
+  DB.loginLog.push({user:u,name:effName,role:effLabel,ts:new Date().toISOString()});
+  queueCloudSave();
   $('uav').textContent=SES.init;$('unm').textContent=effName;$('url').textContent=effLabel;
   buildSide(effRole);
   if(!DB._roadmapSeeded){seedExistingRoadmaps();DB._roadmapSeeded=true;}
@@ -2716,7 +2737,7 @@ function render(pg){
       else if(pg==='access'){renderTARQueue();}
       else if(pg==='tar-request'){initTARForm();renderMyTARs();}
       else if(pg==='leave-request'){renderMyLeaveRequests();}
-      else if(pg==='users'){renderUsers();renderUserMgmt();}
+      else if(pg==='users'){renderUsers();renderUserMgmt();renderLoginActivity();}
       else if(pg==='settings'){renderSettings();}
       else if(pg==='meal'){renderMealHome();}
       else if(pg==='meal-ind'){renderInd();}
@@ -2785,18 +2806,21 @@ function shadeColor(hex,pct){
   return '#'+(0x1000000+r*0x10000+g*0x100+b).toString(16).slice(1);
 }
 
-function bars(cid,labels,sets){
+function bars(cid,labels,sets,axisFmt){
   var c=$(cid);if(!c)return;var x=c.getContext('2d');
   x.clearRect(0,0,c.width,c.height);
   var W=c.width,H=c.height,P={t:14,r:8,b:26,l:44};
   var cw=W-P.l-P.r,ch=H-P.t-P.b;
   var all=[];sets.forEach(function(s){s.d.forEach(function(v){all.push(v);});});
   var mx=Math.max.apply(null,all)*1.18||1;
+  // axisFmt lets a non-money chart (e.g. a plain count) supply its own y-axis label instead
+  // of the dollar-millions format every existing money chart here still relies on by default.
+  axisFmt=axisFmt||function(v){return '$'+(v/1000000).toFixed(1)+'M';};
   x.strokeStyle='#eef1f5';x.lineWidth=1;x.font='9px Arial';x.fillStyle='#94a3b8';
   for(var i=0;i<=4;i++){
     var y=P.t+ch-(i/4)*ch;
     x.beginPath();x.moveTo(P.l,y);x.lineTo(W-P.r,y);x.stroke();
-    x.textAlign='right';x.fillText('$'+(mx*i/4/1000000).toFixed(1)+'M',P.l-3,y+3);
+    x.textAlign='right';x.fillText(axisFmt(mx*i/4),P.l-3,y+3);
   }
   var slotW=cw/labels.length,barW=slotW/(sets.length+0.6);
   labels.forEach(function(lb,li){
@@ -5560,6 +5584,101 @@ function renderUserMgmt(){
   if($('um-total'))$('um-total').textContent=totalCred+DB.users.length;
   if($('um-active'))$('um-active').textContent=totalCred+DB.users.filter(function(u){return u.status==='Active';}).length;
   if($('um-inactive'))$('um-inactive').textContent=DB.users.filter(function(u){return u.status==='Inactive';}).length;
+}
+
+// ============ STAFF LOGIN ACTIVITY ============
+// Every successful login is recorded to DB.loginLog (see doLogin()) so the Director can see,
+// per account, whether they logged in today and how often over the week/month/year, plus a
+// drill-down chart of their login history at daily/weekly/monthly/yearly granularity.
+function loginAccountsList(){
+  var list=[];
+  Object.keys(CRED).forEach(function(k){list.push({username:CRED[k].u,name:CRED[k].n,role:CRED[k].r});});
+  DB.users.forEach(function(u){list.push({username:u.username,name:u.name,role:ROLE_TEMPLATE_LABEL[u.roleTemplate]||u.roleTemplate});});
+  return list;
+}
+function renderLoginActivity(){
+  var sel=$('la-staff');
+  if(sel){
+    var cur=sel.value;
+    var accts=loginAccountsList();
+    sel.innerHTML='<option value="all">All Staff (org-wide)</option>'+accts.map(function(a){return '<option value="'+esc(a.username)+'">'+esc(a.name)+'</option>';}).join('');
+    if(cur && Array.from(sel.options).some(function(o){return o.value===cur;})) sel.value=cur;
+  }
+  renderLoginActivitySummary();
+  renderLoginChart();
+}
+function renderLoginActivitySummary(){
+  var body=$('login-activity-body');if(!body)return;
+  var accts=loginAccountsList();
+  body.innerHTML='';
+  if(!accts.length){body.innerHTML='<tr><td colspan="7" class="empty">No accounts yet.</td></tr>';return;}
+  var now=new Date();
+  var startOfToday=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  var startOfWeek=startOfToday-6*86400000;
+  var startOfMonth=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  var startOfYear=new Date(now.getFullYear(),0,1).getTime();
+  accts.forEach(function(a){
+    var logs=DB.loginLog.filter(function(l){return l.user===a.username;});
+    var today=logs.some(function(l){return new Date(l.ts).getTime()>=startOfToday;});
+    var week=logs.filter(function(l){return new Date(l.ts).getTime()>=startOfWeek;}).length;
+    var month=logs.filter(function(l){return new Date(l.ts).getTime()>=startOfMonth;}).length;
+    var year=logs.filter(function(l){return new Date(l.ts).getTime()>=startOfYear;}).length;
+    var last=logs.length?logs.reduce(function(x,y){return new Date(x.ts)>new Date(y.ts)?x:y;}):null;
+    var r=el('tr');
+    r.innerHTML='<td><b>'+esc(a.name)+'</b></td><td>'+esc(a.role)+'</td>'+
+      '<td><span class="bdg '+(today?'bG':'bY')+'">'+(today?'Logged in today':'Not yet today')+'</span></td>'+
+      '<td>'+week+'</td><td>'+month+'</td><td>'+year+'</td>'+
+      '<td>'+(last?dt(last.ts)+' '+new Date(last.ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'Never')+'</td>';
+    body.appendChild(r);
+  });
+}
+var loginChartPeriod='day';
+function setLoginChartPeriod(p){
+  loginChartPeriod=p;
+  ['day','week','month','year'].forEach(function(t){
+    var b=$('la-tab-'+t);
+    if(b) b.className = t===p ? 'b bn bs' : 'b bo bs';
+  });
+  renderLoginChart();
+}
+function renderLoginChart(){
+  var sel=$('la-staff');if(!sel)return;
+  var who=sel.value||'all';
+  var logs=who==='all'?DB.loginLog:DB.loginLog.filter(function(l){return l.user===who;});
+  var labels=[],data=[],now=new Date(),i,d,next,cnt,start,end,y;
+  if(loginChartPeriod==='day'){
+    for(i=13;i>=0;i--){
+      d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);
+      next=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);
+      cnt=logs.filter(function(l){var t=new Date(l.ts).getTime();return t>=d.getTime()&&t<next.getTime();}).length;
+      labels.push(d.getDate()+'/'+(d.getMonth()+1));
+      data.push(cnt);
+    }
+  } else if(loginChartPeriod==='week'){
+    for(i=7;i>=0;i--){
+      end=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i*7);
+      start=new Date(end.getFullYear(),end.getMonth(),end.getDate()-6);
+      cnt=logs.filter(function(l){var t=new Date(l.ts).getTime();return t>=start.getTime()&&t<end.getTime()+86400000;}).length;
+      labels.push(start.getDate()+'/'+(start.getMonth()+1));
+      data.push(cnt);
+    }
+  } else if(loginChartPeriod==='month'){
+    for(i=11;i>=0;i--){
+      d=new Date(now.getFullYear(),now.getMonth()-i,1);
+      next=new Date(d.getFullYear(),d.getMonth()+1,1);
+      cnt=logs.filter(function(l){var t=new Date(l.ts).getTime();return t>=d.getTime()&&t<next.getTime();}).length;
+      labels.push(d.toLocaleDateString('en-GB',{month:'short'}));
+      data.push(cnt);
+    }
+  } else {
+    for(i=4;i>=0;i--){
+      y=now.getFullYear()-i;
+      cnt=logs.filter(function(l){return new Date(l.ts).getFullYear()===y;}).length;
+      labels.push(''+y);
+      data.push(cnt);
+    }
+  }
+  bars('la-chart',labels,[{d:data,c:'#1A3A6B'}],function(v){return Math.round(v).toString();});
 }
 
 
