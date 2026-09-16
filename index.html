@@ -653,13 +653,21 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL RISKS -->
 <div class="pg" id="p-meal-risk">
-  <div class="ph"><div><h1>Risk Register</h1><p>Live risk tracking with automatic scoring</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-risk')">+ Add Risk</button></div></div>
+  <div class="ph"><div><h1>Risk &amp; Audit Findings</h1><p>Live risk tracking with automatic scoring, plus internal/external/donor audit findings tracked to closure</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bo bs" onclick="openM('m-risk')">+ Add Risk</button><button class="b bn bs" onclick="openM('m-audit-finding')">+ Add Audit Finding</button></div></div>
   <div class="stats"><div class="st rd"><div class="stl">Critical (15-25)</div><div class="stv" id="rk-c">0</div></div>
   <div class="st og"><div class="stl">High (10-14)</div><div class="stv" id="rk-h">0</div></div>
   <div class="st gd"><div class="stl">Medium (5-9)</div><div class="stv" id="rk-m">0</div></div>
   <div class="st gr"><div class="stl">Low (1-4)</div><div class="stv" id="rk-l">0</div></div></div>
   <div id="risk-list"></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Audit Findings &amp; Corrective Action Tracker</div></div></div>
+  <div class="stats">
+    <div class="st og"><div class="stl">Open Findings</div><div class="stv" id="af-open">0</div></div>
+    <div class="st rd"><div class="stl">Overdue</div><div class="stv" id="af-overdue">0</div></div>
+    <div class="st gr"><div class="stl">Closed</div><div class="stv" id="af-closed">0</div></div>
+  </div>
+  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Source</th><th>Finding</th><th>Project</th><th>Severity</th><th>Responsible</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="audit-findings-body"></tbody></table></div></div>
 </div>
 
 <!-- MEAL DQA & EVALUATIONS -->
@@ -1696,6 +1704,22 @@ tbody tr:hover td{background:var(--g50);}
 <div class="mf"><button class="b bo" onclick="closeM('m-evaluation')">Cancel</button><button class="b bn" onclick="saveEvaluation()">Save Evaluation</button></div>
 </div></div>
 
+<div class="mb" id="m-audit-finding"><div class="md">
+<div class="mh"><h3>Add Audit Finding</h3><button class="mx" onclick="closeM('m-audit-finding')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg"><label>Source</label><select id="af-source"><option>Internal Audit</option><option>External Audit</option><option>Donor Audit</option><option>Board/Governance</option></select></div>
+<div class="fg"><label>Project</label><select id="af-proj"></select></div>
+<div class="fg"><label>Severity</label><select id="af-severity"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+<div class="fg ff"><label>Finding Title *</label><input type="text" id="af-title" placeholder="e.g. Missing competitive quotes for 3 procurement transactions"></div>
+<div class="fg ff"><label>Description</label><textarea rows="2" id="af-desc"></textarea></div>
+<div class="fg ff"><label>Recommendation</label><textarea rows="2" id="af-rec"></textarea></div>
+<div class="fg ff"><label>Management Response</label><textarea rows="2" id="af-response"></textarea></div>
+<div class="fg"><label>Responsible Person</label><input type="text" id="af-owner"></div>
+<div class="fg"><label>Due Date</label><input type="date" id="af-due"></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-audit-finding')">Cancel</button><button class="b bn" onclick="saveAuditFinding()">Save Finding</button></div>
+</div></div>
+
 <div class="mb" id="m-asset"><div class="md">
 <div class="mh"><h3>Register New Asset</h3><button class="mx" onclick="closeM('m-asset')">&times;</button></div>
 <div class="mbd"><div class="fr">
@@ -2139,7 +2163,7 @@ executive:[
 {l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'},{p:'deputy',n:'Deputy Director'},{p:'progdeputy',n:'Program Deputy Director'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-dqa',n:'DQA & Evaluations'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
+meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk & Audit Findings'},{p:'meal-dqa',n:'DQA & Evaluations'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'finance-advances',n:'Advances & Reconciliation'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -3094,7 +3118,7 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();if(id==='m-audit-finding')resetAuditFindingModal();}
 
 // A department head could previously pick ANY department in the Add Task modal and assign
 // work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
@@ -3231,7 +3255,7 @@ function render(pg){
       else if(pg==='meal-cfrm'){renderCFRM();}
       else if(pg==='meal-visits'){renderVisits();}
       else if(pg==='meal-find'){renderFindings();}
-      else if(pg==='meal-risk'){renderRisks();}
+      else if(pg==='meal-risk'){renderRisks();renderAuditFindings();}
       else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
       else if(pg==='meal-data'){renderDataHistory();}
@@ -4180,6 +4204,66 @@ function renderEvaluations(){
   }
   $('ev-done').textContent=DB.evaluations.filter(function(e){return e.status==='Completed';}).length;
   $('ev-pending').textContent=DB.evaluations.filter(function(e){return e.status!=='Completed';}).length;
+}
+
+// ============ AUDIT FINDINGS & CORRECTIVE ACTION TRACKER ============
+// Distinct from logAudit()/renderAuditLog() below, which is an automated system trail of
+// actions taken in this app (approvals, exports, username changes). This is the opposite:
+// findings raised by an internal, external or donor auditor, tracked by hand to closure.
+DB.auditFindings=[];
+
+function resetAuditFindingModal(){
+  $('af-source').value='Internal Audit';$('af-severity').value='Medium';$('af-proj').value='';
+  $('af-title').value='';$('af-desc').value='';$('af-rec').value='';$('af-response').value='';
+  $('af-owner').value='';$('af-due').value='';
+}
+
+function saveAuditFinding(){
+  var title=$('af-title');
+  if(!title.value.trim()){alert('Please enter the finding title.');return;}
+  DB.auditFindings.push({id:nid('AF'),source:$('af-source').value,project:$('af-proj').value||'All Projects',
+    severity:$('af-severity').value,title:title.value.trim(),description:$('af-desc').value.trim(),
+    recommendation:$('af-rec').value.trim(),managementResponse:$('af-response').value.trim(),
+    owner:$('af-owner').value.trim(),dueDate:$('af-due').value,status:'Open',createdBy:SES.name,created:today()});
+  closeM('m-audit-finding');
+  resetAuditFindingModal();
+  renderAuditFindings();queueCloudSave();
+}
+
+function auditFindingOverdue(f){
+  return f.status==='Open' && !!f.dueDate && new Date(f.dueDate)<new Date(today());
+}
+
+function toggleAuditFindingStatus(id){
+  var f=DB.auditFindings.find(function(x){return x.id===id;});
+  if(!f)return;
+  f.status=f.status==='Open'?'Closed':'Open';
+  if(f.status==='Closed')f.closedDate=today();
+  renderAuditFindings();queueCloudSave();
+}
+
+function renderAuditFindings(){
+  var body=$('audit-findings-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.auditFindings.length){body.innerHTML='<tr><td colspan="8" class="empty">No audit findings recorded yet</td></tr>';}
+  else{
+    DB.auditFindings.slice().reverse().forEach(function(f){
+      var overdue=auditFindingOverdue(f);
+      var sb=f.status==='Closed'?'bG':(overdue?'bR':'bO');
+      var label=f.status==='Closed'?'Closed':(overdue?'Overdue':'Open');
+      var sevBdg={Critical:'bR',High:'bO',Medium:'bY',Low:'bG'}[f.severity]||'bY';
+      var r=el('tr');
+      r.innerHTML='<td>'+esc(f.source)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.project)+'</td>'+
+        '<td><span class="bdg '+sevBdg+'">'+esc(f.severity)+'</span></td><td>'+esc(f.owner||'-')+'</td>'+
+        '<td>'+(f.dueDate?dt(f.dueDate):'-')+'</td><td><span class="bdg '+sb+'">'+label+'</span></td>'+
+        '<td><button class="b bo bs" onclick="toggleAuditFindingStatus(\''+f.id+'\')">'+(f.status==='Closed'?'Reopen':'Close')+'</button></td>';
+      body.appendChild(r);
+    });
+  }
+  var open=DB.auditFindings.filter(function(f){return f.status==='Open';});
+  $('af-open').textContent=open.length;
+  $('af-overdue').textContent=open.filter(auditFindingOverdue).length;
+  $('af-closed').textContent=DB.auditFindings.filter(function(f){return f.status==='Closed';}).length;
 }
 
 // ============ DOCUMENTS ============
@@ -5344,7 +5428,8 @@ var PROJECT_SELECT_IDS=[
   {id:'gr-proj',all:false,core:false},
   {id:'adv-proj',all:false,core:true},
   {id:'dqa-proj',all:false,core:false},
-  {id:'ev-proj',all:false,core:false}
+  {id:'ev-proj',all:false,core:false},
+  {id:'af-proj',all:true,core:false}
 ];
 
 function refreshAllProjectDropdowns(){
