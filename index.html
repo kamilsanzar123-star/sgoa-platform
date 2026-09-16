@@ -906,7 +906,10 @@ tbody tr:hover td{background:var(--g50);}
 </div>
 <div class="pg" id="p-admin">
   <div class="wb" style="background:linear-gradient(135deg,#134e4a,#0d9488)"><div><div class="wbt">Administration Department</div><div class="wbs">Office · Documentation · Compliance</div></div><div class="wbi">&#127970;</div></div>
-  
+  <div class="qn">
+    <div class="qi" onclick="go('admin-registry')"><div class="qii">&#128194;</div><div class="qil">Document Registry</div></div>
+    <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
+  </div>
   <div class="stats" id="admin-stats"></div>
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="admin-tasks"></div></div>
@@ -916,6 +919,27 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-admin"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Administration Department documents</b></p></div></div></div>
 </div>
+
+<div class="pg" id="p-admin-registry">
+  <div class="ph"><div><h1>Document &amp; Records Registry</h1><p>Every document across every department in one searchable register, with confidentiality, review dates, and archiving</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('admin')">Back</button><button class="b bn bs" onclick="openM('m-doc')">+ Upload Document</button></div></div>
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Documents</div><div class="stv" id="dr-tot">0</div></div>
+    <div class="st rd"><div class="stl">Confidential</div><div class="stv" id="dr-conf">0</div></div>
+    <div class="st og"><div class="stl">Due for Review</div><div class="stv" id="dr-review">0</div></div>
+    <div class="st gd"><div class="stl">Archived</div><div class="stv" id="dr-archived">0</div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">All Documents</div>
+    <div style="display:flex;gap:7px">
+      <select id="dr-filter-dept" onchange="renderDocRegistry()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+        <option value="all">All Departments</option><option>MEAL</option><option>Finance</option><option>HR</option><option>Programs</option><option>Supply Chain</option><option>Admin</option><option>Safeguarding</option><option>Operations</option><option>All</option></select>
+      <select id="dr-filter-status" onchange="renderDocRegistry()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+        <option value="all">Active &amp; Archived</option><option value="Active">Active Only</option><option value="Archived">Archived Only</option></select>
+      <input type="text" id="dr-search" oninput="renderDocRegistry()" placeholder="Search title..." style="font-size:11px;padding:4px 8px;border:1px solid var(--g200);border-radius:6px;font-family:inherit;width:160px">
+    </div></div>
+    <div class="cdb tw"><table><thead><tr><th>Title</th><th>Department</th><th>Type</th><th>Version</th><th>Confidentiality</th><th>Review Due</th><th>Status</th><th>Action</th></tr></thead><tbody id="doc-registry-body"></tbody></table></div></div>
+</div>
+
 <div class="pg" id="p-safeguarding">
   <div class="wb" style="background:linear-gradient(135deg,#7f1d1d,#dc2626)"><div><div class="wbt">Safeguarding Department</div><div class="wbs">Child Protection · PSEA · Investigations</div></div><div class="wbi">&#128737;</div></div>
   
@@ -1586,6 +1610,8 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Type</label><select id="d-type"><option>SOP</option><option>Policy</option><option>Guideline</option><option>Template</option><option>Report</option><option>Beneficiary List</option><option>Selection Criteria</option></select></div>
 <div class="fg"><label>Version</label><input type="text" id="d-ver" value="1.0"></div>
 <div class="fg"><label>Date</label><input type="date" id="d-date"></div>
+<div class="fg"><label>Confidentiality</label><select id="d-conf"><option>Public</option><option selected>Internal</option><option>Confidential</option></select></div>
+<div class="fg"><label>Review Due Date (optional)</label><input type="date" id="d-review"></div>
 <div class="fg ff"><label>Summary / Brief Description</label><textarea rows="2" id="d-desc" placeholder="Short summary shown when the document is opened..."></textarea></div>
 <div class="fg ff"><label>Full Document Content (optional)</label><textarea rows="6" id="d-content" placeholder="Paste or type the full document text here so it can be read inside the platform..."></textarea></div>
 </div>
@@ -2137,23 +2163,23 @@ var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
 'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
-'admin','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+'admin','admin-registry','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 finance:['finance','finance-commitments','finance-advances','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 hr:['hr','hr-recruitment','hr-training','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+admin:['admin','admin-registry','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
-  'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
+  'admin','admin-registry','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
-  'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
+  'admin','admin-registry','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
 access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
 };
@@ -2176,7 +2202,7 @@ programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Pro
 supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-po',n:'Purchase Orders'},{p:'supply-grn',n:'GRN & Invoices'},{p:'supply-warehouse',n:'Warehouse & Stock'},{p:'supply-dist',n:'Distribution'},{p:'supply-suppliers',n:'Suppliers'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'admin-registry',n:'Document Registry'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
@@ -3279,6 +3305,7 @@ function render(pg){
       else if(pg==='supply-grn'){renderGRNs();renderInvoices();}
       else if(pg==='supply-warehouse'){renderStockItems();renderStockLedger();}
       else if(pg==='admin'){renderDept('admin','Admin');}
+      else if(pg==='admin-registry'){renderDocRegistry();}
       else if(pg==='safeguarding'){renderDept('safeguarding','Safeguarding');renderSGCases();}
       else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();}
       else if(pg==='ops-assets'){renderAssets();}
@@ -4269,7 +4296,7 @@ function renderAuditFindings(){
 // ============ DOCUMENTS ============
 function renderDocs(cid,dept){
   var c=$('docs-'+cid);if(!c)return;c.innerHTML='';
-  var ds=DB.docs.filter(function(d){return d.dept===dept||d.dept==='All';});
+  var ds=DB.docs.filter(function(d){return (d.dept===dept||d.dept==='All')&&d.status!=='Archived';});
   var cnt=$('doc-cnt-'+cid);if(cnt)cnt.textContent=ds.length+' files';
   if(!ds.length){c.innerHTML='<div class="empty">No documents uploaded yet</div>';return;}
   var ic={SOP:'📋',Policy:'🔒',Guideline:'📌',Template:'📝',Report:'📊','Beneficiary List':'👥','Selection Criteria':'✅'};
@@ -4306,6 +4333,55 @@ async function uploadFileToStorage(file, folder){
     alert('File upload failed. Check your connection.');
     return null;
   }
+}
+
+// ============ DOCUMENT & RECORDS REGISTRY (cross-department) ============
+function docReviewDue(d){
+  return d.status!=='Archived' && !!d.reviewDue && new Date(d.reviewDue)<new Date(today());
+}
+
+function toggleDocArchiveStatus(id){
+  var d=DB.docs.find(function(x){return x.id===id;});
+  if(!d)return;
+  d.status=d.status==='Archived'?'Active':'Archived';
+  renderDocRegistry();
+  ['meal','finance','hr','programs','supply','admin','safeguarding','operations'].forEach(function(cid){renderDocs(cid,{meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations'}[cid]);});
+  queueCloudSave();
+}
+
+function renderDocRegistry(){
+  var body=$('doc-registry-body');if(!body)return;
+  var deptFilter=$('dr-filter-dept')?$('dr-filter-dept').value:'all';
+  var statusFilter=$('dr-filter-status')?$('dr-filter-status').value:'all';
+  var q=($('dr-search')?$('dr-search').value:'').trim().toLowerCase();
+  var docs=DB.docs.filter(function(d){
+    if(deptFilter!=='all' && d.dept!==deptFilter)return false;
+    var st=d.status||'Active';
+    if(statusFilter!=='all' && st!==statusFilter)return false;
+    if(q && d.title.toLowerCase().indexOf(q)===-1)return false;
+    return true;
+  });
+  body.innerHTML='';
+  if(!docs.length){body.innerHTML='<tr><td colspan="8" class="empty">No documents match</td></tr>';}
+  else{
+    docs.slice().reverse().forEach(function(d){
+      var st=d.status||'Active';
+      var reviewOverdue=docReviewDue(d);
+      var confBdg={Public:'bG',Internal:'bY',Confidential:'bR'}[d.confidentiality]||'bY';
+      var r=el('tr');
+      r.innerHTML='<td>'+esc(d.title)+'</td><td>'+esc(d.dept)+'</td><td>'+esc(d.type)+'</td><td>v'+esc(d.ver)+'</td>'+
+        '<td><span class="bdg '+confBdg+'">'+esc(d.confidentiality||'Internal')+'</span></td>'+
+        '<td>'+(d.reviewDue?('<span style="color:'+(reviewOverdue?'var(--red)':'inherit')+'">'+dt(d.reviewDue)+(reviewOverdue?' (overdue)':'')+'</span>'):'-')+'</td>'+
+        '<td><span class="bdg '+(st==='Archived'?'bD':'bG')+'">'+st+'</span></td>'+
+        '<td><button class="b bo bs" onclick="toggleDocArchiveStatus(\''+d.id+'\')">'+(st==='Archived'?'Restore':'Archive')+'</button></td>';
+      body.appendChild(r);
+    });
+  }
+  var active=DB.docs.filter(function(d){return d.status!=='Archived';});
+  $('dr-tot').textContent=DB.docs.length;
+  $('dr-conf').textContent=active.filter(function(d){return d.confidentiality==='Confidential';}).length;
+  $('dr-review').textContent=active.filter(docReviewDue).length;
+  $('dr-archived').textContent=DB.docs.filter(function(d){return d.status==='Archived';}).length;
 }
 
 // ============ DEPT GENERIC ============
@@ -5222,10 +5298,14 @@ async function saveDoc(){
     ver:$('d-ver').value||'1.0',date:$('d-date').value||today(),by:SES.name,desc:$('d-desc').value.trim(),
     brief:$('d-desc').value.trim()||'No summary provided.',
     full:($('d-content')&&$('d-content').value.trim())||'No full content entered.',
-    fileUrl:fileInfo?fileInfo.url:null,fileName:fileInfo?fileInfo.name:null});
+    fileUrl:fileInfo?fileInfo.url:null,fileName:fileInfo?fileInfo.name:null,
+    confidentiality:$('d-conf')?$('d-conf').value:'Internal',reviewDue:$('d-review')?$('d-review').value:'',
+    status:'Active'});
   closeM('m-doc');
   t.value='';$('d-desc').value='';if($('d-content'))$('d-content').value='';$('d-fname').textContent='';if(fileInput)fileInput.value='';
+  if($('d-conf'))$('d-conf').value='Internal';if($('d-review'))$('d-review').value='';
   refreshAll();
+  renderDocRegistry();
   queueCloudSave();
   if(fileInfo)alert('Document and file uploaded successfully.');
 }
