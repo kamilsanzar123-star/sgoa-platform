@@ -2248,7 +2248,13 @@ function pollCloudRefresh(){
   if(!cloudSyncEnabled || syncBlocked || cloudSaveTimer || cloudStatus==='saving')return;
   loadFromCloud().then(function(result){
     if(result==='ok'){
-      if(currentPageId)render(currentPageId);
+      // The Raise PR form holds a lot of live, uncommitted typing (line items, budget
+      // codes, justification) that never touches DB.pr until submit -- re-rendering it here
+      // used to wipe all of that out from under the person filling it in, every 20 seconds,
+      // making it impossible to ever finish and submit a request. Nothing on this page needs
+      // to reflect another user's change within 20 seconds, so just leave it alone; it still
+      // refreshes normally the next time someone navigates to it.
+      if(currentPageId && currentPageId!=='raise-pr')render(currentPageId);
       refreshAll();
       if(SES.role)checkDeadlineAlerts();
       applyOrgLogo();
@@ -5912,15 +5918,28 @@ function initRaisePR(){
   updatePRHeadStatus();
   $('pr-requesteddate').value=dt(today());
   var pjSel=$('pr-project');
+  // pollCloudRefresh() re-runs initRaisePR() every 20s to pick up new PROJ entries from
+  // other users -- rebuilding the <select> used to silently reset the dropdown back to its
+  // first option ("Core/Admin") mid-form, discarding whatever project the user had already
+  // chosen. Preserve the current selection across the rebuild, same pattern as
+  // refreshAllProjectDropdowns().
+  var pjCur=pjSel.value;
   pjSel.innerHTML='<option>Core/Admin</option>'+Object.keys(PROJ).map(function(k){return '<option>'+k+'</option>';}).join('');
+  if(pjCur && Array.from(pjSel.options).some(function(o){return o.value===pjCur;}))pjSel.value=pjCur;
   if($('pr-prf-display') && !$('pr-prf-display')._userChanged){$('pr-prf-display').value=nextPRFNumber(pjSel.value);}
   pjSel.onchange=function(){ if($('pr-prf-display')&&!$('pr-prf-display')._userChanged)$('pr-prf-display').value=nextPRFNumber(pjSel.value); recalcPRTotals(); };
   // Mark user changes
   [$('pr-position-display'),$('pr-prf-display')].forEach(function(el){if(el)el.addEventListener('input',function(){el._userChanged=true;},true);});
   if(isHeadSel)isHeadSel.addEventListener('change',function(){isHeadSel._userChanged=true;updatePRHeadStatus();},true);
   if(deptSel)deptSel.addEventListener('change',function(){deptSel._userChanged=true;},true);
-  $('pr-items-body').innerHTML='';
-  addPRItemRow();
+  // Same background-refresh problem, much worse: this used to unconditionally clear the
+  // line-items table and drop in one blank row on every call. Since initRaisePR() re-runs
+  // every 20 seconds while this page is open (pollCloudRefresh -> render(currentPageId)),
+  // every purchase request the user was mid-typing -- descriptions, quantities, prices,
+  // budget codes -- was silently wiped out from under them, with no way to submit before
+  // it happened again. Only seed the first blank row on a genuinely fresh open of the form;
+  // submitPR() already resets this table itself after a successful submission.
+  if($('pr-items-body').children.length===0)addPRItemRow();
   $('pr-form-box').style.display='block';
   updatePRForm();
 }
