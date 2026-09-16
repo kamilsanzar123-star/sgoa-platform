@@ -760,6 +760,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="wb" style="background:linear-gradient(135deg,#4c1d95,#7c3aed)"><div><div class="wbt">Human Resources</div><div class="wbs">Staff · Recruitment · Performance</div></div><div class="wbi">&#128101;</div></div>
   <div class="qn">
     <div class="qi" onclick="go('hr-recruitment')"><div class="qii">&#128188;</div><div class="qil">Recruitment</div></div>
+    <div class="qi" onclick="go('hr-training')"><div class="qii">&#127891;</div><div class="qil">Training &amp; Certs</div></div>
     <div class="qi" onclick="openM('m-staff')"><div class="qii">&#128101;</div><div class="qil">Add Staff</div></div>
     <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
     <div class="qi" onclick="openM('m-doc')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
@@ -802,6 +803,17 @@ tbody tr:hover td{background:var(--g50);}
       <button class="b bn bs" onclick="openCandidateModal()">+ Add Candidate</button>
     </div></div>
     <div class="cdb tw"><table><thead><tr><th>Candidate</th><th>Contact</th><th>Applied</th><th>Stage</th><th>Action</th></tr></thead><tbody id="candidates-body"></tbody></table></div></div>
+</div>
+
+<div class="pg" id="p-hr-training">
+  <div class="ph"><div><h1>Training &amp; Certifications</h1><p>Staff training records and certifications requiring renewal</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('hr')">Back</button><button class="b bn bs" onclick="openM('m-training')">+ Add Training Record</button></div></div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="st nv"><div class="stl">Total Records</div><div class="stv" id="tr-tot">0</div></div>
+    <div class="st og"><div class="stl">Expiring Soon (60 Days)</div><div class="stv" id="tr-expiring">0</div></div>
+    <div class="st rd"><div class="stl">Expired</div><div class="stv" id="tr-expired">0</div></div>
+  </div>
+  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Staff</th><th>Course / Training</th><th>Provider</th><th>Completed</th><th>Expiry</th><th>Certificate Ref</th><th>Status</th></tr></thead><tbody id="trainings-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-programs">
@@ -1821,6 +1833,16 @@ tbody tr:hover td{background:var(--g50);}
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-appraisal')">Cancel</button><button class="b bn" onclick="saveAppraisal()">Save Appraisal</button></div>
 </div></div>
+<div class="mb" id="m-onboard"><div class="md">
+<div class="mh"><h3>Onboard Staff Member</h3><button class="mx" onclick="closeM('m-onboard')">&times;</button></div>
+<div class="mbd">
+  <div id="onb-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div style="font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Onboarding Checklist &mdash; confirm each before completing</div>
+  <div id="onb-checklist" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+  <div class="fg ff"><label>Notes</label><textarea rows="2" id="onb-notes" placeholder="Optional"></textarea></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-onboard')">Cancel</button><button class="b bn" onclick="confirmOnboard()">Complete Onboarding</button></div>
+</div></div>
 <div class="mb" id="m-offboard"><div class="md">
 <div class="mh"><h3>Offboard Staff Member</h3><button class="mx" onclick="closeM('m-offboard')">&times;</button></div>
 <div class="mbd">
@@ -2037,11 +2059,11 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-'finance','finance-commitments','finance-advances','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
+'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
 'admin','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 finance:['finance','finance-commitments','finance-advances','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-hr:['hr','hr-recruitment','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+hr:['hr','hr-recruitment','hr-training','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
@@ -2049,11 +2071,11 @@ safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','a
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','finance-commitments','finance-advances','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
+  'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','finance-commitments','finance-advances','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
+  'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
 access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
@@ -2069,7 +2091,7 @@ meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tr
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'finance-advances',n:'Advances & Reconciliation'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'hr-recruitment',n:'Recruitment'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'hr-recruitment',n:'Recruitment'},{p:'hr-training',n:'Training & Certifications'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'},{p:'prog-partners',n:'Partners'},{p:'prog-grants',n:'Grants'}]},
 {l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -3164,6 +3186,7 @@ function render(pg){
       else if(pg==='finance-advances'){renderAdvances();renderReconciliations();}
       else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();}
       else if(pg==='hr-recruitment'){renderVacancies();renderCandidatePipeline();}
+      else if(pg==='hr-training'){renderTrainings();}
       else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();}
       else if(pg==='prog-activities'){renderActivities();}
       else if(pg==='prog-benef'){renderBenef();renderDocs('benef','Programs');}
@@ -4193,13 +4216,15 @@ function renderStaff(){
   var c=$('hr-staff');if(!c)return;c.innerHTML='';
   DB.staff.forEach(function(s){
     var r=el('tr');
-    var statusBdg=s.status==='Offboarded'?'bY':'bG';
+    var pending=s.status!=='Offboarded' && s.onboarded===false;
+    var statusBdg=s.status==='Offboarded'?'bY':(pending?'bO':'bG');
+    var statusLabel=s.status==='Offboarded'?'Offboarded':(pending?'Onboarding Pending':s.status);
     var la=lastAppraisal(s.id);
     var apCell=la?(esc(la.rating)+'<div style="font-size:10px;color:var(--g400)">'+dt(la.date)+'</div>'):'<span style="color:var(--g400)">Not yet reviewed</span>';
     var actions=s.status==='Offboarded'
       ? '<span class="bdg bY">Offboarded '+dt(s.offboardedOn)+'</span>'
-      : '<button class="b bo bs" onclick="openAppraisalModal(\''+s.id+'\')">Appraise</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="openOffboardModal(\''+s.id+'\')">Offboard</button>';
-    r.innerHTML='<td><b>'+esc(s.name)+'</b></td><td>'+esc(s.pos)+'</td><td>'+esc(s.dept)+'</td><td>'+esc(s.loc)+'</td><td>'+dt(s.start)+'</td><td><span class="bdg '+statusBdg+'">'+esc(s.status)+'</span></td><td style="font-size:11.5px">'+apCell+'</td><td>'+actions+'</td>';
+      : (pending?'<button class="b bn bs" onclick="openOnboardModal(\''+s.id+'\')">Onboard</button> ':'')+'<button class="b bo bs" onclick="openAppraisalModal(\''+s.id+'\')">Appraise</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="openOffboardModal(\''+s.id+'\')">Offboard</button>';
+    r.innerHTML='<td><b>'+esc(s.name)+'</b></td><td>'+esc(s.pos)+'</td><td>'+esc(s.dept)+'</td><td>'+esc(s.loc)+'</td><td>'+dt(s.start)+'</td><td><span class="bdg '+statusBdg+'">'+esc(statusLabel)+'</span></td><td style="font-size:11.5px">'+apCell+'</td><td>'+actions+'</td>';
     c.appendChild(r);
   });
 }
@@ -4226,6 +4251,38 @@ function saveAppraisal(){
 }
 
 // ============ OFFBOARDING ============
+// ============ STAFF ONBOARDING ============
+var _onboardStaffId=null;
+function openOnboardModal(staffId){
+  var s=DB.staff.find(function(x){return x.id===staffId;});if(!s)return;
+  _onboardStaffId=staffId;
+  $('onb-ctx').innerHTML='<b>'+esc(s.name)+'</b> &middot; '+esc(s.pos)+' &middot; '+esc(s.dept);
+  var items=[
+    {key:'contract',label:'Employment contract signed'},
+    {key:'id',label:'ID badge / access card issued'},
+    {key:'orientation',label:'Orientation / induction briefing completed'},
+    {key:'policy',label:'Safeguarding &amp; Code of Conduct policy signed'},
+    {key:'systems',label:'IT/systems account and email set up'},
+    {key:'equipment',label:'Equipment issued (if applicable)'}
+  ];
+  $('onb-checklist').innerHTML=items.map(function(it){
+    return '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px"><input type="checkbox" class="onb-check" data-key="'+it.key+'" style="margin-top:3px">'+it.label+'</label>';
+  }).join('');
+  $('onb-notes').value='';
+  openM('m-onboard');
+}
+function confirmOnboard(){
+  if(!_onboardStaffId)return;
+  var boxes=Array.from(document.querySelectorAll('.onb-check'));
+  var unchecked=boxes.filter(function(b){return !b.checked;});
+  if(unchecked.length){alert('Please confirm every item on the onboarding checklist before completing.');return;}
+  var s=DB.staff.find(function(x){return x.id===_onboardStaffId;});if(!s)return;
+  s.onboarded=true;s.onboardedOn=today();s.onboardedBy=SES.name;s.onboardingNotes=$('onb-notes').value.trim();
+  closeM('m-onboard');
+  renderStaff();queueCloudSave();
+  alert('Onboarding completed for '+s.name+'.');
+}
+
 var _offboardStaffId=null;
 function openOffboardModal(staffId){
   var s=DB.staff.find(function(x){return x.id===staffId;});if(!s)return;
@@ -5401,7 +5458,7 @@ function saveStaff(){
   var n=$('s-name');
   if(!n||!n.value.trim()){alert('Please enter staff name.');return;}
   DB.staff.push({id:nid('S'),name:n.value.trim(),pos:$('s-pos').value,dept:$('s-dept').value,
-    sex:$('s-sex').value,loc:$('s-loc').value||'Kabul',start:$('s-start').value||today(),status:'Active'});
+    sex:$('s-sex').value,loc:$('s-loc').value||'Kabul',start:$('s-start').value||today(),status:'Active',onboarded:false});
   closeM('m-staff');n.value='';renderStaff();renderHRChart();renderAllStaffDirectories();queueCloudSave();
 }
 
@@ -7497,6 +7554,49 @@ function renderCandidatePipeline(){
   });
 }
 
+// ============ HR: TRAINING & CERTIFICATIONS ============
+DB.trainings=[];
+
+function trainingStatus(t){
+  if(!t.expiry)return {label:'Completed',cls:'bG'};
+  var days=(new Date(t.expiry)-new Date(today()))/86400000;
+  if(days<0)return {label:'Expired',cls:'bR'};
+  if(days<=60)return {label:'Expiring Soon',cls:'bO'};
+  return {label:'Valid',cls:'bG'};
+}
+
+function saveTraining(){
+  var staff=$('tr-staff'),course=$('tr-course');
+  if(!staff.value.trim()){alert('Please enter the staff name.');return;}
+  if(!course.value.trim()){alert('Please enter the course/training title.');return;}
+  DB.trainings.push({id:nid('TRN'),staffName:staff.value.trim(),course:course.value.trim(),
+    provider:$('tr-provider').value.trim(),completed:$('tr-completed').value||today(),
+    expiry:$('tr-expiry').value,certRef:$('tr-certref').value.trim(),
+    notes:$('tr-notes').value.trim(),createdBy:SES.name});
+  closeM('m-training');
+  staff.value='';course.value='';$('tr-provider').value='';$('tr-completed').value='';$('tr-expiry').value='';$('tr-certref').value='';$('tr-notes').value='';
+  renderTrainings();queueCloudSave();
+}
+
+function renderTrainings(){
+  var body=$('trainings-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.trainings.length){body.innerHTML='<tr><td colspan="7" class="empty">No training records yet</td></tr>';}
+  else{
+    DB.trainings.slice().reverse().forEach(function(t){
+      var st=trainingStatus(t);
+      var r=el('tr');
+      r.innerHTML='<td>'+esc(t.staffName)+'</td><td>'+esc(t.course)+'</td><td>'+esc(t.provider||'-')+'</td>'+
+        '<td>'+dt(t.completed)+'</td><td>'+(t.expiry?dt(t.expiry):'-')+'</td><td>'+esc(t.certRef||'-')+'</td>'+
+        '<td><span class="bdg '+st.cls+'">'+st.label+'</span></td>';
+      body.appendChild(r);
+    });
+  }
+  $('tr-tot').textContent=DB.trainings.length;
+  $('tr-expiring').textContent=DB.trainings.filter(function(t){return trainingStatus(t).label==='Expiring Soon';}).length;
+  $('tr-expired').textContent=DB.trainings.filter(function(t){return trainingStatus(t).label==='Expired';}).length;
+}
+
 // ============ HR: ATTENDANCE ============
 DB.attendance=[];
 
@@ -8655,6 +8755,20 @@ if(document.getElementById('afg-map')) initMap();
 <div class="fg ff"><label>Notes</label><textarea rows="2" id="cd-notes"></textarea></div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-candidate')">Cancel</button><button class="b bn" onclick="saveCandidate()">Add Candidate</button></div>
+</div></div>
+
+<div class="mb" id="m-training"><div class="md">
+<div class="mh"><h3>Add Training Record</h3><button class="mx" onclick="closeM('m-training')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg ff"><label>Staff Name *</label><input type="text" id="tr-staff"></div>
+<div class="fg ff"><label>Course / Training Title *</label><input type="text" id="tr-course" placeholder="e.g. PSEA Refresher, Defensive Driving"></div>
+<div class="fg"><label>Provider</label><input type="text" id="tr-provider"></div>
+<div class="fg"><label>Completion Date</label><input type="date" id="tr-completed"></div>
+<div class="fg"><label>Expiry Date (if a certification)</label><input type="date" id="tr-expiry"></div>
+<div class="fg"><label>Certificate Reference</label><input type="text" id="tr-certref"></div>
+<div class="fg ff"><label>Notes</label><input type="text" id="tr-notes"></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-training')">Cancel</button><button class="b bn" onclick="saveTraining()">Add Training Record</button></div>
 </div></div>
 
 <div class="mb" id="m-attendance"><div class="md">
