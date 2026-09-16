@@ -1324,6 +1324,13 @@ tbody tr:hover td{background:var(--g50);}
     <div class="st gr"><div class="stl">Open Vacancies</div><div class="stv" id="deputy-vac-open">0</div></div>
     <div class="st og"><div class="stl">POs Awaiting Receipt</div><div class="stv" id="deputy-po-open">0</div></div>
   </div>
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">Budget vs Spent by Project</div></div><div class="cdb" style="padding:14px"><canvas id="dep-c-budget" width="500" height="230" style="width:100%;height:230px"></canvas></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Program Activities Status</div></div><div class="cdb" style="padding:14px;display:flex;align-items:center;gap:16px">
+      <canvas id="dep-c-status" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+      <div style="flex:1" id="dep-status-legend"></div>
+    </div></div>
+  </div>
   <div class="cd"><div class="cdh"><div class="cdt">Quick Links</div></div><div class="cdb" style="display:flex;flex-wrap:wrap;gap:10px">
     <button class="b bn bs" onclick="go('pr-approvals')">PR Approvals</button>
     <button class="b bn bs" onclick="go('timesheet-approve')">Approve Timesheets</button>
@@ -1347,6 +1354,14 @@ tbody tr:hover td{background:var(--g50);}
     <div class="st gr"><div class="stl">Open Vacancies</div><div class="stv" id="progdeputy-vac-open">0</div></div>
     <div class="st og"><div class="stl">POs Awaiting Receipt</div><div class="stv" id="progdeputy-po-open">0</div></div>
   </div>
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">Budget vs Spent by Project</div></div><div class="cdb" style="padding:14px"><canvas id="pd-c-budget" width="500" height="230" style="width:100%;height:230px"></canvas></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Program Activities Status</div></div><div class="cdb" style="padding:14px;display:flex;align-items:center;gap:16px">
+      <canvas id="pd-c-status" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+      <div style="flex:1" id="pd-status-legend"></div>
+    </div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Beneficiaries Reached by Project</div></div><div class="cdb" style="padding:14px"><canvas id="pd-c-benef" width="900" height="220" style="width:100%;height:220px"></canvas></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Quick Links</div></div><div class="cdb" style="display:flex;flex-wrap:wrap;gap:10px">
     <button class="b bn bs" onclick="go('pr-approvals')">PR Approvals</button>
     <button class="b bn bs" onclick="go('timesheet-approve')">Approve Timesheets</button>
@@ -4654,7 +4669,7 @@ function renderProgramsHomeCharts(){
     '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--g100)"><span><span style="display:inline-block;width:9px;height:9px;background:#2563eb;border-radius:2px;margin-right:6px"></span>In Progress</span><b>'+prog+'</b></div>'+
     '<div style="display:flex;justify-content:space-between;padding:5px 0"><span><span style="display:inline-block;width:9px;height:9px;background:#e2e8f0;border-radius:2px;margin-right:6px"></span>Not Started</span><b>'+not+'</b></div>';
 
-  bars('pg-c-benef',pk,[{d:pk.map(function(k){return PROJ[k].benef;}),c:pcolors}]);
+  bars('pg-c-benef',pk,[{d:pk.map(function(k){return PROJ[k].benef;}),c:pcolors}],function(v){return Math.round(v).toLocaleString();});
 
   var months=['M1','M2','M3','M4','M5','M6'];
   var trendData=pk.map(function(k,i){return Math.min(100,Math.round(PROJ[k].prog*(0.5+i*0.08)));});
@@ -7472,6 +7487,42 @@ function renderApprovalRoleHome(roleKey){
   if($(roleKey+'-po-open'))$(roleKey+'-po-open').textContent=DB.po.filter(function(p){return p.status==='Draft'||p.status==='Issued';}).length;
   renderStaffDirectory(DEPTNAME[roleKey],'staffdir-'+roleKey);
   renderDeptSnapshot(roleKey);
+  renderDeputyProgramCharts(roleKey);
+}
+
+// The Deputy Director / Program Deputy Director dashboards used to be nothing but stat tiles
+// and tables -- no visual read on the org's actual program performance, which is exactly what
+// these two roles are meant to oversee. Reuses the same Budget-vs-Spent and Activities-Status
+// charts already proven on the Programs department home page (see renderProgramsHomeCharts),
+// so the numbers are guaranteed consistent with what Programs itself sees.
+var DEPUTY_CHART_PREFIX={deputy:'dep',progdeputy:'pd'};
+function renderDeputyProgramCharts(roleKey){
+  var prefix=DEPUTY_CHART_PREFIX[roleKey];if(!prefix||!$(prefix+'-c-budget'))return;
+  var pk=Object.keys(PROJ);
+  var colorMap={teal:'#0d9488',green:'#16a34a',blue:'#2563eb',purple:'#7c3aed',gold:'#C8922A',navy:'#1A3A6B',red:'#dc2626',orange:'#ea580c'};
+  var pcolors=pk.map(function(k){var c=PROJ[k].color.match(/--(\w+)/);return colorMap[c?c[1]:'navy']||'#1A3A6B';});
+
+  bars(prefix+'-c-budget',pk,[
+    {d:pk.map(function(k){return PROJ[k].budget*projFxToUSD(k);}),c:'#94a3b8'},
+    {d:pk.map(function(k){return PROJ[k].spent*projFxToUSD(k);}),c:pcolors}
+  ]);
+
+  var allActs=DB.activities;
+  var done=allActs.filter(function(a){return a.status==='Complete';}).length;
+  var prog=allActs.filter(function(a){return a.status==='In Progress';}).length;
+  var not=allActs.filter(function(a){return a.status==='Not Started';}).length;
+  donut(prefix+'-c-status',[{v:done,c:'#16a34a'},{v:prog,c:'#2563eb'},{v:not,c:'#e2e8f0'}],18,'Complete',allActs.length?Math.round(done/allActs.length*100)+'%':'0%');
+  var legend=$(prefix+'-status-legend');
+  if(legend){
+    legend.innerHTML=
+      '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--g100)"><span><span style="display:inline-block;width:9px;height:9px;background:#16a34a;border-radius:2px;margin-right:6px"></span>Complete</span><b>'+done+'</b></div>'+
+      '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--g100)"><span><span style="display:inline-block;width:9px;height:9px;background:#2563eb;border-radius:2px;margin-right:6px"></span>In Progress</span><b>'+prog+'</b></div>'+
+      '<div style="display:flex;justify-content:space-between;padding:5px 0"><span><span style="display:inline-block;width:9px;height:9px;background:#e2e8f0;border-radius:2px;margin-right:6px"></span>Not Started</span><b>'+not+'</b></div>';
+  }
+
+  if($(prefix+'-c-benef')){
+    bars(prefix+'-c-benef',pk,[{d:pk.map(function(k){return PROJ[k].benef;}),c:pcolors}],function(v){return Math.round(v).toLocaleString();});
+  }
 }
 
 function renderDeptSnapshot(roleKey){
