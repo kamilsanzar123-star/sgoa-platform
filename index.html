@@ -366,6 +366,16 @@ tbody tr:hover td{background:var(--g50);}
     <div class="nright">
       <div class="nuser"><div class="nav-av" id="uav">KS</div><div><div class="nuname" id="unm">Kamil Sanzar</div><div class="nurole" id="url">Head of MEAL</div></div></div>
       <span id="cloud-status" style="font-size:11px;color:#94a3b8;margin-right:10px"></span>
+      <div style="position:relative">
+        <button class="nlogout" id="nb-notif" onclick="toggleNotifPanel()" style="position:relative">&#128276;<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:9px;font-size:9.5px;font-weight:800;padding:1px 5px;line-height:1.3">0</span></button>
+        <div id="notif-panel" style="display:none;position:absolute;top:38px;right:0;width:320px;max-height:420px;overflow-y:auto;background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18);z-index:500;color:var(--g700)">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--g100)">
+            <b style="font-size:12.5px;color:var(--navy)">Notifications</b>
+            <button class="b bo bs" style="padding:2px 8px;font-size:10.5px" onclick="markAllNotifsRead()">Mark all read</button>
+          </div>
+          <div id="notif-list"></div>
+        </div>
+      </div>
       <button class="nlogout" id="nb-back" style="display:none" onclick="goBack()">&larr; Back</button>
       <button class="nlogout" onclick="openM('m-incident')" style="background:rgba(220,38,38,.25)" title="Report a safeguarding concern — available to every department">🛡 Report a Concern</button>
       <button class="nlogout" onclick="openPwdModal()" style="background:rgba(255,255,255,.06)">🔒 Password</button>
@@ -2443,6 +2453,7 @@ function pollCloudRefresh(){
       refreshAll();
       if(SES.role)checkDeadlineAlerts();
       applyOrgLogo();
+      renderNotifBell();
     }
   });
 }
@@ -2755,6 +2766,7 @@ function doLogin(){
   renderAllStaffDirectories();
   checkDeadlineAlerts();
   applyOrgLogo();
+  renderNotifBell();
   go(HOME[effRole]||'exec');
 }
 // MY WORK PAGE -- one place for everything tied to the logged-in person, filtered from the
@@ -5266,16 +5278,82 @@ function renderDataHistory(){
   });
 }
 
+// ============ NOTIFICATION / TASK CENTER ============
+// The "Notifications" checkboxes in My Settings (task/PR/leave/workflow alerts) previously
+// saved a prefs object that nothing ever read -- flipping them did literally nothing. This
+// wires them up for real: notify() is the single entry point every event below calls, and it
+// checks the recipient's own saved preference before creating anything.
+DB.notifications=[];
+
+function notify(userName,category,message,link){
+  if(!userName)return;
+  var u=DB.users.find(function(x){return x.name===userName;});
+  var prefs=(u&&u.prefs)||{};
+  if(prefs[category]===false)return;
+  DB.notifications.push({id:nid('NOT'),user:userName,category:category,message:message,link:link||'',read:false,created:today()});
+  if(userName===SES.name)renderNotifBell();
+}
+
+function renderNotifBell(){
+  var badge=$('notif-badge');if(!badge)return;
+  var unread=DB.notifications.filter(function(n){return n.user===SES.name && !n.read;}).length;
+  badge.textContent=unread>9?'9+':String(unread);
+  badge.style.display=unread>0?'block':'none';
+}
+
+function toggleNotifPanel(force){
+  var panel=$('notif-panel');if(!panel)return;
+  var show=force!==undefined?force:panel.style.display!=='block';
+  panel.style.display=show?'block':'none';
+  if(show)renderNotifPanel();
+}
+
+document.addEventListener('click',function(e){
+  var panel=$('notif-panel'),btn=$('nb-notif');
+  if(panel && panel.style.display==='block' && !panel.contains(e.target) && btn && !btn.contains(e.target)){
+    panel.style.display='none';
+  }
+});
+
+function renderNotifPanel(){
+  var body=$('notif-list');if(!body)return;
+  var mine=DB.notifications.filter(function(n){return n.user===SES.name;}).slice().reverse();
+  if(!mine.length){body.innerHTML='<div class="empty" style="padding:16px 14px">No notifications yet</div>';return;}
+  body.innerHTML=mine.slice(0,30).map(function(n){
+    return '<div style="padding:10px 14px;border-bottom:1px solid var(--g100);cursor:pointer;'+(n.read?'':'background:#eff6ff;')+'" onclick="openNotif(\''+n.id+'\')">'+
+      '<div style="font-size:12px;color:var(--g700)">'+esc(n.message)+'</div>'+
+      '<div style="font-size:10px;color:var(--g400);margin-top:2px">'+dt(n.created)+'</div></div>';
+  }).join('');
+}
+
+function openNotif(id){
+  var n=DB.notifications.find(function(x){return x.id===id;});
+  if(!n)return;
+  n.read=true;
+  renderNotifBell();renderNotifPanel();
+  toggleNotifPanel(false);
+  if(n.link)go(n.link);
+  queueCloudSave();
+}
+
+function markAllNotifsRead(){
+  DB.notifications.forEach(function(n){if(n.user===SES.name)n.read=true;});
+  renderNotifBell();renderNotifPanel();
+  queueCloudSave();
+}
+
 // ============ SAVE FUNCTIONS ============
 function nid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 
 function saveTask(){
   var t=$('t-title');
   if(!t||!t.value.trim()){alert('Please enter a task title.');if(t)t.focus();return;}
+  var assignee=$('t-assign').value.trim()||SES.name;
   DB.tasks.push({id:nid('T'),title:t.value.trim(),desc:$('t-desc').value.trim(),
     dept:$('t-dept').value,proj:$('t-proj').value,due:$('t-due').value||today(),
-    prio:$('t-prio').value,done:false,assign:$('t-assign').value.trim()||SES.name,
+    prio:$('t-prio').value,done:false,assign:assignee,
     createdBy:SES.name});
+  if(assignee!==SES.name)notify(assignee,'tasks','New task assigned to you: '+t.value.trim(),'my-work');
   closeM('m-task');
   t.value='';$('t-desc').value='';$('t-assign').value='';
   refreshAll();
@@ -6825,9 +6903,11 @@ function confirmPRAction(){
         p.completedAt=today();
         addCommitmentFromPR(p);
         refreshAll();
+        notify(p.requestedBy,'pr','Your purchase request '+p.prf+' has been fully approved.','my-work');
       }
     } else if(curPR.act==='reject'){
       p.chain[p.step].status='rejected';p.status='rejected';p.completedAt=today();
+      notify(p.requestedBy,'pr','Your purchase request '+p.prf+' was rejected.','my-work');
     }
   }
   closeM('m-pr-action');
@@ -7706,6 +7786,7 @@ function approveTAR(id){
   t.status='Approved';
   t.hist.push({a:'Approved',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:(note||'Approved, safe travels')+assignedVehicleText});
   logAudit('tar-approval',id,'TAR request approved.'+assignedVehicleText);
+  notify(t.requestedBy,'wf','Your TAR request to '+t.dest+' has been approved.'+assignedVehicleText,'tar-request');
   renderTARQueue();
   queueCloudSave();
   alert('TAR approved.'+assignedVehicleText+' '+t.dept+' has been notified.');
@@ -7720,6 +7801,7 @@ function denyTAR(id){
   t.status='Denied';
   t.hist.push({a:'Denied',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:note});
   logAudit('tar-denial',id,'TAR request denied: '+note);
+  notify(t.requestedBy,'wf','Your TAR request to '+t.dest+' was denied: '+note,'tar-request');
   renderTARQueue();
   queueCloudSave();
   alert('TAR denied. '+t.dept+' has been notified with your comment.');
@@ -8003,6 +8085,7 @@ function approveLeave(id){
   l.status='Approved';
   l.hist.push({a:'Approved',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Enjoy your leave'});
   logAudit('leave-approval',id,'Leave request approved for '+l.requestedBy);
+  notify(l.requestedBy,'leave','Your leave request ('+l.type+', '+dt(l.start)+' - '+dt(l.end)+') has been approved.','leave-request');
   renderLeaveQueue();
   queueCloudSave();
   alert('Leave approved. '+l.requestedBy+' has been notified.');
@@ -8016,6 +8099,7 @@ function rejectLeave(id){
   l.status='Rejected';
   l.hist.push({a:'Rejected',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:reason});
   logAudit('leave-rejection',id,'Leave request rejected for '+l.requestedBy+': '+reason);
+  notify(l.requestedBy,'leave','Your leave request ('+l.type+') was rejected: '+reason,'leave-request');
   renderLeaveQueue();
   queueCloudSave();
   alert('Leave rejected. '+l.requestedBy+' has been notified with your reason.');
