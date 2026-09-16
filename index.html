@@ -700,6 +700,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="wb" style="background:linear-gradient(135deg,#14532d,#16a34a)"><div><div class="wbt">Finance Department</div><div class="wbs">Budget · Expenditure · Financial Controls</div></div><div class="wbi">&#128176;</div></div>
   <div class="qn">
     <div class="qi" onclick="go('finance-commitments')"><div class="qii">&#128203;</div><div class="qil">Commitments</div></div>
+    <div class="qi" onclick="go('finance-advances')"><div class="qii">&#128181;</div><div class="qil">Advances &amp; Reconciliation</div></div>
     <div class="qi" onclick="openM('m-expenditure')"><div class="qii">&#128176;</div><div class="qil">Record Expenditure</div></div>
     <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
     <div class="qi" onclick="openM('m-doc')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
@@ -738,6 +739,21 @@ tbody tr:hover td{background:var(--g50);}
     <div class="st bl"><div class="stl">Total Liquidated (USD equiv.)</div><div class="stv" id="cmt-liq-total">$0</div></div>
   </div>
   <div class="cd"><div class="cdb tw"><table><thead><tr><th>Source</th><th>Project</th><th>Description</th><th>Amount</th><th>Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="commitments-body"></tbody></table></div></div>
+</div>
+
+<div class="pg" id="p-finance-advances">
+  <div class="ph"><div><h1>Advances &amp; Reconciliation</h1><p>Staff/travel cash advances awaiting liquidation, and monthly bank/cash reconciliation</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('finance')">Back</button><button class="b bo bs" onclick="openM('m-advance')">+ Issue Advance</button><button class="b bn bs" onclick="openM('m-reconciliation')">+ New Reconciliation</button></div></div>
+  <div class="stats">
+    <div class="st og"><div class="stl">Outstanding Advances</div><div class="stv" id="adv-outstanding-count">0</div></div>
+    <div class="st nv"><div class="stl">Total Outstanding (USD equiv.)</div><div class="stv" id="adv-outstanding-total">$0</div></div>
+    <div class="st rd"><div class="stl">Overdue Advances</div><div class="stv" id="adv-overdue">0</div></div>
+    <div class="st bl"><div class="stl">Unreconciled Periods</div><div class="stv" id="rec-unreconciled">0</div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Staff &amp; Travel Advances</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Advance #</th><th>Staff</th><th>Project</th><th>Purpose</th><th>Amount</th><th>Issued</th><th>Expected Liquidation</th><th>Status</th><th>Action</th></tr></thead><tbody id="advances-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Bank / Cash Reconciliation</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Account</th><th>Period</th><th>Book Balance</th><th>Statement Balance</th><th>Variance</th><th>Status</th><th>Action</th></tr></thead><tbody id="reconciliations-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-hr">
@@ -2021,10 +2037,10 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
+'finance','finance-commitments','finance-advances','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
 'admin','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-finance:['finance','finance-commitments','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+finance:['finance','finance-commitments','finance-advances','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 hr:['hr','hr-recruitment','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
@@ -2033,11 +2049,11 @@ safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','a
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
+  'finance','finance-commitments','finance-advances','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
-  'finance','finance-commitments','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
+  'finance','finance-commitments','finance-advances','hr','hr-recruitment','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
 access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
@@ -2051,7 +2067,7 @@ executive:[
 meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'finance-advances',n:'Advances & Reconciliation'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'hr-recruitment',n:'Recruitment'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
@@ -3145,6 +3161,7 @@ function render(pg){
       else if(pg==='meal-data'){renderDataHistory();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();}
       else if(pg==='finance-commitments'){renderCommitments();}
+      else if(pg==='finance-advances'){renderAdvances();renderReconciliations();}
       else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();}
       else if(pg==='hr-recruitment'){renderVacancies();renderCandidatePipeline();}
       else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();}
@@ -5125,7 +5142,8 @@ var PROJECT_SELECT_IDS=[
   {id:'an-gender-proj',all:true,core:false},
   {id:'mg-proj',all:true,core:false},
   {id:'cmt-proj',all:false,core:true},
-  {id:'gr-proj',all:false,core:false}
+  {id:'gr-proj',all:false,core:false},
+  {id:'adv-proj',all:false,core:true}
 ];
 
 function refreshAllProjectDropdowns(){
@@ -7733,6 +7751,129 @@ function renderCommitments(){
   $('cmt-liq-total').textContent=money(liq.reduce(function(s,c){return s+prAmountUSD(c.project,c.amount);},0),'USD');
 }
 
+// ============ FINANCE: STAFF/TRAVEL ADVANCES ============
+DB.advances=[];
+
+function saveAdvance(){
+  var staff=$('adv-staff'),amt=$('adv-amount'),purpose=$('adv-purpose');
+  if(!staff.value.trim()){alert('Please enter the staff name.');return;}
+  if(!amt.value||parseFloat(amt.value)<=0){alert('Please enter a valid amount.');return;}
+  if(!purpose.value.trim()){alert('Please enter the purpose of this advance.');return;}
+  var proj=$('adv-proj').value;
+  DB.advances.push({id:nid('ADV'),advanceNumber:'ADV-'+String(DB.advances.length+1).padStart(4,'0'),
+    staffName:staff.value.trim(),project:proj,purpose:purpose.value.trim(),
+    amount:parseFloat(amt.value),currency:prProjectCurrency(proj),
+    dateIssued:$('adv-issued').value||today(),expectedDate:$('adv-expected').value,
+    notes:$('adv-notes').value.trim(),status:'Outstanding',createdBy:SES.name});
+  closeM('m-advance');
+  staff.value='';amt.value='';purpose.value='';$('adv-issued').value='';$('adv-expected').value='';$('adv-notes').value='';
+  renderAdvances();queueCloudSave();
+}
+
+var _liquidatingAdvanceId=null;
+function openLiquidateModal(id){
+  var a=DB.advances.find(function(x){return x.id===id;});
+  if(!a)return;
+  _liquidatingAdvanceId=id;
+  $('liq-ctx').innerHTML='<b>'+esc(a.advanceNumber)+'</b> — '+esc(a.staffName)+'<div style="font-size:11px;color:var(--g500);margin-top:3px">Advance amount: '+money(a.amount,a.currency)+' · Purpose: '+esc(a.purpose)+'</div>';
+  $('liq-amount').value='';$('liq-date').value=today();$('liq-notes').value='';
+  openM('m-liquidate-advance');
+}
+
+function saveLiquidation(){
+  if(!_liquidatingAdvanceId)return;
+  var a=DB.advances.find(function(x){return x.id===_liquidatingAdvanceId;});
+  if(!a)return;
+  var spentInput=$('liq-amount');
+  if(spentInput.value===''||parseFloat(spentInput.value)<0){alert('Please enter the amount actually spent.');return;}
+  var spent=parseFloat(spentInput.value);
+  a.liquidatedAmount=spent;
+  a.variance=spent-a.amount;
+  a.liquidatedDate=$('liq-date').value||today();
+  a.liquidationNotes=$('liq-notes').value.trim();
+  a.status='Liquidated';
+  closeM('m-liquidate-advance');
+  _liquidatingAdvanceId=null;
+  renderAdvances();queueCloudSave();
+}
+
+function advanceIsOverdue(a){
+  return a.status==='Outstanding' && !!a.expectedDate && new Date(a.expectedDate)<new Date(today());
+}
+
+function renderAdvances(){
+  var body=$('advances-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.advances.length){body.innerHTML='<tr><td colspan="9" class="empty">No advances issued yet</td></tr>';}
+  else{
+    DB.advances.slice().reverse().forEach(function(a){
+      var overdue=advanceIsOverdue(a);
+      var sb=a.status==='Liquidated'?'bG':(overdue?'bR':'bO');
+      var label=a.status==='Liquidated'?'Liquidated':(overdue?'Overdue':'Outstanding');
+      var actions;
+      if(a.status==='Outstanding'){
+        actions='<button class="b bn bs" onclick="openLiquidateModal(\''+a.id+'\')">Liquidate</button>';
+      } else if(Math.abs(a.variance)>0.01){
+        actions='<span style="font-size:10.5px;color:'+(a.variance>0?'var(--red)':'var(--g400)')+'">'+(a.variance>0?'Owes '+money(Math.abs(a.variance),a.currency):'Returned '+money(Math.abs(a.variance),a.currency))+'</span>';
+      } else {
+        actions='<span class="bdg bG">Settled</span>';
+      }
+      var r=el('tr');
+      r.innerHTML='<td>'+esc(a.advanceNumber)+'</td><td>'+esc(a.staffName)+'</td><td>'+esc(a.project)+'</td><td>'+esc(a.purpose)+'</td>'+
+        '<td>'+money(a.amount,a.currency)+'</td><td>'+dt(a.dateIssued)+'</td><td>'+(a.expectedDate?dt(a.expectedDate):'-')+'</td>'+
+        '<td><span class="bdg '+sb+'">'+label+'</span></td><td>'+actions+'</td>';
+      body.appendChild(r);
+    });
+  }
+  var outstanding=DB.advances.filter(function(a){return a.status==='Outstanding';});
+  $('adv-outstanding-count').textContent=outstanding.length;
+  $('adv-outstanding-total').textContent=money(outstanding.reduce(function(s,a){return s+prAmountUSD(a.project,a.amount);},0),'USD');
+  $('adv-overdue').textContent=outstanding.filter(advanceIsOverdue).length;
+}
+
+// ============ FINANCE: BANK / CASH RECONCILIATION ============
+DB.reconciliations=[];
+
+function saveReconciliation(){
+  var acct=$('rec-account'),period=$('rec-period'),book=$('rec-book'),stmt=$('rec-statement');
+  if(!acct.value.trim()){alert('Please enter the account name.');return;}
+  if(!period.value){alert('Please select the reconciliation period.');return;}
+  if(book.value===''||stmt.value===''){alert('Please enter both the book balance and the bank statement balance.');return;}
+  var bookBal=parseFloat(book.value),stmtBal=parseFloat(stmt.value);
+  DB.reconciliations.push({id:nid('REC'),account:acct.value.trim(),period:period.value,
+    bookBalance:bookBal,statementBalance:stmtBal,variance:stmtBal-bookBal,
+    notes:$('rec-notes').value.trim(),status:'Unreconciled',createdBy:SES.name});
+  closeM('m-reconciliation');
+  acct.value='';period.value='';book.value='';stmt.value='';$('rec-notes').value='';
+  renderReconciliations();queueCloudSave();
+}
+
+function toggleReconciliationStatus(id){
+  var r=DB.reconciliations.find(function(x){return x.id===id;});
+  if(!r)return;
+  r.status=r.status==='Unreconciled'?'Reconciled':'Unreconciled';
+  if(r.status==='Reconciled'){r.reconciledBy=SES.name;r.reconciledDate=today();}
+  renderReconciliations();queueCloudSave();
+}
+
+function renderReconciliations(){
+  var body=$('reconciliations-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.reconciliations.length){body.innerHTML='<tr><td colspan="7" class="empty">No reconciliations recorded yet</td></tr>';}
+  else{
+    DB.reconciliations.slice().reverse().forEach(function(r){
+      var tr=el('tr');
+      tr.innerHTML='<td>'+esc(r.account)+'</td><td>'+esc(r.period)+'</td>'+
+        '<td>'+r.bookBalance.toLocaleString()+'</td><td>'+r.statementBalance.toLocaleString()+'</td>'+
+        '<td style="color:'+(Math.abs(r.variance)>0.01?'var(--red)':'var(--g400)')+'">'+(r.variance>=0?'+':'')+r.variance.toLocaleString()+'</td>'+
+        '<td><span class="bdg '+(r.status==='Reconciled'?'bG':'bO')+'">'+r.status+'</span></td>'+
+        '<td><button class="b bo bs" onclick="toggleReconciliationStatus(\''+r.id+'\')">'+(r.status==='Reconciled'?'Reopen':'Mark Reconciled')+'</button></td>';
+      body.appendChild(tr);
+    });
+  }
+  $('rec-unreconciled').textContent=DB.reconciliations.filter(function(r){return r.status==='Unreconciled';}).length;
+}
+
 
 // ============ EDIT / DELETE SYSTEM ============
 
@@ -8558,6 +8699,45 @@ if(document.getElementById('afg-map')) initMap();
 <div class="fg"><label>Date</label><input type="date" id="cmt-date"></div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-commitment')">Cancel</button><button class="b bn" onclick="saveCommitment()">Add Commitment</button></div>
+</div></div>
+
+<div class="mb" id="m-advance"><div class="md">
+<div class="mh"><h3>Issue Advance</h3><button class="mx" onclick="closeM('m-advance')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg ff"><label>Staff Name *</label><input type="text" id="adv-staff"></div>
+<div class="fg"><label>Project</label><select id="adv-proj"></select></div>
+<div class="fg"><label>Amount *</label><input type="number" id="adv-amount" placeholder="0"></div>
+<div class="fg ff"><label>Purpose *</label><input type="text" id="adv-purpose" placeholder="e.g. Travel advance for field monitoring visit"></div>
+<div class="fg"><label>Date Issued</label><input type="date" id="adv-issued"></div>
+<div class="fg"><label>Expected Liquidation Date</label><input type="date" id="adv-expected"></div>
+<div class="fg ff"><label>Notes</label><input type="text" id="adv-notes"></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-advance')">Cancel</button><button class="b bn" onclick="saveAdvance()">Issue Advance</button></div>
+</div></div>
+
+<div class="mb" id="m-liquidate-advance"><div class="md">
+<div class="mh"><h3>Liquidate Advance</h3><button class="mx" onclick="closeM('m-liquidate-advance')">&times;</button></div>
+<div class="mbd">
+  <div id="liq-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr">
+    <div class="fg"><label>Amount Actually Spent (with receipts) *</label><input type="number" id="liq-amount" placeholder="0"></div>
+    <div class="fg"><label>Liquidation Date</label><input type="date" id="liq-date"></div>
+    <div class="fg ff"><label>Notes</label><input type="text" id="liq-notes" placeholder="e.g. Receipts attached, $20 unspent returned to cashier"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-liquidate-advance')">Cancel</button><button class="b bn" onclick="saveLiquidation()">Confirm Liquidation</button></div>
+</div></div>
+
+<div class="mb" id="m-reconciliation"><div class="md">
+<div class="mh"><h3>New Bank / Cash Reconciliation</h3><button class="mx" onclick="closeM('m-reconciliation')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg"><label>Account *</label><input type="text" id="rec-account" placeholder="e.g. Main Operating Account (AFN)"></div>
+<div class="fg"><label>Period *</label><input type="month" id="rec-period"></div>
+<div class="fg"><label>Book Balance (per ledger) *</label><input type="number" id="rec-book" placeholder="0"></div>
+<div class="fg"><label>Bank Statement Balance *</label><input type="number" id="rec-statement" placeholder="0"></div>
+<div class="fg ff"><label>Reconciling Items / Notes</label><textarea rows="2" id="rec-notes" placeholder="e.g. Cheque #1234 outstanding $500; bank charges $12"></textarea></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-reconciliation')">Cancel</button><button class="b bn" onclick="saveReconciliation()">Save</button></div>
 </div></div>
 
 
