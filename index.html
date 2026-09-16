@@ -582,6 +582,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="qi" onclick="go('meal-lf')"><div class="qii">&#128203;</div><div class="qil">Logframe</div></div>
     <div class="qi" onclick="go('meal-find')"><div class="qii">&#128269;</div><div class="qil">Findings</div></div>
     <div class="qi" onclick="go('meal-risk')"><div class="qii">&#9888;</div><div class="qil">Risks</div></div>
+    <div class="qi" onclick="go('meal-dqa')"><div class="qii">&#9989;</div><div class="qil">DQA &amp; Evaluations</div></div>
     <div class="qi" onclick="go('meal-docs')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
     <div class="qi" onclick="go('meal-data')"><div class="qii">&#9999;</div><div class="qil">Data Entry</div></div>
   </div>
@@ -659,6 +660,22 @@ tbody tr:hover td{background:var(--g50);}
   <div class="st gd"><div class="stl">Medium (5-9)</div><div class="stv" id="rk-m">0</div></div>
   <div class="st gr"><div class="stl">Low (1-4)</div><div class="stv" id="rk-l">0</div></div></div>
   <div id="risk-list"></div>
+</div>
+
+<!-- MEAL DQA & EVALUATIONS -->
+<div class="pg" id="p-meal-dqa">
+  <div class="ph"><div><h1>DQA &amp; Evaluations</h1><p>Data Quality Assessments against the standard validity/integrity/precision/reliability/timeliness dimensions, and formal Baseline/Midline/Endline evaluations</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bo bs" onclick="openM('m-dqa')">+ New DQA</button><button class="b bn bs" onclick="openM('m-evaluation')">+ New Evaluation</button></div></div>
+  <div class="stats">
+    <div class="st nv"><div class="stl">DQAs Conducted</div><div class="stv" id="dqa-tot">0</div></div>
+    <div class="st rd"><div class="stl">Needing Improvement</div><div class="stv" id="dqa-poor">0</div></div>
+    <div class="st gr"><div class="stl">Evaluations Completed</div><div class="stv" id="ev-done">0</div></div>
+    <div class="st og"><div class="stl">Evaluations Ongoing/Planned</div><div class="stv" id="ev-pending">0</div></div>
+  </div>
+  <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Project</th><th>Data / Indicator Assessed</th><th>Date</th><th>Assessed By</th><th>Dimensions (V / I / P / R / T)</th><th>Overall</th></tr></thead><tbody id="dqa-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Project</th><th>Type</th><th>Title</th><th>Period</th><th>Lead</th><th>Status</th></tr></thead><tbody id="evaluations-body"></tbody></table></div></div>
 </div>
 
 <!-- MEAL DOCUMENTS -->
@@ -1643,6 +1660,42 @@ tbody tr:hover td{background:var(--g50);}
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-risk')">Cancel</button><button class="b bn" onclick="saveRisk()">Save Risk</button></div>
 </div></div>
+
+<div class="mb" id="m-dqa"><div class="md">
+<div class="mh"><h3>New Data Quality Assessment</h3><button class="mx" onclick="closeM('m-dqa')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg"><label>Project</label><select id="dqa-proj"></select></div>
+<div class="fg ff"><label>Data / Indicator Assessed *</label><input type="text" id="dqa-indicator" placeholder="e.g. Number of girls enrolled (Q3 report)"></div>
+<div class="fg"><label>Assessment Date</label><input type="date" id="dqa-date"></div>
+<div class="fg"><label>Assessed By</label><input type="text" id="dqa-by"></div>
+<div class="fg"><label>Validity</label><select id="dqa-validity"><option>Yes</option><option>Partial</option><option>No</option></select></div>
+<div class="fg"><label>Integrity</label><select id="dqa-integrity"><option>Yes</option><option>Partial</option><option>No</option></select></div>
+<div class="fg"><label>Precision</label><select id="dqa-precision"><option>Yes</option><option>Partial</option><option>No</option></select></div>
+<div class="fg"><label>Reliability</label><select id="dqa-reliability"><option>Yes</option><option>Partial</option><option>No</option></select></div>
+<div class="fg"><label>Timeliness</label><select id="dqa-timeliness"><option>Yes</option><option>Partial</option><option>No</option></select></div>
+<div class="fg ff"><label>Issues Identified</label><textarea rows="2" id="dqa-issues"></textarea></div>
+<div class="fg ff"><label>Recommendations</label><textarea rows="2" id="dqa-recs"></textarea></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-dqa')">Cancel</button><button class="b bn" onclick="saveDQA()">Save DQA</button></div>
+</div></div>
+
+<div class="mb" id="m-evaluation"><div class="md">
+<div class="mh"><h3>New Evaluation / Assessment</h3><button class="mx" onclick="closeM('m-evaluation')">&times;</button></div>
+<div class="mbd"><div class="fr">
+<div class="fg"><label>Project</label><select id="ev-proj"></select></div>
+<div class="fg"><label>Type</label><select id="ev-type"><option>Baseline</option><option>Midline</option><option>Endline</option><option>Real-Time Evaluation</option><option>Other</option></select></div>
+<div class="fg ff"><label>Title *</label><input type="text" id="ev-title" placeholder="e.g. GPE-STG Endline Evaluation"></div>
+<div class="fg"><label>Start Date</label><input type="date" id="ev-start"></div>
+<div class="fg"><label>End Date</label><input type="date" id="ev-end"></div>
+<div class="fg"><label>Lead Evaluator</label><input type="text" id="ev-lead"></div>
+<div class="fg"><label>Status</label><select id="ev-status"><option>Planned</option><option>Ongoing</option><option>Completed</option></select></div>
+<div class="fg ff"><label>Key Findings</label><textarea rows="2" id="ev-findings"></textarea></div>
+<div class="fg ff"><label>Recommendations</label><textarea rows="2" id="ev-recs"></textarea></div>
+<div class="fg ff"><label>Management Response</label><textarea rows="2" id="ev-response"></textarea></div>
+</div></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-evaluation')">Cancel</button><button class="b bn" onclick="saveEvaluation()">Save Evaluation</button></div>
+</div></div>
+
 <div class="mb" id="m-asset"><div class="md">
 <div class="mh"><h3>Register New Asset</h3><button class="mx" onclick="closeM('m-asset')">&times;</button></div>
 <div class="mbd"><div class="fr">
@@ -2058,10 +2111,10 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 // ============ ACCESS ============
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
-'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
+'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
 'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
 'admin','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
-meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 finance:['finance','finance-commitments','finance-advances','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 hr:['hr','hr-recruitment','hr-training','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
@@ -2070,11 +2123,11 @@ admin:['admin','projects','project-detail','roadmap','workflow','all-tasks','den
 safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
 progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
-  'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
+  'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
-  'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-docs','meal-data',
+  'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
@@ -2086,7 +2139,7 @@ executive:[
 {l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'},{p:'deputy',n:'Deputy Director'},{p:'progdeputy',n:'Program Deputy Director'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
+meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk Register'},{p:'meal-dqa',n:'DQA & Evaluations'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'finance-advances',n:'Advances & Reconciliation'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -3041,7 +3094,7 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();}
 
 // A department head could previously pick ANY department in the Add Task modal and assign
 // work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
@@ -3179,6 +3232,7 @@ function render(pg){
       else if(pg==='meal-visits'){renderVisits();}
       else if(pg==='meal-find'){renderFindings();}
       else if(pg==='meal-risk'){renderRisks();}
+      else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
       else if(pg==='meal-data'){renderDataHistory();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();}
@@ -4039,6 +4093,94 @@ document.addEventListener('change',function(e){
     if(r){r.status=e.target.value;queueCloudSave();}
   }
 });
+
+// ============ MEAL: DATA QUALITY ASSESSMENTS ============
+// Standard USAID DQA dimensions -- validity, integrity, precision, reliability, timeliness --
+// scored Yes/Partial/No per assessment, matching what donors actually ask to see instead of
+// just a free-text "Data Quality Check" note.
+DB.dqas=[];
+DB.evaluations=[];
+
+function dqaOverallRating(d){
+  var vals=[d.validity,d.integrity,d.precision,d.reliability,d.timeliness];
+  if(vals.indexOf('No')!==-1)return {label:'Needs Improvement',cls:'bR'};
+  if(vals.indexOf('Partial')!==-1)return {label:'Acceptable',cls:'bO'};
+  return {label:'Good',cls:'bG'};
+}
+
+function resetDQAModal(){
+  $('dqa-indicator').value='';$('dqa-date').value='';$('dqa-by').value='';
+  $('dqa-validity').value='Yes';$('dqa-integrity').value='Yes';$('dqa-precision').value='Yes';
+  $('dqa-reliability').value='Yes';$('dqa-timeliness').value='Yes';
+  $('dqa-issues').value='';$('dqa-recs').value='';
+}
+
+function saveDQA(){
+  var ind=$('dqa-indicator');
+  if(!ind.value.trim()){alert('Please describe the data/indicator being assessed.');return;}
+  DB.dqas.push({id:nid('DQA'),project:$('dqa-proj').value,indicator:ind.value.trim(),
+    date:$('dqa-date').value||today(),assessedBy:$('dqa-by').value.trim()||SES.name,
+    validity:$('dqa-validity').value,integrity:$('dqa-integrity').value,precision:$('dqa-precision').value,
+    reliability:$('dqa-reliability').value,timeliness:$('dqa-timeliness').value,
+    issues:$('dqa-issues').value.trim(),recommendations:$('dqa-recs').value.trim()});
+  closeM('m-dqa');
+  resetDQAModal();
+  renderDQAs();queueCloudSave();
+}
+
+function renderDQAs(){
+  var body=$('dqa-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.dqas.length){body.innerHTML='<tr><td colspan="6" class="empty">No data quality assessments recorded yet</td></tr>';}
+  else{
+    DB.dqas.slice().reverse().forEach(function(d){
+      var overall=dqaOverallRating(d);
+      var dimBdg=function(v){return '<span class="bdg '+(v==='Yes'?'bG':v==='Partial'?'bO':'bR')+'" style="padding:1px 5px;font-size:9.5px">'+v[0]+'</span>';};
+      var r=el('tr');
+      r.innerHTML='<td>'+esc(d.project)+'</td><td>'+esc(d.indicator)+'</td><td>'+dt(d.date)+'</td><td>'+esc(d.assessedBy)+'</td>'+
+        '<td>'+[d.validity,d.integrity,d.precision,d.reliability,d.timeliness].map(dimBdg).join(' ')+'</td>'+
+        '<td><span class="bdg '+overall.cls+'">'+overall.label+'</span></td>';
+      body.appendChild(r);
+    });
+  }
+  $('dqa-tot').textContent=DB.dqas.length;
+  $('dqa-poor').textContent=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Needs Improvement';}).length;
+}
+
+function resetEvaluationModal(){
+  $('ev-type').value='Baseline';$('ev-title').value='';$('ev-start').value='';$('ev-end').value='';
+  $('ev-lead').value='';$('ev-status').value='Planned';
+  $('ev-findings').value='';$('ev-recs').value='';$('ev-response').value='';
+}
+
+function saveEvaluation(){
+  var title=$('ev-title');
+  if(!title.value.trim()){alert('Please enter the evaluation title.');return;}
+  DB.evaluations.push({id:nid('EVAL'),project:$('ev-proj').value,type:$('ev-type').value,title:title.value.trim(),
+    start:$('ev-start').value,end:$('ev-end').value,lead:$('ev-lead').value.trim(),status:$('ev-status').value,
+    findings:$('ev-findings').value.trim(),recommendations:$('ev-recs').value.trim(),response:$('ev-response').value.trim()});
+  closeM('m-evaluation');
+  resetEvaluationModal();
+  renderEvaluations();queueCloudSave();
+}
+
+function renderEvaluations(){
+  var body=$('evaluations-body');if(!body)return;
+  body.innerHTML='';
+  if(!DB.evaluations.length){body.innerHTML='<tr><td colspan="6" class="empty">No evaluations recorded yet</td></tr>';}
+  else{
+    DB.evaluations.slice().reverse().forEach(function(e){
+      var sb=e.status==='Completed'?'bG':e.status==='Ongoing'?'bO':'bY';
+      var r=el('tr');
+      r.innerHTML='<td>'+esc(e.project)+'</td><td>'+esc(e.type)+'</td><td>'+esc(e.title)+'</td>'+
+        '<td>'+(e.start?dt(e.start):'-')+' – '+(e.end?dt(e.end):'-')+'</td><td>'+esc(e.lead||'-')+'</td>'+
+        '<td><span class="bdg '+sb+'">'+esc(e.status)+'</span></td>';
+      body.appendChild(r);
+    });
+  }
+  $('ev-done').textContent=DB.evaluations.filter(function(e){return e.status==='Completed';}).length;
+  $('ev-pending').textContent=DB.evaluations.filter(function(e){return e.status!=='Completed';}).length;
+}
 
 // ============ DOCUMENTS ============
 function renderDocs(cid,dept){
@@ -5200,7 +5342,9 @@ var PROJECT_SELECT_IDS=[
   {id:'mg-proj',all:true,core:false},
   {id:'cmt-proj',all:false,core:true},
   {id:'gr-proj',all:false,core:false},
-  {id:'adv-proj',all:false,core:true}
+  {id:'adv-proj',all:false,core:true},
+  {id:'dqa-proj',all:false,core:false},
+  {id:'ev-proj',all:false,core:false}
 ];
 
 function refreshAllProjectDropdowns(){
