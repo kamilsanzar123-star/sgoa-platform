@@ -4009,7 +4009,8 @@ function renderMealHome(){
     var pct=i.target?Math.round(i.actual/i.target*100):0;
     var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
     var r=el('div','mbr');
-    r.innerHTML='<div class="mbl" style="font-size:11.5px">'+esc(i.name.slice(0,38))+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
+    var shortName=i.name.length>38?i.name.slice(0,38)+'…':i.name;
+    r.innerHTML='<div class="mbl" style="font-size:11.5px" title="'+esc(i.name)+'">'+esc(shortName)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
     c.appendChild(r);
   });}
   renderDeptTasks('meal-tasks','MEAL');
