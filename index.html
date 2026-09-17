@@ -3523,6 +3523,16 @@ function drawAll(){
   if($('k-bud'))$('k-bud').textContent=d.budget?Math.round(d.spent/d.budget*100)+'%':'0%';
   if($('k-bud-s'))$('k-bud-s').textContent=money(Math.round(d.spent),dispCur)+' of '+money(Math.round(d.budget),dispCur);
   if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).length:1;
+  if($('k-proj-sub')){
+    if(pf==='all'){
+      var allKeys=Object.keys(PROJ);
+      var donors=new Set(allKeys.map(function(k){return PROJ[k].donor;}).filter(Boolean));
+      var sectors=new Set(allKeys.map(function(k){return PROJ[k].sector;}).filter(Boolean));
+      $('k-proj-sub').textContent=allKeys.length?(donors.size+' donor'+(donors.size!==1?'s':'')+' · '+sectors.size+' sector'+(sectors.size!==1?'s':'')):'No projects yet';
+    }else{
+      $('k-proj-sub').textContent=(PROJ[pf].sector||'-')+' · '+(PROJ[pf].donor||'-');
+    }
+  }
 
   donut('c-donut',[{v:d.done,c:'#16a34a'},{v:d.prog,c:'#2563eb'},{v:d.behind,c:'#dc2626'},{v:d.not,c:'#e2e8f0'}],26);
   if($('d-pct'))$('d-pct').textContent=d.comp+'%';
