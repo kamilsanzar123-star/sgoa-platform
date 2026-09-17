@@ -2776,7 +2776,7 @@ function doLogin(){
     effRole=matchKey;effName=c.n;effLabel=c.r;effPosition=c.r;
   }
   SES.role=effRole;SES.name=effName;SES.init=effName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
-  SES.position=effPosition;
+  SES.position=effPosition;SES.username=u;
   DB.loginLog.push({user:u,name:effName,role:effLabel,ts:new Date().toISOString()});
   queueCloudSave();
   $('uav').textContent=SES.init;$('unm').textContent=effName;$('url').textContent=effLabel;
@@ -2876,7 +2876,7 @@ function renderMySettings(){
   // account info
   document.getElementById('ms-info-name').textContent=SES.name||'-';
   document.getElementById('ms-info-role').textContent=SES.position||'-';
-  document.getElementById('ms-info-user').textContent=(u&&u.username)||'-';
+  document.getElementById('ms-info-user').textContent=(u&&u.username)||SES.username||'-';
 }
 function renderSettings(){
   var o=DB.org||{};
@@ -5227,7 +5227,7 @@ function renderWF(){
     var card=el('div','wf '+(w.prio==='h'?'ph':w.prio==='m'?'pm':'pl'));
     var badgeCls = w.status==='complete'?'bG':w.status==='rejected'?'bR':'bO';
     var badgeText = w.status==='complete'?'Approved':w.status==='rejected'?'Rejected':'In Progress';
-    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="wft">'+w.id+' — '+esc(w.title)+'</div><div class="wfm">'+esc(w.proj)+' · Due '+dt(w.due)+' · Initiated by '+esc(w.chain[0].d)+'</div></div><span class="bdg '+badgeCls+'">'+badgeText+'</span></div>';
+    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px"><div><div class="wft">'+w.id+' — '+esc(w.title)+'</div><div class="wfm">'+esc(w.proj==='all'?'All Projects':w.proj)+' · Due '+dt(w.due)+' · Initiated by '+esc(w.chain[0].d)+'</div></div><span class="bdg '+badgeCls+'">'+badgeText+'</span></div>';
     h+='<div style="font-size:11.5px;color:var(--g600);margin-top:6px">'+esc(w.desc)+'</div>';
     h+='<div class="wfp">';
     w.chain.forEach(function(n,i){
