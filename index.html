@@ -2681,7 +2681,7 @@ var CURRENCIES={
   GBP:{sym:'£',name:'British Pound'},
   PKR:{sym:'₨',name:'Pakistani Rupee'}
 };
-function money(n,cur){var sym=(CURRENCIES[cur||'USD']||CURRENCIES.USD).sym;return sym+(sym.length>1?' ':'')+n.toLocaleString();}
+function money(n,cur){var sym=(CURRENCIES[cur||'USD']||CURRENCIES.USD).sym;return sym+(sym.length>1?' ':'')+(n==null?0:n).toLocaleString();}
 // Shrinks a figure's font size as its text gets longer, so a large converted amount
 // (e.g. a USD budget expressed in AFN) still fits its fixed-width box instead of overflowing.
 function setFitText(id,text){
