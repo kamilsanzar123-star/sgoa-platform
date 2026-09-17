@@ -1874,6 +1874,14 @@ tbody tr:hover td{background:var(--g50);}
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-incident')">Cancel</button><button class="b bn" onclick="saveIncident()">Submit &amp; Escalate</button></div>
 </div></div>
+<div class="mb" id="m-sg-close"><div class="md">
+<div class="mh"><h3>Close Investigation</h3><button class="mx" onclick="closeM('m-sg-close')">&times;</button></div>
+<div class="mbd">
+  <div id="sgc-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr"><div class="fg ff"><label>Investigation Outcome / Closure Notes *</label><textarea rows="4" id="sgc-outcome" placeholder="Summarize the finding and any action taken..."></textarea></div></div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-sg-close')">Cancel</button><button class="b bn" onclick="confirmSGCaseClose()">Close Case</button></div>
+</div></div>
 <div class="mb" id="m-project"><div class="md">
 <div class="mh"><h3>Add Project</h3><button class="mx" onclick="closeM('m-project')">&times;</button></div>
 <div class="mbd"><div class="fr">
@@ -5555,13 +5563,24 @@ function startInvestigation(id){
   queueCloudSave();
 }
 
+var _sgCloseId=null;
 function closeSGCase(id){
   var c=DB.sgCases.find(function(x){return x.id===id;});
   if(!c)return;
-  var outcome=window.prompt('Investigation outcome / closure notes:','');
-  if(!outcome)return;
+  _sgCloseId=id;
+  $('sgc-ctx').innerHTML='<b>'+c.id+'</b> — '+esc(c.title);
+  $('sgc-outcome').value='';
+  openM('m-sg-close');
+}
+function confirmSGCaseClose(){
+  if(!_sgCloseId)return;
+  var c=DB.sgCases.find(function(x){return x.id===_sgCloseId;});
+  if(!c)return;
+  var outcome=$('sgc-outcome').value.trim();
+  if(!outcome){alert('Please summarize the investigation outcome before closing.');return;}
   c.stage='Closed';
   c.notes.push({by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:outcome});
+  closeM('m-sg-close');
   renderSGCases();
   queueCloudSave();
 }
