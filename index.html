@@ -752,7 +752,7 @@ tbody tr:hover td{background:var(--g50);}
   </div></div>
 
   <div class="cd"><div class="cdh"><div class="cdt">Expenditure Ledger</div><button class="b bn bs" onclick="openM('m-expenditure')">+ Record Expenditure</button></div>
-  <div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>Category</th><th>Description</th><th>Paid To</th><th>Method</th><th>Amount</th></tr></thead><tbody id="fin-ledger"></tbody></table>
+  <div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>Category</th><th>Description</th><th>Paid To</th><th>Method</th><th>Amount</th><th>Action</th></tr></thead><tbody id="fin-ledger"></tbody></table>
   <div style="text-align:right;padding:10px 0;font-weight:800;color:var(--navy)">Total Recorded: <span id="fin-ledger-total">$0</span></div></div></div>
   <div class="stats" id="finance-stats"></div>
   <div class="g2">
@@ -8221,7 +8221,7 @@ function renderExpenditureLedger(){
   var body=$('fin-ledger');if(!body)return;
   body.innerHTML='';
   var totalUSD=0,mixedCurrency=false;
-  if(!DB.expenditures.length){body.innerHTML='<tr><td colspan="7" class="empty">No expenditures recorded yet</td></tr>';}
+  if(!DB.expenditures.length){body.innerHTML='<tr><td colspan="8" class="empty">No expenditures recorded yet</td></tr>';}
   DB.expenditures.forEach(function(e){
     var cur=projCurrency(e.proj);
     totalUSD+=e.amount*projFxToUSD(e.proj);
