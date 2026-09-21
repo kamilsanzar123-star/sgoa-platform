@@ -545,7 +545,7 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- ========= ALL TASKS ========= -->
 <div class="pg" id="p-all-tasks">
-  <div class="ph"><div><h1>All Tasks — Live View</h1><p>Every task from every department, updated in real time</p></div>
+  <div class="ph"><div><h1>All Tasks — Live View</h1><p id="all-tasks-sub">Every task from every department, updated in real time</p></div>
   <div class="pha"><button class="b bo bs" onclick="go('exec')">Back</button><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div></div>
   <div class="stats" style="grid-template-columns:repeat(4,1fr)">
     <div class="st rd clk" data-taskfilter="overdue"><div class="stl">Overdue (click to view)</div><div class="stv" id="t-overdue">0</div></div>
@@ -556,9 +556,13 @@ tbody tr:hover td{background:var(--g50);}
   <div id="task-filter-active" style="display:none;font-size:12px;padding:8px 12px;background:var(--g50);border-radius:7px;margin-bottom:12px"></div>
   <div class="cd">
     <div class="cdh"><div class="cdt">Task Register</div>
-      <div style="display:flex;gap:7px">
+      <div style="display:flex;gap:7px;align-items:center">
+        <span id="tf-dept-locked" style="font-size:11px;color:var(--g500);display:none">Department: <b id="tf-dept-locked-label"></b></span>
         <select id="tf-dept" onchange="renderAllTasks()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
           <option value="all">All Departments</option><option>MEAL</option><option>Finance</option><option>HR</option><option>Programs</option><option>Supply Chain</option><option>Admin</option><option>Safeguarding</option><option>Operations</option>
+        </select>
+        <select id="tf-proj" onchange="renderAllTasks()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+          <option value="all">All Projects</option>
         </select>
         <select id="tf-status" onchange="renderAllTasks()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
           <option value="all">All Status</option><option value="open">Open</option><option value="done">Completed</option>
@@ -3921,10 +3925,43 @@ function setTaskFilter(mode){
 
 function renderAllTasks(){
   var c=$('all-tasks-body');if(!c)return;c.innerHTML='';
-  var df=$('tf-dept')?$('tf-dept').value:'all';
+  // Department heads used to see (and filter by) every other department's tasks from
+  // this cross-org view, with no way to restrict it to their own. Only the three
+  // genuinely org-wide roles keep that visibility; everyone else is hard-locked to
+  // their own department, both in the table below and in the stat tiles above it.
+  var orgWide=['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  var myDept=DEPTNAME[SES.role];
+  if($('tf-dept')){
+    $('tf-dept').style.display=orgWide?'':'none';
+    if($('tf-dept-locked'))$('tf-dept-locked').style.display=orgWide?'none':'';
+    if($('tf-dept-locked-label'))$('tf-dept-locked-label').textContent=myDept||'-';
+  }
+  if($('all-tasks-sub'))$('all-tasks-sub').textContent=orgWide?'Every task from every department, updated in real time':'Every '+myDept+' task, updated in real time';
+  var df=orgWide?($('tf-dept')?$('tf-dept').value:'all'):myDept;
   var sf=$('tf-status')?$('tf-status').value:'all';
+
+  // The Project filter is scoped the same way: org-wide roles can filter by any
+  // project in the system, department-level roles only by a project their own
+  // department actually has a task on -- this list can't be used to see what
+  // projects other departments are working on.
+  if($('tf-proj')){
+    var relevantProjects;
+    if(orgWide){
+      relevantProjects=Object.keys(PROJ);
+    }else{
+      var seenProj={};
+      DB.tasks.forEach(function(t){if(t.dept===myDept&&t.proj)seenProj[t.proj]=true;});
+      relevantProjects=Object.keys(seenProj);
+    }
+    var curProjVal=$('tf-proj').value;
+    $('tf-proj').innerHTML='<option value="all">All Projects</option>'+relevantProjects.map(function(p){return '<option value="'+esc(p)+'">'+esc(p)+'</option>';}).join('');
+    if(relevantProjects.indexOf(curProjVal)!==-1)$('tf-proj').value=curProjVal;
+  }
+  var pf=$('tf-proj')?$('tf-proj').value:'all';
+
   var ts=DB.tasks.filter(function(t){
     if(df!=='all'&&t.dept!==df)return false;
+    if(pf!=='all'&&t.proj!==pf)return false;
     if(sf==='open'&&t.done)return false;
     if(sf==='done'&&!t.done)return false;
     if(taskFilterMode==='overdue'&&!(overdue(t.due)&&!t.done))return false;
@@ -3933,11 +3970,12 @@ function renderAllTasks(){
     if(taskFilterMode==='done'&&!t.done)return false;
     return true;
   });
-  var pend=DB.tasks.filter(function(t){return !t.done;});
+  var deptScopedTasks=orgWide?DB.tasks:DB.tasks.filter(function(t){return t.dept===myDept;});
+  var pend=deptScopedTasks.filter(function(t){return !t.done;});
   if($('t-overdue'))$('t-overdue').textContent=pend.filter(function(t){return overdue(t.due);}).length;
   if($('t-high'))$('t-high').textContent=pend.filter(function(t){return t.prio==='high';}).length;
   if($('t-open'))$('t-open').textContent=pend.length;
-  if($('t-done'))$('t-done').textContent=DB.tasks.filter(function(t){return t.done;}).length;
+  if($('t-done'))$('t-done').textContent=deptScopedTasks.filter(function(t){return t.done;}).length;
   var fbox=$('task-filter-active');
   if(fbox){
     if(taskFilterMode==='all'){fbox.style.display='none';}
