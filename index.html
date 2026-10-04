@@ -533,6 +533,10 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cdh"><div class="cdt">Project Deletion Requests &mdash; Awaiting Executive Director Approval</div></div>
     <div class="cdb" id="deletion-requests-list"></div>
   </div>
+  <div class="cd" id="change-requests-card" style="display:none;border-left:3px solid var(--navy)">
+    <div class="cdh"><div class="cdt">Project Change Requests &mdash; Awaiting Executive Director Approval</div></div>
+    <div class="cdb" id="change-requests-list"></div>
+  </div>
   <div id="project-cards"></div>
 </div>
 
@@ -599,6 +603,7 @@ tbody tr:hover td{background:var(--g50);}
     <div class="qi" onclick="go('meal-dqa')"><div class="qii">&#9989;</div><div class="qil">DQA &amp; Evaluations</div></div>
     <div class="qi" onclick="go('meal-docs')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
     <div class="qi" onclick="go('meal-data')"><div class="qii">&#9999;</div><div class="qil">Data Entry</div></div>
+    <div class="qi" onclick="go('projects');setTimeout(function(){openM('m-project');},150)"><div class="qii">&#127919;</div><div class="qil">Add Project</div></div>
   </div>
   <div class="stats"><div class="st nv"><div class="stl">Total Indicators</div><div class="stv" id="mi-tot">15</div></div>
   <div class="st gr"><div class="stl">On Track</div><div class="stv" id="mi-on">11</div></div>
@@ -865,7 +870,6 @@ tbody tr:hover td{background:var(--g50);}
     <div class="qi" onclick="go('prog-partners')"><div class="qii">&#129309;</div><div class="qil">Partners</div></div>
     <div class="qi" onclick="go('prog-grants')"><div class="qii">&#128179;</div><div class="qil">Grants</div></div>
     <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
-    <div class="qi" onclick="go('projects');setTimeout(function(){openM('m-project');},150)"><div class="qii">&#127919;</div><div class="qil">Add Project</div></div>
   </div>
   <div class="stats" id="programs-stats"></div>
 
@@ -3740,12 +3744,14 @@ function renderProjectCards(){
       '<div style="text-align:center"><div style="font-size:20px;font-weight:700;color:'+p.color+'">'+p.prog+'%</div><div style="font-size:10px;color:var(--g400)">Progress</div></div></div>'+
       '<div class="pw" style="margin-bottom:11px"><div class="pb" style="width:'+p.prog+'%;background:'+p.color+'"></div></div>'+
       '<button class="b bn bs" data-proj="'+k+'">View Full Details</button>'+
+      ((SES.role==='meal'||SES.role==='executive')?'<button class="b bo bs" style="margin-left:6px" onclick="openEditLiveProject(\''+k+'\')">Edit</button>':'')+
       (SES.role==='executive'?'<button class="b bs" style="background:var(--red);color:#fff;margin-left:6px" onclick="deleteItem(\'project-live\',\''+k+'\')">Delete Project</button>':'')+
       (SES.role!=='executive' && p.deletionRequest && p.deletionRequest.status==='pending'?
         '<span class="bdg bO" style="margin-left:6px">Deletion requested — awaiting ED approval</span>'+
         (p.deletionRequest.by===SES.name?' <button class="b bo bs" style="margin-left:6px" onclick="cancelProjectDeletionRequest(\''+k+'\')">Cancel Request</button>':'')
-        :(SES.role!=='executive' && (SES.role==='programs' || p.mgr===SES.name)?
+        :(SES.role!=='executive' && (SES.role==='meal' || p.mgr===SES.name)?
           '<button class="b bo bs" style="margin-left:6px;color:var(--red);border-color:var(--red)" onclick="requestProjectDeletion(\''+k+'\')">Request Deletion</button>':''))+
+      (p.pendingChange && p.pendingChange.status==='pending'?'<span class="bdg bO" style="margin-left:6px">Change requested — awaiting ED approval</span>':'')+
       '</div>';
     c.appendChild(card);
   });
@@ -5692,13 +5698,14 @@ function refreshAllProjectDropdowns(){
 function renderProjectAddBtn(){
   var btnBox=$('project-add-btn');
   if(!btnBox)return;
-  if(SES.role==='programs'){
-    btnBox.innerHTML='<button class="b bn bs" onclick="openM(\'m-project\')">+ Add Project (sent for Executive approval)</button>';
+  if(SES.role==='meal'){
+    btnBox.innerHTML='<button class="b bn bs" onclick="openM(\'m-project\')">+ Add Project (sent for Executive Director approval)</button>';
   } else {
     btnBox.innerHTML='';
   }
   renderPendingProjects();
   renderProjectDeletionRequests();
+  renderProjectChangeRequests();
 }
 
 function renderLogframeSummary(p){
@@ -5733,37 +5740,29 @@ function renderPendingProjects(){
   if(!box||!list)return;
   var pending=DB.pendingProjects.filter(function(p){return p.status==='pending';});
   if(!pending.length){box.style.display='none';return;}
-  if(['executive','programs','meal','finance','progdeputy','deputy'].indexOf(SES.role)===-1){box.style.display='none';return;}
+  if(['executive','meal','progdeputy','deputy'].indexOf(SES.role)===-1){box.style.display='none';return;}
   box.style.display='block';
   list.innerHTML='';
   pending.forEach(function(p){
     var d=el('div','cd');d.style.marginBottom='10px';
     var edBdg = p.edApproved ? '<span class="bdg bG">Executive: Approved</span>' : '<span class="bdg bO">Executive: Pending</span>';
-    var mealBdg = p.mealApproved ? '<span class="bdg bG">MEAL: Approved</span>' : '<span class="bdg bO">MEAL: Pending Review</span>';
-    var finBdg = p.financeApproved ? '<span class="bdg bG">Finance: Approved</span>' : '<span class="bdg bO">Finance: Pending Review</span>';
     var body='<div class="cdb"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">'+
       '<div><b>'+esc(p.name)+'</b> ('+esc(p.code)+')<div style="font-size:11px;color:var(--g500);margin-top:3px">Donor: '+esc(p.donor)+' \u00b7 '+esc(p.sector)+' \u00b7 Budget: $'+p.budget.toLocaleString()+' \u00b7 Created by '+esc(p.createdBy)+'</div></div>'+
-      '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+edBdg+mealBdg+finBdg+'</div></div>';
+      '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+edBdg+'</div></div>';
     body+='<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px">'+renderLogframeSummary(p)+
       '<div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">BUDGET</div><div style="font-size:12px;color:var(--g700)">$'+p.budget.toLocaleString()+' total \u00b7 '+esc(p.donor)+'</div></div>';
-    if(p.mealComments && p.mealComments.length){
+    if(p.comments && p.comments.length){
       body+='<div style="margin-top:9px"><div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:5px">Reviewer Comments</div>';
-      p.mealComments.forEach(function(c){
+      p.comments.forEach(function(c){
         body+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(c.note)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(c.by)+' \u00b7 '+c.date+'</div></div>';
       });
       body+='</div>';
     }
     body+='<div class="wfa">';
     if(SES.role==='executive' && !p.edApproved){
-      body+='<button class="b bn bs" data-pjaction="approve-ed" data-pjid="'+p.code+'">Approve (Executive)</button><button class="b bo bs" data-pjaction="reject" data-pjid="'+p.code+'">Reject</button>';
+      body+='<button class="b bn bs" data-pjaction="approve-ed" data-pjid="'+p.code+'">Approve</button><button class="b bo bs" data-pjaction="comment" data-pjid="'+p.code+'">Comment</button><button class="b bo bs" data-pjaction="reject" data-pjid="'+p.code+'">Reject</button>';
     }
-    if(SES.role==='meal' && !p.mealApproved){
-      body+='<button class="b bn bs" data-pjaction="approve-meal" data-pjid="'+p.code+'">Approve M&amp;E Design</button><button class="b bo bs" data-pjaction="comment" data-pjid="'+p.code+'">Request Changes</button>';
-    }
-    if(SES.role==='finance' && !p.financeApproved){
-      body+='<button class="b bn bs" data-pjaction="approve-finance" data-pjid="'+p.code+'">Approve Budget</button><button class="b bo bs" data-pjaction="comment" data-pjid="'+p.code+'">Request Changes</button>';
-    }
-    if(p.createdBy===SES.name && !p.edApproved && !p.mealApproved && !p.financeApproved){
+    if(p.createdBy===SES.name && !p.edApproved){
       body+='<button class="b bo bs" onclick="openEditProject(\''+p.code+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'project\',\''+p.code+'\')">Delete</button>';
     }
     body+='</div></div>';
@@ -5802,18 +5801,18 @@ function saveProject(){
     goal:goals.join(' | '),impact:$('pj-impact').value.trim(),
     indicators:outcomes.concat(outputs).map(function(o){return (o.text?o.text+': ':'')+o.indicators.join(', ');}).join('\n'),
     logframe:{goals:goals,outcomes:outcomes,outputs:outputs},
-    edApproved:false,mealApproved:false,financeApproved:false,mealComments:[],
+    edApproved:false,comments:[],
     createdBy:SES.name,createdRole:SES.role};
   DB.pendingProjects.push(data);
   closeM('m-project');n.value='';$('pj-impact').value='';$('pj-benef-direct').value='';$('pj-benef-indirect').value='';$('pj-budget-program').value='';$('pj-budget-operations').value='';initProjectLFFields();
   renderPendingProjects();
   queueCloudSave();
-  alert('Project submitted. It requires approval from MEAL (indicators), Finance (budget), and the Executive Director before it goes live.');
+  alert('Project submitted. It requires approval from the Executive Director before it goes live.');
 }
 
 function maybeActivateProject(code){
   var p=DB.pendingProjects.find(function(x){return x.code===code;});
-  if(!p||!p.edApproved||!p.mealApproved||!p.financeApproved)return;
+  if(!p||!p.edApproved)return;
   p.status='approved';
   PROJ[code]={name:p.name,donor:p.donor,sector:p.sector,budget:p.budget,spent:0,benef:p.benef,
     benefDirect:p.benefDirect||0,benefIndirect:p.benefIndirect||0,
@@ -5851,46 +5850,39 @@ function approveProjectED(code){
   maybeActivateProject(code);
 }
 
-function approveProjectMEAL(code){
-  var p=DB.pendingProjects.find(function(x){return x.code===code;});
-  if(!p)return;
-  p.mealApproved=true;
-  logAudit('project-approval-meal',code,'MEAL indicator/design approval');
-  renderPendingProjects();
-  queueCloudSave();
-  maybeActivateProject(code);
-}
-
-function approveProjectFinance(code){
-  var p=DB.pendingProjects.find(function(x){return x.code===code;});
-  if(!p)return;
-  p.financeApproved=true;
-  logAudit('project-approval-finance',code,'Finance budget approval');
-  renderPendingProjects();
-  queueCloudSave();
-  maybeActivateProject(code);
-}
-
-var curCommentProject=null;
-function openProjectComment(code){
-  var p=DB.pendingProjects.find(function(x){return x.code===code;});
+var curCommentProject=null,curCommentType='new';
+function openProjectComment(code,type){
+  curCommentType=type||'new';
+  var p=curCommentType==='change'?PROJ[code]:DB.pendingProjects.find(function(x){return x.code===code;});
   if(!p)return;
   curCommentProject=code;
-  $('pc-ctx').innerHTML='<b>'+esc(p.name)+'</b> ('+esc(p.code)+')';
+  $('pc-ctx').innerHTML='<b>'+esc(p.name)+'</b> ('+esc(code)+')';
   $('pc-note').value='';
   openM('m-project-comment');
 }
 function saveProjectComment(){
   if(!curCommentProject)return;
-  var p=DB.pendingProjects.find(function(x){return x.code===curCommentProject;});
-  if(!p)return;
   var note=$('pc-note').value.trim();
   if(!note){alert('Please write a comment.');return;}
-  if(!p.mealComments)p.mealComments=[];
-  p.mealComments.push({by:SES.name,note:note,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
+  var createdBy;
+  if(curCommentType==='change'){
+    var live=PROJ[curCommentProject];
+    if(!live||!live.pendingChange)return;
+    if(!live.pendingChange.comments)live.pendingChange.comments=[];
+    live.pendingChange.comments.push({by:SES.name,note:note,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
+    createdBy=live.pendingChange.by;
+    renderProjectChangeRequests();renderProjectCards();
+  } else {
+    var p=DB.pendingProjects.find(function(x){return x.code===curCommentProject;});
+    if(!p)return;
+    if(!p.comments)p.comments=[];
+    p.comments.push({by:SES.name,note:note,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
+    createdBy=p.createdBy;
+    renderPendingProjects();
+  }
   closeM('m-project-comment');
-  renderPendingProjects();
-  alert('Comment sent to '+p.createdBy+'.');
+  queueCloudSave();
+  alert('Comment sent to '+createdBy+'.');
 }
 
 
@@ -5906,6 +5898,107 @@ function rejectProject(code){
   renderPendingProjects();
   queueCloudSave();
   alert('Project rejected'+(reason?': '+reason:'.')+' The submission is kept on record and can be resubmitted as a new project if needed.');
+}
+
+// ============ LIVE PROJECT EDITS (MEAL proposes a change, Executive Director approves) ============
+var _editingLiveCode=null;
+function openEditLiveProject(code){
+  var p=PROJ[code];if(!p)return;
+  _editingLiveCode=code;
+  var draft=(p.pendingChange&&p.pendingChange.status==='pending')?p.pendingChange.proposed:p;
+  var m=document.getElementById('m-edit-live-project');
+  if(!m){
+    m=document.createElement('div');m.id='m-edit-live-project';m.className='mb';
+    m.innerHTML='<div class="md"><div class="mh"><h3>Edit Project</h3><button class="mx" onclick="closeM(\'m-edit-live-project\')">&times;</button></div><div class="mbd"><div class="fg"><label>Project Name</label><input id="elp-name" class="fi" type="text"></div><div class="fg"><label>Donor</label><input id="elp-donor" class="fi" type="text"></div><div class="fg"><label>Budget ($)</label><input id="elp-budget" class="fi" type="number" min="0"></div><div class="fg"><label>Goal</label><textarea id="elp-goal" class="fi" rows="2"></textarea></div><div class="fg"><label>Impact</label><textarea id="elp-impact" class="fi" rows="2"></textarea></div><div class="fg"><label>Reason for this change (required)</label><textarea id="elp-reason" class="fi" rows="2" placeholder="Why is this change needed?"></textarea></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-live-project\')">Cancel</button><button class="b bn" onclick="saveEditLiveProject()" id="elp-save-btn">Submit for Approval</button></div></div>';
+    document.body.appendChild(m);
+  }
+  document.getElementById('elp-name').value=draft.name||'';
+  document.getElementById('elp-donor').value=draft.donor||'';
+  document.getElementById('elp-budget').value=draft.budget||0;
+  document.getElementById('elp-goal').value=draft.goal||'';
+  document.getElementById('elp-impact').value=draft.impact||'';
+  document.getElementById('elp-reason').value='';
+  document.getElementById('elp-save-btn').textContent=SES.role==='executive'?'Save Changes':'Submit for Approval';
+  m.classList.add('on');
+}
+function saveEditLiveProject(){
+  var p=PROJ[_editingLiveCode];if(!p)return;
+  var name=document.getElementById('elp-name').value.trim();
+  if(!name){alert('Project name is required.');return;}
+  var reason=document.getElementById('elp-reason').value.trim();
+  if(!reason){alert('Please explain why this change is needed.');return;}
+  var proposed={name:name,donor:document.getElementById('elp-donor').value.trim(),
+    budget:parseInt(document.getElementById('elp-budget').value)||0,
+    goal:document.getElementById('elp-goal').value.trim(),
+    impact:document.getElementById('elp-impact').value.trim()};
+  if(SES.role==='executive'){
+    Object.assign(p,proposed);
+    p.pendingChange=null;
+    logAudit('project-edit-direct',_editingLiveCode,reason);
+    closeM('m-edit-live-project');
+    renderProjectCards();renderProjectChangeRequests();refreshAll();
+    queueCloudSave();
+    alert('Project updated.');
+  } else {
+    p.pendingChange={by:SES.name,reason:reason,date:today(),status:'pending',proposed:proposed,comments:[]};
+    closeM('m-edit-live-project');
+    renderProjectCards();renderProjectChangeRequests();
+    queueCloudSave();
+    alert('Change submitted to the Executive Director for approval.');
+  }
+}
+function approveProjectChange(code){
+  var p=PROJ[code];if(!p||!p.pendingChange)return;
+  var reason=p.pendingChange.reason,by=p.pendingChange.by;
+  Object.assign(p,p.pendingChange.proposed);
+  p.pendingChange=null;
+  logAudit('project-change-approved',code,'Requested by '+by+': '+reason);
+  renderProjectCards();renderProjectChangeRequests();refreshAll();
+  queueCloudSave();
+  alert('Change approved and applied.');
+}
+function rejectProjectChange(code){
+  var p=PROJ[code];if(!p||!p.pendingChange)return;
+  var reason=window.prompt('Reason for rejecting this change (optional):','');
+  logAudit('project-change-rejected',code,'Requested by '+p.pendingChange.by+(reason?'. Rejection reason: '+reason:''));
+  p.pendingChange=null;
+  renderProjectCards();renderProjectChangeRequests();
+  queueCloudSave();
+  alert('Change rejected.');
+}
+function renderProjectChangeRequests(){
+  var box=$('change-requests-card'),list=$('change-requests-list');
+  if(!box||!list)return;
+  var codes=Object.keys(PROJ).filter(function(k){return PROJ[k].pendingChange && PROJ[k].pendingChange.status==='pending';});
+  if(!codes.length || SES.role!=='executive'){box.style.display='none';return;}
+  box.style.display='block';
+  list.innerHTML='';
+  codes.forEach(function(k){
+    var p=PROJ[k],c=p.pendingChange,prop=c.proposed;
+    var diffs=[];
+    if(prop.name!==p.name)diffs.push(['Name',p.name,prop.name]);
+    if(prop.donor!==p.donor)diffs.push(['Donor',p.donor,prop.donor]);
+    if(prop.budget!==p.budget)diffs.push(['Budget','$'+p.budget.toLocaleString(),'$'+prop.budget.toLocaleString()]);
+    if(prop.goal!==p.goal)diffs.push(['Goal',p.goal||'-',prop.goal||'-']);
+    if(prop.impact!==p.impact)diffs.push(['Impact',p.impact||'-',prop.impact||'-']);
+    var d=el('div','cd');d.style.marginBottom='10px';
+    var body='<div class="cdb"><div><b>'+esc(p.name)+'</b> ('+esc(k)+')<div style="font-size:11px;color:var(--g500);margin-top:3px">Requested by '+esc(c.by)+' on '+dt(c.date)+'</div>'+
+      '<div style="font-size:12px;color:var(--g700);margin-top:6px;background:var(--g50);padding:8px;border-radius:6px"><b>Reason:</b> '+esc(c.reason)+'</div></div>';
+    if(diffs.length){
+      body+='<div style="margin-top:9px"><div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:5px">PROPOSED CHANGES</div>'+
+        diffs.map(function(x){return '<div style="font-size:12px;color:var(--g700);margin-bottom:3px"><b>'+x[0]+':</b> <span style="color:var(--g500)">'+esc(String(x[1]))+'</span> &rarr; '+esc(String(x[2]))+'</div>';}).join('')+'</div>';
+    }
+    if(c.comments && c.comments.length){
+      body+='<div style="margin-top:9px"><div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:5px">Comments</div>';
+      c.comments.forEach(function(cm){
+        body+='<div style="font-size:11.5px;color:var(--g600);background:rgba(200,146,42,.08);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(cm.note)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(cm.by)+' · '+cm.date+'</div></div>';
+      });
+      body+='</div>';
+    }
+    body+='<div class="wfa" style="margin-top:9px"><button class="b bn bs" onclick="approveProjectChange(\''+k+'\')">Approve</button><button class="b bo bs" onclick="openProjectComment(\''+k+'\',\'change\')">Comment</button><button class="b bo bs" style="color:var(--red);border-color:var(--red)" onclick="rejectProjectChange(\''+k+'\')">Reject</button></div></div>';
+    d.innerHTML=body;
+    list.appendChild(d);
+  });
 }
 
 
@@ -8829,9 +8922,7 @@ document.addEventListener('click',function(e){
   if(pjBtn){
     var pjid=pjBtn.getAttribute('data-pjid'),pjact=pjBtn.getAttribute('data-pjaction');
     if(pjact==='approve-ed')approveProjectED(pjid);
-    else if(pjact==='approve-meal')approveProjectMEAL(pjid);
-    else if(pjact==='approve-finance')approveProjectFinance(pjid);
-    else if(pjact==='comment')openProjectComment(pjid);
+    else if(pjact==='comment')openProjectComment(pjid,'new');
     else if(pjact==='reject')rejectProject(pjid);
     return;
   }
@@ -9056,7 +9147,7 @@ document.addEventListener('keydown',function(e){
 
 
 <div class="mb" id="m-project-comment"><div class="md">
-<div class="mh"><h3>MEAL Comment / Request Changes</h3><button class="mx" onclick="closeM('m-project-comment')">&times;</button></div>
+<div class="mh"><h3>Project Comment</h3><button class="mx" onclick="closeM('m-project-comment')">&times;</button></div>
 <div class="mbd">
   <div id="pc-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
   <div class="fg"><label>Your Comment</label><textarea rows="4" id="pc-note" placeholder="What needs to change in the goal, impact, or indicators?"></textarea></div>
