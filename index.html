@@ -848,6 +848,8 @@ tbody tr:hover td{background:var(--g50);}
 
   <div class="cd"><div class="cdh"><div class="cdt">Leave Requests — Awaiting HR Action</div></div><div class="cdb" id="hr-leave-queue"></div></div>
 
+  <div class="cd"><div class="cdh"><div class="cdt">Staff Leave Balances — <span id="hr-leave-bal-year"></span></div></div><div class="cdb tw" id="hr-leave-balances"></div></div>
+
   <div class="cd"><div class="cdh"><div class="cdt">Monthly Attendance Summary</div><button class="b bn bs" onclick="openM('m-attendance')">+ Log Attendance</button></div>
   <div class="cdb tw"><table><thead><tr><th>Staff Name</th><th>Department</th><th>Month</th><th>Present</th><th>Absent</th><th>Late</th><th>On Leave</th></tr></thead><tbody id="hr-attendance"></tbody></table></div></div>
 
@@ -1434,6 +1436,10 @@ tbody tr:hover td{background:var(--g50);}
 
 <div class="pg" id="p-leave-request">
   <div class="ph"><div><h1>Request Leave</h1><p>Submit a leave request — goes directly to HR for approval</p></div></div>
+  <div class="cd">
+    <div class="cdh"><div class="cdt">My Leave Balance — <span id="lv-balance-year"></span></div></div>
+    <div class="cdb"><div id="lv-balance" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px"></div></div>
+  </div>
   <div class="cd">
     <div class="cdh"><div class="cdt">New Leave Request</div></div>
     <div class="cdb">
@@ -2231,14 +2237,14 @@ executive:['exec','projects','project-detail','roadmap','all-tasks','all-challen
 'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
 'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
 'admin','admin-registry','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
-meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-finance:['finance','finance-commitments','finance-advances','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+finance:['finance','finance-commitments','finance-advances','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 hr:['hr','hr-recruitment','hr-training','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
-programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-admin:['admin','admin-registry','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
-operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','my-settings'],
+programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+supply:['supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+admin:['admin','admin-registry','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
@@ -2247,8 +2253,8 @@ deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','acce
   'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','admin-registry','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
-it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings'],
-access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','my-settings']
+it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','timesheet-approve','my-settings'],
+access:['access','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','timesheet-approve','my-settings']
 };
 
 var SIDEBAR={
@@ -2257,24 +2263,24 @@ executive:[
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'},{p:'deputy',n:'Deputy Director'},{p:'progdeputy',n:'Program Deputy Director'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk & Audit Findings'},{p:'meal-dqa',n:'DQA & Evaluations'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
-{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'finance-advances',n:'Advances & Reconciliation'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'finance-advances',n:'Advances & Reconciliation'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 hr:[{l:'HUMAN RESOURCES',i:[{p:'hr',n:'HR Home'},{p:'hr-recruitment',n:'Recruitment'},{p:'hr-training',n:'Training & Certifications'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 programs:[{l:'PROGRAMS',i:[{p:'programs',n:'Programs Home'},{p:'projects',n:'Projects'},{p:'prog-activities',n:'Activities'},{p:'prog-benef',n:'Beneficiaries'},{p:'prog-analysis',n:'Analysis'},{p:'prog-partners',n:'Partners'},{p:'prog-grants',n:'Grants'}]},
-{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'CROSS-DEPT',i:[{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 supply:[{l:'SUPPLY CHAIN',i:[{p:'supply',n:'Supply Chain Home'},{p:'supply-proc',n:'Procurement'},{p:'supply-po',n:'Purchase Orders'},{p:'supply-grn',n:'GRN & Invoices'},{p:'supply-warehouse',n:'Warehouse & Stock'},{p:'supply-dist',n:'Distribution'},{p:'supply-suppliers',n:'Suppliers'}]},
-{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'admin-registry',n:'Document Registry'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+admin:[{l:'ADMINISTRATION',i:[{p:'admin',n:'Admin Home'},{p:'admin-registry',n:'Document Registry'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+safeguarding:[{l:'SAFEGUARDING',i:[{p:'safeguarding',n:'Safeguarding Home'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 operations:[{l:'OPERATIONS',i:[{p:'operations',n:'Operations Home'},{p:'ops-assets',n:'Asset Register'},{p:'ops-fleet',n:'Fleet Management'}]},
-{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
+{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 progdeputy:[{l:'MAIN',i:[{p:'progdeputy',n:'Program Deputy Director Home'}]},
 {l:'APPROVALS',i:[{p:'pr-approvals',n:'PR Approvals'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},
@@ -2288,8 +2294,8 @@ deputy:[{l:'MAIN',i:[{p:'deputy',n:'Deputy Director Home'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'}]},
 {l:'CROSS-DEPT',i:[{p:'tar-request',n:'Raise TAR'},{p:'it-tickets',n:'IT Support'},{p:'timesheet',n:'⏱ My Timesheet'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
+it:[{l:'IT SUPPORT',i:[{p:'it',n:'IT Support Home'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
+access:[{l:'ACCESS DEPARTMENT',i:[{p:'access',n:'Access Home'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'}]},{l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'leave-request',n:'Request Leave'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},{l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}]
 };
 var HOME={executive:'exec',meal:'meal',finance:'finance',hr:'hr',programs:'programs',supply:'supply',admin:'admin',safeguarding:'safeguarding',operations:'operations',progdeputy:'progdeputy',deputy:'deputy',it:'it',access:'access'};
 
@@ -2881,7 +2887,7 @@ function renderMyWork(){
     var monthKey=new Date().toISOString().slice(0,7);
     var rec=(DB.timesheets||[]).find(function(r){return r.staff===SES.name && r.month===monthKey;});
     var status=rec?rec.status:'Not started';
-    var bd=status==='Approved'?'bG':status==='Submitted'?'bO':status==='Rejected'?'bR':'bY';
+    var bd=status==='Approved'?'bG':(status==='Submitted'||status==='SupervisorApproved')?'bO':status==='Rejected'?'bR':'bY';
     tsBox.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px">This month ('+monthKey+')</div><span class="bdg '+bd+'">'+esc(status)+'</span></div>';
   }
 
@@ -3341,7 +3347,7 @@ function render(pg){
       else if(pg==='deputy'){renderApprovalRoleHome('deputy');}
       else if(pg==='progdeputy'){renderApprovalRoleHome('progdeputy');}
       else if(pg==='tar-request'){initTARForm();renderMyTARs();}
-      else if(pg==='leave-request'){renderMyLeaveRequests();}
+      else if(pg==='leave-request'){renderMyLeaveRequests();renderMyLeaveBalance();}
       else if(pg==='users'){renderUsers();renderUserMgmt();renderLoginActivity();}
       else if(pg==='settings'){renderSettings();}
       else if(pg==='meal'){renderMealHome();}
@@ -3357,7 +3363,7 @@ function render(pg){
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();}
       else if(pg==='finance-commitments'){renderCommitments();}
       else if(pg==='finance-advances'){renderAdvances();renderReconciliations();}
-      else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();}
+      else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();renderStaffLeaveBalances();}
       else if(pg==='hr-recruitment'){renderVacancies();renderCandidatePipeline();}
       else if(pg==='hr-training'){renderTrainings();}
       else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();}
@@ -7750,7 +7756,7 @@ function renderStaffDirectory(deptLabel,containerId){
 // department page already uses.
 function renderApprovalRoleHome(roleKey){
   var prPending=DB.pr.filter(function(p){return p.status==='progress' && p.chain[p.step] && p.chain[p.step].role===roleKey;}).length;
-  var tsPending=(DB.timesheets||[]).filter(function(t){return t.status==='Submitted';}).length;
+  var tsPending=(DB.timesheets||[]).filter(function(t){return t.status==='SupervisorApproved';}).length;
   if($(roleKey+'-pr-pending'))$(roleKey+'-pr-pending').textContent=prPending;
   if($(roleKey+'-ts-pending'))$(roleKey+'-ts-pending').textContent=tsPending;
   if($(roleKey+'-projects'))$(roleKey+'-projects').textContent=Object.keys(PROJ).length;
@@ -8342,6 +8348,45 @@ function renderAttendance(){
 // ============ LEAVE REQUESTS ============
 DB.leaveRequests=[];
 var lvStatusBdg={'Pending':'bO','Approved':'bG','Rejected':'bR'};
+// Unpaid leave has no entitlement to track against -- it's deliberately left out of this
+// map, and the balance UI treats any type not listed here as uncapped.
+var LEAVE_ENTITLEMENT={'Annual':20,'Sick':10,'Emergency':5,'Maternity/Paternity':90};
+function leaveBalanceYear(){return today().slice(0,4);}
+function computeLeaveBalance(name){
+  var year=leaveBalanceYear();
+  return Object.keys(LEAVE_ENTITLEMENT).map(function(type){
+    var used=DB.leaveRequests.filter(function(l){
+      return l.requestedBy===name && l.type===type && l.status==='Approved' && l.start && l.start.slice(0,4)===year;
+    }).reduce(function(s,l){return s+(l.days||0);},0);
+    var ent=LEAVE_ENTITLEMENT[type];
+    return {type:type,entitlement:ent,used:used,remaining:Math.max(0,ent-used)};
+  });
+}
+function renderMyLeaveBalance(){
+  var box=$('lv-balance');if(!box)return;
+  if($('lv-balance-year'))$('lv-balance-year').textContent=leaveBalanceYear();
+  box.innerHTML=computeLeaveBalance(SES.name).map(function(r){
+    return '<div style="text-align:center;padding:12px;background:var(--g50);border-radius:8px">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:5px">'+esc(r.type)+'</div>'+
+      '<div style="font-size:22px;font-weight:700;color:var(--green)">'+r.remaining+'</div>'+
+      '<div style="font-size:10px;color:var(--g500)">of '+r.entitlement+' days · '+r.used+' used in '+leaveBalanceYear()+'</div></div>';
+  }).join('');
+}
+function renderStaffLeaveBalances(){
+  var box=$('hr-leave-balances');if(!box)return;
+  if($('hr-leave-bal-year'))$('hr-leave-bal-year').textContent=leaveBalanceYear();
+  var people=loginAccountsList();
+  var types=Object.keys(LEAVE_ENTITLEMENT);
+  var h='<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;color:var(--g500)">Staff</th>'+
+    types.map(function(t){return '<th style="padding:7px 10px;font-size:10px;text-transform:uppercase;color:var(--g500)">'+esc(t)+'</th>';}).join('')+'</tr></thead><tbody>';
+  people.forEach(function(p){
+    var bal=computeLeaveBalance(p.name);
+    h+='<tr style="border-top:1px solid var(--g100)"><td style="padding:7px 10px"><b>'+esc(p.name)+'</b><div style="font-size:10px;color:var(--g500)">'+esc(p.role)+'</div></td>'+
+      bal.map(function(b){return '<td style="padding:7px 10px;text-align:center;font-size:12px">'+b.remaining+' / '+b.entitlement+'</td>';}).join('')+'</tr>';
+  });
+  h+='</tbody></table>';
+  box.innerHTML=people.length?h:'<div class="empty">No staff accounts yet.</div>';
+}
 
 function submitLeaveRequest(){
   var type=$('lv-type'),start=$('lv-start'),end=$('lv-end'),reason=$('lv-reason');
@@ -8410,6 +8455,7 @@ function approveLeave(id){
   logAudit('leave-approval',id,'Leave request approved for '+l.requestedBy);
   notify(l.requestedBy,'leave','Your leave request ('+l.type+', '+dt(l.start)+' - '+dt(l.end)+') has been approved.','leave-request');
   renderLeaveQueue();
+  renderStaffLeaveBalances();
   queueCloudSave();
   alert('Leave approved. '+l.requestedBy+' has been notified.');
 }
@@ -9572,6 +9618,7 @@ if(document.getElementById('afg-map')) initMap();
 <script>
 // ====== TIMESHEET MODULE ======
 var TS_TARGET = null;
+var TS_STAGE = 'hr';
 
 function tsInit(){
   if(!DB.timesheets) DB.timesheets = [];
@@ -9624,7 +9671,7 @@ function tsGetRecord(staff, month){
   // approved, the record is frozen so a payroll total can't change after sign-off, and a
   // holiday HR later deletes is no longer added back on the next view either. This
   // replaces (not merges) the holiday hours each time, so removed holidays actually drop.
-  if(rec.status==='Draft' || rec.status==='Submitted'){
+  if(rec.status==='Draft' || rec.status==='Submitted' || rec.status==='SupervisorApproved'){
     var freshHoliday={};
     (DB.holidays||[]).forEach(function(h){
       if(h.month===month){
@@ -9673,7 +9720,7 @@ function renderMyTimesheet(){
   var h = document.getElementById('ts-hrs'); if(h) h.textContent = allHours+'h';
   var e = document.getElementById('ts-exp'); if(e) e.textContent = 'of '+(workDays*8)+'h expected';
   var a = document.getElementById('ts-appr'); if(a) a.textContent = mine.filter(function(r){return r.status==='Approved';}).length;
-  var p = document.getElementById('ts-pend'); if(p) p.textContent = mine.filter(function(r){return r.status==='Submitted';}).length;
+  var p = document.getElementById('ts-pend'); if(p) p.textContent = mine.filter(function(r){return r.status==='Submitted'||r.status==='SupervisorApproved';}).length;
   var rj = document.getElementById('ts-rej'); if(rj) rj.textContent = mine.filter(function(r){return r.status==='Rejected';}).length;
 
   // Clear and rebuild container
@@ -9700,7 +9747,7 @@ function renderMyTimesheet(){
   var right = document.createElement('div');
   right.style.cssText = 'display:flex;gap:8px;align-items:center';
   var badge = document.createElement('span');
-  var badgeColors = {Draft:'background:#f1f5f9;color:#64748b', Submitted:'background:#fef3c7;color:#92400e', Approved:'background:#dcfce7;color:#15803d', Rejected:'background:#fee2e2;color:#dc2626'};
+  var badgeColors = {Draft:'background:#f1f5f9;color:#64748b', Submitted:'background:#fef3c7;color:#92400e', SupervisorApproved:'background:#fef3c7;color:#92400e', Approved:'background:#dcfce7;color:#15803d', Rejected:'background:#fee2e2;color:#dc2626'};
   badge.style.cssText = 'padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;' + (badgeColors[rec.status]||'');
   badge.textContent = rec.status;
   right.appendChild(badge);
@@ -9730,14 +9777,16 @@ function renderMyTimesheet(){
   var noticeStyle = {
     Draft: 'background:#eff6ff;border:1px solid #2563eb;color:#1e40af',
     Submitted: 'background:#fef3c7;border:1px solid #f59e0b;color:#92400e',
+    SupervisorApproved: 'background:#fef3c7;border:1px solid #f59e0b;color:#92400e',
     Approved: 'background:#dcfce7;border:1px solid #16a34a;color:#14532d',
     Rejected: 'background:#fee2e2;border:1px solid #dc2626;color:#7f1d1d'
   };
   var noticeText = {
-    Draft: '📝 Draft — enter 8 for a full working day. Fri and Sat are weekends (shaded). Click Submit to HR when the month is complete.',
-    Submitted: '⏳ Submitted to HR — awaiting approval. You cannot edit this timesheet.',
+    Draft: '📝 Draft — enter 8 for a full working day. Fri and Sat are weekends (shaded). Click Submit when the month is complete.',
+    Submitted: '⏳ Submitted to your supervisor, '+esc(rec.supervisor||'your supervisor')+' — awaiting their approval before it goes to HR. You cannot edit this timesheet.',
+    SupervisorApproved: '⏳ Approved by your supervisor, now with HR for final approval. You cannot edit this timesheet.',
     Approved: '✅ Approved by HR.' + (rec.hrNote ? ' Note: ' + rec.hrNote : ''),
-    Rejected: '❌ Returned by HR. Please correct and resubmit. Reason: ' + (rec.hrNote||'—')
+    Rejected: '❌ Returned. Please correct and resubmit. Reason: ' + (rec.supervisorNote||rec.hrNote||'—')
   };
   notice.style.cssText = 'padding:9px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;' + (noticeStyle[rec.status]||'');
   notice.textContent = noticeText[rec.status]||'';
@@ -9783,13 +9832,16 @@ function renderMyTimesheet(){
   var dept = (SES&&SES.role) ? (DEPTNAME[SES.role]||SES.role) : '';
   if(!rec.empName) rec.empName = staff;
   if(!rec.empDept) rec.empDept = dept;
-  if(!rec.supervisor) rec.supervisor = 'Gul Mohammad ARYAN';
   if(!rec.empPos) rec.empPos = '';
+  // Once the record exists, who approves it is decided at submission (tsSubmit), not here --
+  // this just shows that computed value so it can no longer be edited into something that
+  // wouldn't match who the timesheet actually routes to.
+  var supervisorDisplay = rec.supervisor || (tsIsHeadAccount() ? 'HR (no supervisor stage)' : tsSupervisorName());
   infoGrid.appendChild(makeInfoField('Employee Name', rec.empName, true, function(v){ rec.empName=v; queueCloudSave(); var el=document.getElementById('ts-sig-emp'); if(el) el.textContent=v; }));
   infoGrid.appendChild(makeInfoField('Department', rec.empDept, true, function(v){ rec.empDept=v; queueCloudSave(); }));
   infoGrid.appendChild(makeInfoField('Job Location', rec.location||'Kabul', true, function(v){ rec.location=v; queueCloudSave(); }));
   infoGrid.appendChild(makeInfoField('Position / Title', rec.empPos||'', true, function(v){ rec.empPos=v; queueCloudSave(); }));
-  infoGrid.appendChild(makeInfoField('Supervisor', rec.supervisor, true, function(v){ rec.supervisor=v; queueCloudSave(); var el=document.getElementById('ts-sig-sup'); if(el) el.textContent=v; }));
+  infoGrid.appendChild(makeInfoField('Supervisor', supervisorDisplay, false, null));
   infoGrid.appendChild(makeInfoField('Report Month', month, false, null));
   hdrBox.appendChild(infoGrid);
   con.appendChild(hdrBox);
@@ -10041,7 +10093,7 @@ function renderMyTimesheet(){
     return d;
   }
   sigGrid.appendChild(makeSig('Employee Signature', rec.empName||staff, 'ts-sig-emp'));
-  sigGrid.appendChild(makeSig('Supervisor / HR Approval', rec.supervisor||'Gul Mohammad ARYAN', 'ts-sig-sup'));
+  sigGrid.appendChild(makeSig('Supervisor / HR Approval', rec.supervisor||supervisorDisplay, 'ts-sig-sup'));
   sigBox.appendChild(sigGrid);
   con.appendChild(sigBox);
 
@@ -10098,17 +10150,34 @@ function tsDelRow(staff, month, ri){
   renderMyTimesheet();
 }
 
+// A department head logs in through their own original CRED account (username matches
+// CRED[role].u) -- any other staff account sharing that same role template is a regular
+// report, not the head, even though both carry the same SES.role. Only the real head
+// skips the supervisor stage and only the real head sees the supervisor approval queue.
+function tsIsHeadAccount(){
+  return !!(SES && SES.username && CRED[SES.role] && CRED[SES.role].u===SES.username);
+}
+function tsSupervisorName(){
+  return (CRED[SES.role] && CRED[SES.role].n) || 'Department Head';
+}
+
 function tsSubmit(staff, month){
   var rec = tsGetRecord(staff, month);
   var total = 0;
   rec.rows.forEach(function(row){ Object.values(row.hours||{}).forEach(function(v){total+=parseFloat(v)||0;}); });
   if(!total){ alert('Please fill in your hours before submitting.'); return; }
-  if(!confirm('Submit timesheet for '+month+' to HR?\nTotal: '+total+'h\n\nYou cannot edit after submission.')) return;
-  rec.status = 'Submitted';
+  var isHead = tsIsHeadAccount();
+  var supervisorName = isHead ? null : tsSupervisorName();
+  var msg = isHead ? ('Submit timesheet for '+month+' to HR?\nTotal: '+total+'h\n\nYou cannot edit after submission.')
+    : ('Submit timesheet for '+month+' to your supervisor, '+supervisorName+', for approval?\nTotal: '+total+'h\n\nYou cannot edit after submission.');
+  if(!confirm(msg)) return;
+  rec.status = isHead ? 'SupervisorApproved' : 'Submitted';
+  rec.supervisorRole = isHead ? null : SES.role;
+  rec.supervisor = supervisorName || 'HR';
   rec.submitted = new Date().toISOString().split('T')[0];
   queueCloudSave();
   renderMyTimesheet();
-  alert('Submitted to HR successfully.');
+  alert(isHead ? 'Submitted to HR successfully.' : 'Submitted to '+supervisorName+' for approval.');
 }
 
 function renderTimesheetApprovals(){
@@ -10117,12 +10186,32 @@ function renderTimesheetApprovals(){
   var con = document.getElementById('tsa-container');
   if(!con) return;
   var all = DB.timesheets || [];
-  var p1=document.getElementById('tsa-pend'); if(p1) p1.textContent=all.filter(function(r){return r.status==='Submitted';}).length;
-  var p2=document.getElementById('tsa-appr'); if(p2) p2.textContent=all.filter(function(r){return r.status==='Approved';}).length;
-  var p3=document.getElementById('tsa-rej'); if(p3) p3.textContent=all.filter(function(r){return r.status==='Rejected';}).length;
+  // Org-wide roles and HR see every department; a department head sees only their own
+  // department's timesheets, and only the real head account (not a regular staffer who
+  // happens to share the same role template) gets to act as supervisor at all.
+  var orgWide = ['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  var isHR = SES.role==='hr';
+  var isDeptHead = !isHR && !orgWide && tsIsHeadAccount();
+  var myDeptLabel = DEPTNAME[SES.role]||SES.role;
+  var scoped = (isHR||orgWide) ? all : all.filter(function(r){return r.dept===myDeptLabel;});
+  var pending = isDeptHead ? all.filter(function(r){return r.status==='Submitted' && r.supervisorRole===SES.role;})
+    : (isHR||orgWide) ? all.filter(function(r){return r.status==='SupervisorApproved';})
+    : [];
+  var p1=document.getElementById('tsa-pend'); if(p1) p1.textContent=pending.length;
+  var p2=document.getElementById('tsa-appr'); if(p2) p2.textContent=scoped.filter(function(r){return r.status==='Approved';}).length;
+  var p3=document.getElementById('tsa-rej'); if(p3) p3.textContent=scoped.filter(function(r){return r.status==='Rejected';}).length;
   while(con.firstChild) con.removeChild(con.firstChild);
 
-  // ---- HOLIDAY MANAGEMENT ----
+  if(!isHR && !orgWide && !isDeptHead){
+    var restrict=document.createElement('div');
+    restrict.style.cssText='padding:20px;text-align:center;color:#aaa;background:#fff;border-radius:10px;border:1px solid #e2e8f0';
+    restrict.textContent='Only your department head can review timesheet approvals here.';
+    con.appendChild(restrict);
+    return;
+  }
+
+  // ---- HOLIDAY MANAGEMENT (HR only — org-wide roles review approvals but holidays stay one HR-owned list) ----
+  if(isHR){
   var holBox = document.createElement('div'); holBox.className='cd'; holBox.style.marginBottom='16px';
   var holH = document.createElement('div'); holH.className='cdh';
   var holT = document.createElement('div'); holT.className='cdt'; holT.textContent='📅 Public Holiday Management';
@@ -10194,12 +10283,13 @@ function renderTimesheetApprovals(){
     htbl.appendChild(htbody);holBody.appendChild(htbl);
   }
   holBox.appendChild(holBody);con.appendChild(holBox);
+  }
 
-  var pending = all.filter(function(r){return r.status==='Submitted';});
+  var tsStage = isDeptHead ? 'supervisor' : 'hr';
   if(!pending.length){
     var msg = document.createElement('div');
     msg.style.cssText='padding:20px;text-align:center;color:#aaa;background:#fff;border-radius:10px;border:1px solid #e2e8f0';
-    msg.textContent='No timesheets pending approval.';
+    msg.textContent = isDeptHead ? 'No timesheets pending your approval.' : 'No timesheets pending approval.';
     con.appendChild(msg);
   } else {
     pending.forEach(function(rec){
@@ -10215,36 +10305,36 @@ function renderTimesheetApprovals(){
       var rejBtn=document.createElement('button'); rejBtn.className='b'; rejBtn.style.cssText='background:#dc2626;color:#fff;font-size:11px'; rejBtn.textContent='Return ✕';
       var appBtn=document.createElement('button'); appBtn.className='b bn'; appBtn.style.cssText='font-size:11px'; appBtn.textContent='Approve ✓';
       (function(r){
-        rejBtn.addEventListener('click', function(){ openTSApprove(r,'Rejected'); });
-        appBtn.addEventListener('click', function(){ openTSApprove(r,'Approved'); });
+        rejBtn.addEventListener('click', function(){ openTSApprove(r,'Rejected',tsStage); });
+        appBtn.addEventListener('click', function(){ openTSApprove(r,'Approved',tsStage); });
       })(rec);
       btns.appendChild(rejBtn); btns.appendChild(appBtn);
       hdr.appendChild(info); hdr.appendChild(btns); card.appendChild(hdr);
       con.appendChild(card);
     });
   }
-  // All records table
+  // Records table — HR/org-wide see every department, a department head sees only their own
   var tblBox = document.createElement('div'); tblBox.className='cd';
   var tblH = document.createElement('div'); tblH.className='cdh';
-  var tblT = document.createElement('div'); tblT.className='cdt'; tblT.textContent='All Staff Timesheets';
+  var tblT = document.createElement('div'); tblT.className='cdt'; tblT.textContent = (isHR||orgWide) ? 'All Staff Timesheets' : myDeptLabel+' Timesheets';
   tblH.appendChild(tblT); tblBox.appendChild(tblH);
   var tblB = document.createElement('div'); tblB.className='cdb tw';
   var tbl = document.createElement('table');
   var thead2 = tbl.createTHead(); var thr = thead2.insertRow();
   ['Staff','Dept','Month','Hours','Submitted','Status','Action'].forEach(function(t){var th2=document.createElement('th');th2.textContent=t;thr.appendChild(th2);});
   var tbdy = tbl.createTBody();
-  if(!all.length){
+  if(!scoped.length){
     var etr=tbdy.insertRow();var etd=etr.insertCell();etd.colSpan=7;etd.style.cssText='padding:14px;text-align:center;color:#aaa';etd.textContent='No timesheets yet.';
   } else {
-    var sb2={Draft:'bY',Submitted:'bO',Approved:'bG',Rejected:'bR'};
-    all.slice().sort(function(a,b){return a.month<b.month?1:-1;}).forEach(function(r){
+    var sb2={Draft:'bY',Submitted:'bO',SupervisorApproved:'bO',Approved:'bG',Rejected:'bR'};
+    scoped.slice().sort(function(a,b){return a.month<b.month?1:-1;}).forEach(function(r){
       var h=0;(r.rows||[]).forEach(function(row){Object.values(row.hours||{}).forEach(function(v){h+=parseFloat(v)||0;});});
       var tr3=tbdy.insertRow();
-      var canAct=r.status==='Submitted';
+      var canAct = isDeptHead ? (r.status==='Submitted' && r.supervisorRole===SES.role) : (r.status==='SupervisorApproved');
       tr3.innerHTML='<td><b>'+esc(r.staff)+'</b></td><td>'+esc(r.dept)+'</td><td>'+esc(r.month)+'</td><td><b>'+h+'h</b></td><td style="font-size:11px">'+esc(r.submitted||'—')+'</td><td><span class="bdg '+(sb2[r.status]||'bY')+'">'+esc(r.status)+'</span></td><td></td>';
       if(canAct){
         var actBtn=document.createElement('button');actBtn.className='b bn bs';actBtn.style.fontSize='10px';actBtn.textContent='Review';
-        (function(rec2){actBtn.addEventListener('click',function(){openTSApprove(rec2,'Approved');});})(r);
+        (function(rec2){actBtn.addEventListener('click',function(){openTSApprove(rec2,'Approved',tsStage);});})(r);
         tr3.cells[6].appendChild(actBtn);
       }
     });
@@ -10252,9 +10342,10 @@ function renderTimesheetApprovals(){
   tblB.appendChild(tbl);tblBox.appendChild(tblB);con.appendChild(tblBox);
 }
 
-function openTSApprove(rec, defaultAction){
+function openTSApprove(rec, defaultAction, stage){
   TS_TARGET = rec;
-  var t=document.getElementById('m-ts-title');if(t) t.textContent=(defaultAction==='Approved'?'Approve':'Return')+' Timesheet — '+rec.staff;
+  TS_STAGE = stage||'hr';
+  var t=document.getElementById('m-ts-title');if(t) t.textContent=(defaultAction==='Approved'?(TS_STAGE==='supervisor'?'Approve as Supervisor':'Approve'):'Return')+' Timesheet — '+rec.staff;
   var h=0;(rec.rows||[]).forEach(function(r){Object.values(r.hours||{}).forEach(function(v){h+=parseFloat(v)||0;});});
   var info=document.getElementById('m-ts-info');
   if(info) info.innerHTML='<b>Staff:</b> '+esc(rec.staff)+'<br><b>Month:</b> '+esc(rec.month)+'<br><b>Department:</b> '+esc(rec.dept)+'<br><b>Total Hours:</b> '+h+'h';
@@ -10264,6 +10355,19 @@ function openTSApprove(rec, defaultAction){
 
 function doTSDecision(decision){
   if(!TS_TARGET) return;
+  if(TS_STAGE==='supervisor'){
+    var snote = document.getElementById('m-ts-note').value||'';
+    TS_TARGET.status = decision==='Approved' ? 'SupervisorApproved' : 'Rejected';
+    TS_TARGET.supervisorApprovedBy = SES.name;
+    TS_TARGET.supervisorApprovedOn = today();
+    TS_TARGET.supervisorNote = snote;
+    logAudit('timesheet-supervisor-'+decision.toLowerCase(),TS_TARGET.staff+' / '+TS_TARGET.month,'Supervisor '+decision.toLowerCase()+(snote?': '+snote:''));
+    queueCloudSave();
+    closeM('m-ts-approve');
+    renderTimesheetApprovals();
+    alert(decision==='Approved' ? 'Timesheet approved and forwarded to HR.' : 'Timesheet returned to staff.');
+    return;
+  }
   TS_TARGET.status = decision;
   TS_TARGET.approvedBy = SES.name;
   TS_TARGET.hrNote = document.getElementById('m-ts-note').value||'';
