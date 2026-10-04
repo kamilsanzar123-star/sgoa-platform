@@ -519,6 +519,28 @@ tbody tr:hover td{background:var(--g50);}
       </div>
     </div>
   </div>
+
+  <div class="cd">
+    <div class="cdh"><div class="cdt clk" onclick="go('projects')">Completed Projects &mdash; Impact Summary <span style="font-size:10px;color:var(--g400)">(cumulative, all time)</span></div></div>
+    <div class="cdb">
+      <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+        <div class="st nv"><div class="stl">Completed Projects</div><div class="stv" id="ci-count">0</div></div>
+        <div class="st gr"><div class="stl">Beneficiaries Reached</div><div class="stv" id="ci-benef">0</div></div>
+        <div class="st gd"><div class="stl">Provinces Covered</div><div class="stv" id="ci-provinces">0</div></div>
+      </div>
+      <div class="g2">
+        <div style="text-align:center">
+          <canvas id="ci-donut" width="150" height="150"></canvas>
+          <div style="font-size:11px;color:var(--g500);margin-top:8px">Gender breakdown (from registered beneficiary records)</div>
+          <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:11px">
+            <span><span style="display:inline-block;width:9px;height:9px;background:#C8922A;border-radius:50%"></span> Female: <b id="ci-female">0</b></span>
+            <span><span style="display:inline-block;width:9px;height:9px;background:#1A3A6B;border-radius:50%"></span> Male: <b id="ci-male">0</b></span>
+          </div>
+        </div>
+        <div class="tw"><table><thead><tr><th>Province</th><th>Completed Projects</th><th>Beneficiaries</th></tr></thead><tbody id="ci-province-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ========= PROJECTS LIST ========= -->
@@ -538,6 +560,10 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cdb" id="change-requests-list"></div>
   </div>
   <div id="project-cards"></div>
+  <div class="cd" id="completed-projects-card">
+    <div class="cdh"><div class="cdt">Completed Projects</div></div>
+    <div class="cdb" id="completed-projects-list"></div>
+  </div>
 </div>
 
 <!-- ========= PROJECT DETAIL (dynamic) ========= -->
@@ -3538,10 +3564,10 @@ function drawAll(){
   if($('k-act-s'))$('k-act-s').textContent=d.done+' done · '+d.prog+' in progress';
   if($('k-bud'))$('k-bud').textContent=d.budget?Math.round(d.spent/d.budget*100)+'%':'0%';
   if($('k-bud-s'))$('k-bud-s').textContent=money(Math.round(d.spent),dispCur)+' of '+money(Math.round(d.budget),dispCur);
-  if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).length:1;
+  if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).length:1;
   if($('k-proj-sub')){
     if(pf==='all'){
-      var allKeys=Object.keys(PROJ);
+      var allKeys=Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';});
       var donors=new Set(allKeys.map(function(k){return PROJ[k].donor;}).filter(Boolean));
       var sectors=new Set(allKeys.map(function(k){return PROJ[k].sector;}).filter(Boolean));
       $('k-proj-sub').textContent=allKeys.length?(donors.size+' donor'+(donors.size!==1?'s':'')+' · '+sectors.size+' sector'+(sectors.size!==1?'s':'')):'No projects yet';
@@ -3626,11 +3652,12 @@ function renderExec(){
   renderExecAlerts();
   renderExecDeadlines();
   renderExecDepts();
+  renderCompletedProjectsImpact();
 }
 
 function renderExecProjects(){
   var c=$('exec-projects');if(!c)return;c.innerHTML='';
-  Object.keys(PROJ).forEach(function(k){
+  Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).forEach(function(k){
     var p=PROJ[k];
     var row=el('div','pr');
     row.setAttribute('data-proj',k);
@@ -3724,7 +3751,7 @@ function renderExecDepts(){
 // ============ PROJECTS ============
 function renderProjectCards(){
   var c=$('project-cards');if(!c)return;c.innerHTML='';
-  Object.keys(PROJ).forEach(function(k){
+  Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).forEach(function(k){
     var p=PROJ[k];
     var acts=DB.activities.filter(function(a){return a.proj===k;});
     var done=acts.filter(function(a){return a.status==='Complete';}).length;
@@ -3752,9 +3779,92 @@ function renderProjectCards(){
         :(SES.role!=='executive' && (SES.role==='meal' || p.mgr===SES.name)?
           '<button class="b bo bs" style="margin-left:6px;color:var(--red);border-color:var(--red)" onclick="requestProjectDeletion(\''+k+'\')">Request Deletion</button>':''))+
       (p.pendingChange && p.pendingChange.status==='pending'?'<span class="bdg bO" style="margin-left:6px">Change requested — awaiting ED approval</span>':'')+
+      ((SES.role==='meal'||SES.role==='executive')?'<button class="b bo bs" style="margin-left:6px" onclick="markProjectCompleted(\''+k+'\')">Mark as Completed</button>':'')+
       '</div>';
     c.appendChild(card);
   });
+}
+
+function simpleProvinceList(locStr){
+  if(!locStr)return [];
+  return locStr.split(/[;,]/).map(function(s){return s.replace(/\(.*?\)/g,'').trim();}).filter(Boolean);
+}
+
+function markProjectCompleted(code){
+  var p=PROJ[code];if(!p)return;
+  if(!confirm('Mark "'+p.name+'" as Completed? It moves out of Active Projects into the Completed Projects history and feeds the organization\'s cumulative impact reporting.'))return;
+  p.status='Completed';
+  p.completedOn=today();
+  p.completedBy=SES.name;
+  logAudit('project-completed',code,'Marked completed by '+SES.name);
+  renderProjectCards();renderCompletedProjects();refreshAll();
+  if(window.SGOAMap)SGOAMap.refresh();
+  queueCloudSave();
+  alert('Project marked as Completed.');
+}
+function reopenProject(code){
+  var p=PROJ[code];if(!p)return;
+  if(!confirm('Reopen "'+p.name+'" as an active project?'))return;
+  p.status='Active';
+  p.completedOn=null;p.completedBy=null;
+  logAudit('project-reopened',code,'Reopened by '+SES.name);
+  renderProjectCards();renderCompletedProjects();refreshAll();
+  if(window.SGOAMap)SGOAMap.refresh();
+  queueCloudSave();
+  alert('Project reopened as Active.');
+}
+function renderCompletedProjects(){
+  var list=$('completed-projects-list');if(!list)return;
+  var codes=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed';});
+  if(!codes.length){list.innerHTML='<div class="empty">No completed projects yet.</div>';return;}
+  var canManage=SES.role==='meal'||SES.role==='executive';
+  list.innerHTML=codes.map(function(k){
+    var p=PROJ[k];
+    return '<div class="cd" style="margin-bottom:10px;border-left:4px solid var(--g400)"><div class="cdb">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;flex-wrap:wrap">'+
+      '<div><b>'+esc(p.name)+'</b> ('+esc(k)+')<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(p.loc||'-')+' · '+fmt(p.benef)+' beneficiaries · '+money(Math.round(p.budget/1000),p.currency)+'K budget · Completed '+dt(p.completedOn)+' by '+esc(p.completedBy||'-')+'</div></div>'+
+      '<span class="bdg bN">Completed</span></div>'+
+      '<div class="wfa" style="margin-top:9px"><button class="b bo bs" data-proj="'+k+'">View Full Details</button>'+
+      (canManage?'<button class="b bo bs" onclick="reopenProject(\''+k+'\')">Reopen</button>':'')+
+      '</div></div></div>';
+  }).join('');
+}
+
+function completedProjectsImpact(){
+  var completed=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed';});
+  var totalBenef=0,provinces={};
+  completed.forEach(function(k){
+    var p=PROJ[k];
+    totalBenef+=p.benef||0;
+    simpleProvinceList(p.loc).forEach(function(prov){
+      if(!provinces[prov])provinces[prov]={projects:0,benef:0};
+      provinces[prov].projects++;
+      provinces[prov].benef+=p.benef||0;
+    });
+  });
+  var female=0,male=0;
+  DB.benef.forEach(function(b){
+    if(completed.indexOf(b.proj)===-1)return;
+    if(b.sex==='Female')female++;else if(b.sex==='Male')male++;
+  });
+  return {count:completed.length,totalBenef:totalBenef,female:female,male:male,
+    provinces:Object.keys(provinces).map(function(k){return {name:k,projects:provinces[k].projects,benef:provinces[k].benef};}).sort(function(a,b){return b.benef-a.benef;})};
+}
+
+function renderCompletedProjectsImpact(){
+  var box=$('ci-count');if(!box)return;
+  var d=completedProjectsImpact();
+  $('ci-count').textContent=d.count;
+  if($('ci-benef'))$('ci-benef').textContent=fmt(d.totalBenef);
+  if($('ci-provinces'))$('ci-provinces').textContent=d.provinces.length;
+  donut('ci-donut',[{v:d.female,c:'#C8922A'},{v:d.male,c:'#1A3A6B'}],20,'Registered',fmt(d.female+d.male));
+  if($('ci-female'))$('ci-female').textContent=fmt(d.female);
+  if($('ci-male'))$('ci-male').textContent=fmt(d.male);
+  var tbody=$('ci-province-body');
+  if(tbody){
+    tbody.innerHTML=d.provinces.length?d.provinces.map(function(p){return '<tr><td>'+esc(p.name)+'</td><td>'+p.projects+'</td><td>'+fmt(p.benef)+'</td></tr>';}).join('')
+      :'<tr><td colspan="3" style="text-align:center;color:var(--g400)">No completed projects yet.</td></tr>';
+  }
 }
 
 var curProjectCode=null;
@@ -5706,6 +5816,7 @@ function renderProjectAddBtn(){
   renderPendingProjects();
   renderProjectDeletionRequests();
   renderProjectChangeRequests();
+  renderCompletedProjects();
 }
 
 function renderLogframeSummary(p){
