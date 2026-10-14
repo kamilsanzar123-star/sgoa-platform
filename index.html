@@ -1485,6 +1485,12 @@ tbody tr:hover td{background:var(--g50);}
   </div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Department Snapshot</div></div>
     <div class="cdb tw"><table><thead><tr><th>Department</th><th>Staff</th><th>Open Tasks</th><th>Pending PRs</th></tr></thead><tbody id="deputy-dept-snapshot"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Cross-Department Action Register</div><button class="b bn bs" onclick="openCrossDeptActionModal()">+ Log Action</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Issue / Departments</th><th>Agreed Action</th><th>Accountable Owner</th><th>Closure Evidence</th><th>Status</th><th>Action</th></tr></thead><tbody id="crossdeptaction-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Delegation &amp; Acting Authority</div><button class="b bn bs" onclick="openDelegationModal()">+ Add Delegation</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Delegating Role</th><th>Authorized Scope</th><th>Valid Dates</th><th>Approver / Limits</th><th>Status</th><th>Action</th></tr></thead><tbody id="delegation-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Monthly Management Review</div><button class="b bn bs" onclick="openMgmtReviewModal()">+ New Review</button></div>
+  <div class="cdb" id="mgmtreview-body"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-deputy"></div></div>
 </div>
 
@@ -2484,6 +2490,9 @@ itBackups:[],
 itAuditReviews:[],
 routeAssessments:[],
 emergencyContacts:[],
+crossDeptActions:[],
+delegations:[],
+mgmtReviews:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3477,7 +3486,7 @@ function render(pg){
       else if(pg==='it'){renderITQueue();renderITAccess();renderITOnboarding();renderITIncidents();renderITBackups();renderITAudit();}
       else if(pg==='it-tickets'){renderMyITTickets();}
       else if(pg==='access'){renderTARQueue();renderRouteAssessments();renderCheckins();renderEmergencyContacts();renderTravelCloseouts();}
-      else if(pg==='deputy'){renderApprovalRoleHome('deputy');}
+      else if(pg==='deputy'){renderApprovalRoleHome('deputy');renderCrossDeptActions();renderDelegations();renderMgmtReviews();}
       else if(pg==='progdeputy'){renderApprovalRoleHome('progdeputy');}
       else if(pg==='tar-request'){initTARForm();renderMyTARs();}
       else if(pg==='leave-request'){renderMyLeaveRequests();renderMyLeaveBalance();}
@@ -8796,6 +8805,121 @@ function renderApprovalRoleHome(roleKey){
   renderDeputyProgramCharts(roleKey);
 }
 
+// ============ DEPUTY DIRECTOR: CROSS-DEPARTMENT ACTION REGISTER ============
+function openCrossDeptActionModal(){
+  $('cda-issue').value='';$('cda-action').value='';$('cda-owner').value='';
+  openM('m-crossdeptaction');
+}
+function saveCrossDeptAction(){
+  var issue=$('cda-issue').value.trim(),action=$('cda-action').value.trim(),owner=$('cda-owner').value.trim();
+  if(!issue||!action||!owner){alert('Please complete the issue, agreed action, and accountable owner.');return;}
+  DB.crossDeptActions.unshift({id:nid('CDA'),issue:issue,action:action,owner:owner,closureEvidence:null,
+    status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('cross-dept-action-logged',issue,'Cross-department action logged by '+SES.name);
+  closeM('m-crossdeptaction');
+  renderCrossDeptActions();
+  queueCloudSave();
+}
+function closeCrossDeptAction(id){
+  var a=DB.crossDeptActions.find(function(x){return x.id===id;});if(!a)return;
+  var evidence=window.prompt('Closure evidence (what confirms the action is complete):','');
+  if(evidence===null)return;
+  a.closureEvidence=evidence;a.status='Closed';a.closedBy=SES.name;a.closedOn=today();
+  logAudit('cross-dept-action-closed',a.issue,'Closed by '+SES.name);
+  renderCrossDeptActions();
+  queueCloudSave();
+}
+function renderCrossDeptActions(){
+  var body=$('crossdeptaction-body');if(!body)return;
+  body.innerHTML=DB.crossDeptActions.length?DB.crossDeptActions.map(function(a){
+    return '<tr><td>'+esc(a.issue)+'</td><td style="font-size:11.5px">'+esc(a.action)+'</td><td>'+esc(a.owner)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(a.closureEvidence||'—')+'</td>'+
+      '<td><span class="bdg '+(a.status==='Closed'?'bG':'bO')+'">'+a.status+'</span></td>'+
+      '<td>'+(a.status==='Open'?'<button class="b bo bs" onclick="closeCrossDeptAction(\''+a.id+'\')">Close</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No cross-department actions logged yet</td></tr>';
+}
+
+// ============ DEPUTY DIRECTOR: DELEGATION & ACTING AUTHORITY ============
+function openDelegationModal(){
+  $('dg-role').value='';$('dg-scope').value='';$('dg-from').value=today();$('dg-to').value='';$('dg-limits').value='';
+  openM('m-delegation');
+}
+function saveDelegation(){
+  var role=$('dg-role').value.trim(),scope=$('dg-scope').value.trim(),from=$('dg-from').value,to=$('dg-to').value;
+  if(!role||!scope||!from||!to){alert('Please complete the delegating role, scope, and valid dates.');return;}
+  DB.delegations.unshift({id:nid('DEL'),role:role,scope:scope,from:from,to:to,limits:$('dg-limits').value.trim(),
+    revoked:false,createdBy:SES.name,createdOn:today()});
+  logAudit('delegation-logged',role,'Delegation logged by '+SES.name);
+  closeM('m-delegation');
+  renderDelegations();
+  queueCloudSave();
+}
+function revokeDelegation(id){
+  var d=DB.delegations.find(function(x){return x.id===id;});if(!d)return;
+  if(!window.confirm('Revoke this delegation before its valid-to date?'))return;
+  d.revoked=true;d.revokedBy=SES.name;d.revokedOn=today();
+  logAudit('delegation-revoked',d.role,'Revoked early by '+SES.name);
+  renderDelegations();
+  queueCloudSave();
+}
+function delegationStatus(d){
+  if(d.revoked)return 'Revoked';
+  var t=today();
+  if(t<d.from)return 'Upcoming';
+  if(t>d.to)return 'Expired';
+  return 'Active';
+}
+function renderDelegations(){
+  var body=$('delegation-body');if(!body)return;
+  var sb={'Active':'bG','Upcoming':'bB','Expired':'bN','Revoked':'bR'};
+  body.innerHTML=DB.delegations.length?DB.delegations.map(function(d){
+    var st=delegationStatus(d);
+    return '<tr><td>'+esc(d.role)+'</td><td style="font-size:11.5px">'+esc(d.scope)+'</td>'+
+      '<td style="font-size:11.5px">'+dt(d.from)+' - '+dt(d.to)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(d.limits||'—')+'</td>'+
+      '<td><span class="bdg '+sb[st]+'">'+st+'</span></td>'+
+      '<td>'+(st==='Active'||st==='Upcoming'?'<button class="b bo bs" onclick="revokeDelegation(\''+d.id+'\')">Revoke</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No delegations logged yet</td></tr>';
+}
+
+// ============ DEPUTY DIRECTOR: MONTHLY MANAGEMENT REVIEW ============
+function openMgmtReviewModal(){
+  $('mr-month').value=today().slice(0,7);$('mr-summary').value='';$('mr-decisions').value='';
+  openM('m-mgmtreview');
+}
+function saveMgmtReview(){
+  var month=$('mr-month').value,summary=$('mr-summary').value.trim();
+  if(!month||!summary){alert('Please set the reporting month and the department summary.');return;}
+  DB.mgmtReviews.unshift({id:nid('MGR'),month:month,summary:summary,decisions:$('mr-decisions').value.trim(),
+    edEscalated:false,status:'Draft',createdBy:SES.name,createdOn:today()});
+  logAudit('mgmt-review-created',month,'Monthly management review created by '+SES.name);
+  closeM('m-mgmtreview');
+  renderMgmtReviews();
+  queueCloudSave();
+}
+function escalateMgmtReview(id){
+  var r=DB.mgmtReviews.find(function(x){return x.id===id;});if(!r)return;
+  if(!window.confirm('Escalate this review to the Executive Director?'))return;
+  r.edEscalated=true;r.status='Escalated to ED';r.escalatedBy=SES.name;r.escalatedOn=today();
+  notify('Gull Mohammad Aryan','wf','Monthly management review for '+r.month+' escalated by '+SES.name+' for ED decision','deputy');
+  logAudit('mgmt-review-escalated',r.month,'Escalated to ED by '+SES.name);
+  renderMgmtReviews();
+  queueCloudSave();
+}
+function renderMgmtReviews(){
+  var box=$('mgmtreview-body');if(!box)return;
+  if(!DB.mgmtReviews.length){box.innerHTML='<div class="empty">No monthly management reviews yet</div>';return;}
+  box.innerHTML=DB.mgmtReviews.map(function(r){
+    return '<div class="cd" style="margin-bottom:10px"><div class="cdb">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b>'+esc(r.month)+'</b></div>'+
+      '<span class="bdg '+(r.status==='Escalated to ED'?'bR':'bO')+'">'+r.status+'</span></div>'+
+      '<div style="font-size:12px;color:var(--g600);margin-top:7px">'+esc(r.summary)+'</div>'+
+      (r.decisions?'<div style="font-size:12px;color:var(--g600);margin-top:7px"><b>Decisions required:</b> '+esc(r.decisions)+'</div>':'')+
+      (r.edEscalated?'':'<div class="wfa"><button class="b bn bs" onclick="escalateMgmtReview(\''+r.id+'\')">Escalate to ED</button></div>')+
+      '</div></div>';
+  }).join('');
+}
+
 // The Deputy Director / Program Deputy Director dashboards used to be nothing but stat tiles
 // and tables -- no visual read on the org's actual program performance, which is exactly what
 // these two roles are meant to oversee. Reuses the same Budget-vs-Spent and Activities-Status
@@ -10937,6 +11061,44 @@ if(document.getElementById('afg-map')) initMap();
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-tarcloseout')">Cancel</button><button class="b bn" onclick="saveTarCloseout()">Complete Closeout</button></div>
+</div></div>
+
+<div class="mb" id="m-crossdeptaction"><div class="md">
+<div class="mh"><h3>Log Cross-Department Action</h3><button class="mx" onclick="closeM('m-crossdeptaction')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Issue / Departments Involved *</label><input type="text" id="cda-issue" placeholder="e.g. Delayed PR approvals - Supply Chain and Finance"></div>
+    <div class="fg ff"><label>Agreed Action *</label><textarea rows="2" id="cda-action" placeholder="e.g. Finance to clear PR approvals within 2 working days; Supply Chain to flag urgent PRs explicitly"></textarea></div>
+    <div class="fg"><label>Accountable Owner *</label><input type="text" id="cda-owner" placeholder="e.g. Aminullah Amin, Finance Manager"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-crossdeptaction')">Cancel</button><button class="b bn" onclick="saveCrossDeptAction()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-delegation"><div class="md">
+<div class="mh"><h3>Add Delegation / Acting Authority</h3><button class="mx" onclick="closeM('m-delegation')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Delegating Role *</label><input type="text" id="dg-role" placeholder="e.g. Executive Director"></div>
+    <div class="fg ff"><label>Authorized Scope *</label><input type="text" id="dg-scope" placeholder="e.g. Approve PRs up to $5,000 and sign off on timesheets"></div>
+    <div class="fg"><label>Valid From *</label><input type="date" id="dg-from"></div>
+    <div class="fg"><label>Valid To *</label><input type="date" id="dg-to"></div>
+    <div class="fg ff"><label>Approver / Limits</label><input type="text" id="dg-limits" placeholder="e.g. Approved by Board Chair; excludes HR disciplinary decisions"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-delegation')">Cancel</button><button class="b bn" onclick="saveDelegation()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-mgmtreview"><div class="md">
+<div class="mh"><h3>New Monthly Management Review</h3><button class="mx" onclick="closeM('m-mgmtreview')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Reporting Month *</label><input type="month" id="mr-month"></div>
+    <div class="fg ff"><label>Department Summary *</label><textarea rows="3" id="mr-summary" placeholder="e.g. Programs on track across 4 projects; Supply Chain procurement delays on GPE-STG; HR vacancy rate at 12%"></textarea></div>
+    <div class="fg ff"><label>Decisions Required</label><textarea rows="2" id="mr-decisions" placeholder="e.g. Approve expedited procurement process for GPE-STG; approve 2 new MEAL positions"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-mgmtreview')">Cancel</button><button class="b bn" onclick="saveMgmtReview()">Save</button></div>
 </div></div>
 
 <div class="mb" id="m-itaccess"><div class="md">
