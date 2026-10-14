@@ -1197,6 +1197,9 @@ tbody tr:hover td{background:var(--g50);}
   <div class="ph"><div><h1>Procurement Tracker</h1><p>All procurement requests and status</p></div>
   <div class="pha"><button class="b bo bs" onclick="go('supply')">Back</button><button class="b bn bs" onclick="openM('m-proc')">+ New Request</button></div></div>
   <div class="cd"><div class="cdb tw"><table><thead><tr><th>Ref</th><th>Item</th><th>Project</th><th>Qty</th><th>Est. Cost</th><th>Compliance</th><th>Requested By</th><th>Status</th><th>Action</th></tr></thead><tbody id="proc-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Bid Evaluation &amp; Committee</div><button class="b bn bs" onclick="openBidEvalModal()">+ New Evaluation</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Item / Reference</th><th>Bid References</th><th>Evaluation Criteria / Scores</th><th>Committee Decision</th><th>Conflict Declaration</th></tr></thead><tbody id="bideval-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-supply-dist">
@@ -1241,6 +1244,8 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cdb tw"><table><thead><tr><th>GRN #</th><th>PO #</th><th>Supplier</th><th>Received Date</th><th>Items (Received/Ordered)</th><th>Status</th></tr></thead><tbody id="grn-body"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Supplier Invoices &amp; 3-Way Match</div></div>
     <div class="cdb tw"><table><thead><tr><th>Invoice #</th><th>PO #</th><th>Supplier</th><th>Invoice Amount</th><th>PO Amount</th><th>Match Status</th><th>Action</th></tr></thead><tbody id="invoices-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Partial Receipts &amp; Returns</div></div>
+    <div class="cdb tw"><table><thead><tr><th>PO / Item</th><th>Accepted / Rejected / Remaining</th><th>Return / Replacement</th><th>Stock &amp; Payment Effect</th><th>Status</th><th></th></tr></thead><tbody id="receiptissue-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-supply-warehouse">
@@ -2410,6 +2415,8 @@ workplanRevisions:[],
 budgetRevisions:[],
 payrollPeriods:[],
 accessLinks:[],
+bidEvaluations:[],
+receiptIssues:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3432,11 +3439,11 @@ function render(pg){
       else if(pg==='prog-partners'){renderPartners();}
       else if(pg==='prog-grants'){renderGrants();renderGrantReports();}
       else if(pg==='supply'){renderDept('supply','Supply Chain');}
-      else if(pg==='supply-proc'){renderProc();}
+      else if(pg==='supply-proc'){renderProc();renderBidEvals();}
       else if(pg==='supply-dist'){renderDist();}
       else if(pg==='supply-suppliers'){renderSuppliers();}
       else if(pg==='supply-po'){renderPOs();}
-      else if(pg==='supply-grn'){renderGRNs();renderInvoices();}
+      else if(pg==='supply-grn'){renderGRNs();renderInvoices();renderReceiptIssues();}
       else if(pg==='supply-warehouse'){renderStockItems();renderStockLedger();}
       else if(pg==='admin'){renderDept('admin','Admin');}
       else if(pg==='admin-registry'){renderDocRegistry();}
@@ -6918,6 +6925,100 @@ function renderAccessLinks(){
   }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No employment/access changes recorded yet.</td></tr>';
 }
 
+// ============ BID EVALUATION & COMMITTEE (Supply Chain) ============
+function openBidEvalModal(){
+  $('be-item').value='';$('be-bids').value='';$('be-scores').value='';$('be-decision').value='';
+  $('be-conflict').value='No committee member declared a conflict of interest';
+  openM('m-bideval');
+}
+function saveBidEval(){
+  var item=$('be-item').value.trim(),bids=$('be-bids').value.trim(),scores=$('be-scores').value.trim(),
+    decision=$('be-decision').value.trim(),conflict=$('be-conflict').value.trim();
+  if(!item||!bids||!scores||!decision||!conflict){alert('Please complete every field.');return;}
+  DB.bidEvaluations.unshift({id:nid('BID'),item:item,bids:bids,scores:scores,decision:decision,conflict:conflict,
+    createdBy:SES.name,createdOn:today()});
+  logAudit('bid-evaluation-recorded',item,'Bid evaluation recorded by '+SES.name);
+  closeM('m-bideval');
+  renderBidEvals();
+  queueCloudSave();
+}
+function renderBidEvals(){
+  var body=$('bideval-body');if(!body)return;
+  body.innerHTML=DB.bidEvaluations.length?DB.bidEvaluations.map(function(b){
+    return '<tr><td>'+esc(b.item)+'</td><td style="font-size:11.5px">'+esc(b.bids)+'</td><td style="font-size:11.5px">'+esc(b.scores)+'</td>'+
+      '<td>'+esc(b.decision)+'</td><td style="font-size:11.5px">'+esc(b.conflict)+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No bid evaluations recorded yet.</td></tr>';
+}
+
+// ============ PARTIAL RECEIPTS & RETURNS (Supply Chain) ============
+function shortReceivedItems(){
+  var list=[];
+  DB.grn.forEach(function(g){
+    (g.items||[]).forEach(function(it,idx){
+      if(it.receivedQty<it.orderedQty){
+        var issue=DB.receiptIssues.find(function(r){return r.grnId===g.id&&r.itemIndex===idx;});
+        list.push({grn:g,item:it,idx:idx,issue:issue});
+      }
+    });
+  });
+  return list;
+}
+var _curReceiptIssueKey=null;
+function openReceiptIssueModal(grnId,idx){
+  _curReceiptIssueKey={grnId:grnId,idx:idx};
+  var g=DB.grn.find(function(x){return x.id===grnId;});if(!g)return;
+  var it=g.items[idx];
+  var existing=DB.receiptIssues.find(function(r){return r.grnId===grnId&&r.itemIndex===idx;});
+  $('ri-ctx').innerHTML='<b>'+esc(g.poNumber)+'</b> — '+esc(it.desc)+'<div style="font-size:11px;color:var(--g500);margin-top:3px">Ordered '+it.orderedQty+' · Received '+it.receivedQty+' · Remaining '+(it.orderedQty-it.receivedQty)+'</div>';
+  $('ri-return').value=existing?existing.returnReplacement:'';
+  $('ri-effect').value=existing?existing.stockEffect:'';
+  openM('m-receiptissue');
+}
+function saveReceiptIssue(){
+  var k=_curReceiptIssueKey;if(!k)return;
+  var ret=$('ri-return').value.trim(),effect=$('ri-effect').value.trim();
+  if(!ret||!effect){alert('Please complete the return/replacement plan and the stock & payment effect.');return;}
+  var existing=DB.receiptIssues.find(function(r){return r.grnId===k.grnId&&r.itemIndex===k.idx;});
+  if(existing){
+    existing.returnReplacement=ret;existing.stockEffect=effect;
+  } else {
+    var g=DB.grn.find(function(x){return x.id===k.grnId;});if(!g)return;
+    var it=g.items[k.idx];
+    DB.receiptIssues.push({id:nid('RI'),grnId:k.grnId,itemIndex:k.idx,poNumber:g.poNumber,itemDesc:it.desc,
+      accepted:it.receivedQty,rejected:0,remaining:it.orderedQty-it.receivedQty,
+      returnReplacement:ret,stockEffect:effect,status:'Open',createdBy:SES.name,createdOn:today()});
+  }
+  logAudit('receipt-issue-logged',k.grnId,'Receipt issue logged by '+SES.name);
+  closeM('m-receiptissue');
+  renderReceiptIssues();
+  queueCloudSave();
+}
+function resolveReceiptIssue(id){
+  var r=DB.receiptIssues.find(function(x){return x.id===id;});if(!r)return;
+  r.status='Resolved';r.resolvedBy=SES.name;r.resolvedOn=today();
+  logAudit('receipt-issue-resolved',r.poNumber,'Resolved by '+SES.name);
+  renderReceiptIssues();
+  queueCloudSave();
+}
+function renderReceiptIssues(){
+  var body=$('receiptissue-body');if(!body)return;
+  var rows=shortReceivedItems();
+  if(!rows.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--g400)">No short-received items on record.</td></tr>';return;}
+  body.innerHTML=rows.map(function(r){
+    var qty=r.item.receivedQty+' accepted / 0 rejected / '+(r.item.orderedQty-r.item.receivedQty)+' remaining';
+    var ref=esc(r.grn.poNumber)+' — '+esc(r.item.desc);
+    if(r.issue){
+      return '<tr><td>'+ref+'</td><td>'+qty+'</td>'+
+        '<td style="font-size:11.5px">'+esc(r.issue.returnReplacement)+'</td><td style="font-size:11.5px">'+esc(r.issue.stockEffect)+'</td>'+
+        '<td><span class="bdg '+(r.issue.status==='Resolved'?'bG':'bO')+'">'+r.issue.status+'</span></td>'+
+        '<td>'+(r.issue.status==='Open'?'<button class="b bo bs" onclick="openReceiptIssueModal(\''+r.grn.id+'\','+r.idx+')">Edit</button> <button class="b bn bs" onclick="resolveReceiptIssue(\''+r.issue.id+'\')">Resolve</button>':'')+'</td></tr>';
+    }
+    return '<tr><td>'+ref+'</td><td>'+qty+'</td>'+
+      '<td style="color:var(--g400)">Not logged</td><td style="color:var(--g400)">Not logged</td><td><span class="bdg bR">Needs Log</span></td>'+
+      '<td><button class="b bn bs" onclick="openReceiptIssueModal(\''+r.grn.id+'\','+r.idx+')">Log Issue</button></td></tr>';
+  }).join('');
+}
+
 function renderGRNs(){
   var body=$('grn-body');if(!body)return;
   body.innerHTML='';
@@ -9970,6 +10071,32 @@ if(document.getElementById('afg-map')) initMap();
 })();
 </script>
 
+
+<div class="mb" id="m-receiptissue"><div class="md">
+<div class="mh"><h3>Log Receipt Issue</h3><button class="mx" onclick="closeM('m-receiptissue')">&times;</button></div>
+<div class="mbd">
+  <div id="ri-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr">
+    <div class="fg ff"><label>Return / Replacement Plan *</label><textarea rows="2" id="ri-return" placeholder="e.g. Supplier agreed to redeliver the remaining 5 units by 30 Oct"></textarea></div>
+    <div class="fg ff"><label>Stock &amp; Payment Effect *</label><textarea rows="2" id="ri-effect" placeholder="e.g. Stock count reduced by shortfall; invoice to be adjusted pending replacement"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-receiptissue')">Cancel</button><button class="b bn" onclick="saveReceiptIssue()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-bideval"><div class="md">
+<div class="mh"><h3>New Bid Evaluation</h3><button class="mx" onclick="closeM('m-bideval')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Item / Reference *</label><input type="text" id="be-item" placeholder="e.g. PR-024 - School Furniture"></div>
+    <div class="fg ff"><label>Bid References *</label><textarea rows="2" id="be-bids" placeholder="e.g. Supplier A: $4,200; Supplier B: $3,950; Supplier C: $4,500"></textarea></div>
+    <div class="fg ff"><label>Evaluation Criteria / Scores *</label><textarea rows="2" id="be-scores" placeholder="e.g. Price 40%, Quality 30%, Delivery 30% -- A: 82, B: 91, C: 75"></textarea></div>
+    <div class="fg ff"><label>Committee Decision *</label><input type="text" id="be-decision" placeholder="e.g. Awarded to Supplier B - highest weighted score"></div>
+    <div class="fg ff"><label>Conflict Declaration *</label><input type="text" id="be-conflict" placeholder="e.g. No committee member declared a conflict of interest" value="No committee member declared a conflict of interest"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-bideval')">Cancel</button><button class="b bn" onclick="saveBidEval()">Save</button></div>
+</div></div>
 
 <div class="mb" id="m-accesslink"><div class="md">
 <div class="mh"><h3>Record Approved Employment / Access Change</h3><button class="mx" onclick="closeM('m-accesslink')">&times;</button></div>
