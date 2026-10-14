@@ -1448,6 +1448,14 @@ tbody tr:hover td{background:var(--g50);}
   </div>
   <div class="cd"><div class="cdh"><div class="cdt">TAR Requests — Awaiting Action</div></div><div class="cdb" id="tar-queue"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Current &amp; Upcoming Field Movements — Awareness Log</div></div><div class="cdb" id="tar-awareness"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Route &amp; Security Assessment</div><button class="b bn bs" onclick="openRouteAssessModal()">+ Add Assessment</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Route / Destination</th><th>Risk Assessment</th><th>Required Precautions</th><th>Review Owner / Date</th></tr></thead><tbody id="routeassess-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Movement &amp; Check-ins</div></div>
+  <div class="cdb tw"><table><thead><tr><th>Approved Movement</th><th>Departure / Arrival</th><th>Check-in Due / Received</th><th>Escalation Contact</th><th>Action</th></tr></thead><tbody id="checkin-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Emergency Contacts &amp; Alerts</div><button class="b bn bs" onclick="openEmergencyContactModal()">+ Add Contact</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Staff / Contact</th><th>Safe Contact Channel</th><th>Alert / Response</th><th>Authorized Access</th></tr></thead><tbody id="emergencycontact-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Travel Closeout</div></div>
+  <div class="cdb tw"><table><thead><tr><th>Trip</th><th>Return Confirmation</th><th>Advance Settlement</th><th>Outstanding Actions</th><th>Action</th></tr></thead><tbody id="closeout-tar-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-deputy">
@@ -2474,6 +2482,8 @@ itOnboarding:[],
 itIncidents:[],
 itBackups:[],
 itAuditReviews:[],
+routeAssessments:[],
+emergencyContacts:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3466,7 +3476,7 @@ function render(pg){
       else if(pg==='pr-approvals'){renderPRApprovals();renderPRAgeing();}
       else if(pg==='it'){renderITQueue();renderITAccess();renderITOnboarding();renderITIncidents();renderITBackups();renderITAudit();}
       else if(pg==='it-tickets'){renderMyITTickets();}
-      else if(pg==='access'){renderTARQueue();}
+      else if(pg==='access'){renderTARQueue();renderRouteAssessments();renderCheckins();renderEmergencyContacts();renderTravelCloseouts();}
       else if(pg==='deputy'){renderApprovalRoleHome('deputy');}
       else if(pg==='progdeputy'){renderApprovalRoleHome('progdeputy');}
       else if(pg==='tar-request'){initTARForm();renderMyTARs();}
@@ -9344,7 +9354,125 @@ function denyTAR(id){
   alert('TAR denied. '+t.dept+' has been notified with your comment.');
 }
 
+// ============ ACCESS: ROUTE & SECURITY ASSESSMENT ============
+function openRouteAssessModal(){
+  $('ra-route').value='';$('ra-risk').value='';$('ra-precautions').value='';$('ra-owner').value=SES.name;$('ra-date').value=today();
+  openM('m-routeassess');
+}
+function saveRouteAssessment(){
+  var route=$('ra-route').value.trim();
+  if(!route){alert('Please identify the route / destination.');return;}
+  DB.routeAssessments.unshift({id:nid('RA'),route:route,risk:$('ra-risk').value.trim(),
+    precautions:$('ra-precautions').value.trim(),owner:$('ra-owner').value.trim(),date:$('ra-date').value||today(),
+    createdBy:SES.name,createdOn:today()});
+  logAudit('route-assessment-logged',route,'Route assessment logged by '+SES.name);
+  closeM('m-routeassess');
+  renderRouteAssessments();
+  queueCloudSave();
+}
+function renderRouteAssessments(){
+  var body=$('routeassess-body');if(!body)return;
+  body.innerHTML=DB.routeAssessments.length?DB.routeAssessments.map(function(r){
+    return '<tr><td>'+esc(r.route)+'</td><td style="font-size:11.5px">'+esc(r.risk||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(r.precautions||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(r.owner||'—')+' · '+dt(r.date)+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" class="empty">No route assessments logged yet</td></tr>';
+}
 
+// ============ ACCESS: MOVEMENT & CHECK-INS ============
+// Check-in state lives on the TAR record itself (lazy-initialized), the same pattern used
+// for project closeout (getCloseout()) -- there's no separate "create" step because every
+// approved TAR already needs one.
+function getTarCheckin(t){
+  if(!t.checkin)t.checkin={checkinDue:t.ret,checkinReceived:null,escalationContact:''};
+  return t.checkin;
+}
+function logTarCheckin(id){
+  var t=DB.tars.find(function(x){return x.id===id;});if(!t)return;
+  var c=getTarCheckin(t);
+  if(!window.confirm('Confirm check-in received for this movement?'))return;
+  c.checkinReceived=new Date().toISOString();
+  logAudit('tar-checkin-received',id,'Check-in received, logged by '+SES.name);
+  renderCheckins();
+  queueCloudSave();
+}
+function updateEscalationContact(id,value){
+  var t=DB.tars.find(function(x){return x.id===id;});if(!t)return;
+  getTarCheckin(t).escalationContact=value;
+  queueCloudSave();
+}
+function renderCheckins(){
+  var body=$('checkin-body');if(!body)return;
+  var active=DB.tars.filter(function(t){return t.status==='Approved';});
+  body.innerHTML=active.length?active.map(function(t){
+    var c=getTarCheckin(t);
+    var overdueNow=!c.checkinReceived&&overdue(c.checkinDue);
+    return '<tr><td>'+esc(t.purpose)+'<div style="font-size:10px;color:var(--g400)">'+esc(t.dest)+' · '+esc(t.dept)+'</div></td>'+
+      '<td style="font-size:11.5px">'+dt(t.depart)+' / '+dt(t.ret)+'</td>'+
+      '<td style="font-size:11.5px'+(overdueNow?';color:var(--red);font-weight:600':'')+'">'+dt(c.checkinDue)+' / '+(c.checkinReceived?new Date(c.checkinReceived).toLocaleString('en-GB'):(overdueNow?'OVERDUE':'Pending'))+'</td>'+
+      '<td><input type="text" value="'+esc(c.escalationContact||'')+'" placeholder="e.g. Access on-duty officer" style="font-size:11px;padding:4px 6px;border:1px solid var(--g200);border-radius:5px;width:100%" onchange="updateEscalationContact(\''+t.id+'\',this.value)"></td>'+
+      '<td>'+(c.checkinReceived?'—':'<button class="b bo bs" onclick="logTarCheckin(\''+t.id+'\')">Log Check-in</button>')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No approved movements awaiting check-in</td></tr>';
+}
+
+// ============ ACCESS: EMERGENCY CONTACTS & ALERTS ============
+function openEmergencyContactModal(){
+  $('ec-staff').value='';$('ec-channel').value='';$('ec-response').value='';$('ec-authorized').value='';
+  openM('m-emergencycontact');
+}
+function saveEmergencyContact(){
+  var staff=$('ec-staff').value.trim();
+  if(!staff){alert('Please identify the staff / contact.');return;}
+  DB.emergencyContacts.unshift({id:nid('EC'),staff:staff,channel:$('ec-channel').value.trim(),
+    response:$('ec-response').value.trim(),authorized:$('ec-authorized').value.trim(),
+    createdBy:SES.name,createdOn:today()});
+  logAudit('emergency-contact-logged',staff,'Emergency contact logged by '+SES.name);
+  closeM('m-emergencycontact');
+  renderEmergencyContacts();
+  queueCloudSave();
+}
+function renderEmergencyContacts(){
+  var body=$('emergencycontact-body');if(!body)return;
+  body.innerHTML=DB.emergencyContacts.length?DB.emergencyContacts.map(function(c){
+    return '<tr><td>'+esc(c.staff)+'</td><td style="font-size:11.5px">'+esc(c.channel||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(c.response||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(c.authorized||'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" class="empty">No emergency contacts logged yet</td></tr>';
+}
+
+// ============ ACCESS: TRAVEL CLOSEOUT ============
+function openTarCloseoutModal(id){
+  var t=DB.tars.find(function(x){return x.id===id;});if(!t)return;
+  $('tc-ctx').textContent=t.purpose+' — '+t.dest+' ('+dt(t.depart)+' to '+dt(t.ret)+')';
+  $('m-tarcloseout').setAttribute('data-tarid',id);
+  $('tc-log').value='';$('tc-advance').value='';$('tc-outstanding').value='';$('tc-confirmed').checked=false;
+  openM('m-tarcloseout');
+}
+function saveTarCloseout(){
+  var id=$('m-tarcloseout').getAttribute('data-tarid');
+  var t=DB.tars.find(function(x){return x.id===id;});if(!t)return;
+  var log=$('tc-log').value.trim(),confirmed=$('tc-confirmed').checked;
+  if(!log||!confirmed){alert('Please add a trip log and confirm the return before completing closeout.');return;}
+  t.closeout={returnConfirmed:true,tripLog:log,advanceSettlement:$('tc-advance').value.trim(),
+    outstandingActions:$('tc-outstanding').value.trim(),closedBy:SES.name,closedOn:today()};
+  t.status='Completed';
+  t.hist.push({a:'Closed Out',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Travel closeout completed'});
+  logAudit('tar-closeout',id,'Travel closeout completed by '+SES.name);
+  closeM('m-tarcloseout');
+  renderTravelCloseouts();
+  renderCheckins();
+  renderTARQueue();
+  queueCloudSave();
+}
+function renderTravelCloseouts(){
+  var body=$('closeout-tar-body');if(!body)return;
+  var pending=DB.tars.filter(function(t){return t.status==='Approved';});
+  body.innerHTML=pending.length?pending.map(function(t){
+    return '<tr><td>'+esc(t.purpose)+'<div style="font-size:10px;color:var(--g400)">'+esc(t.dest)+'</div></td>'+
+      '<td>—</td><td>—</td><td>—</td>'+
+      '<td><button class="b bo bs" onclick="openTarCloseoutModal(\''+t.id+'\')">Open Closeout</button></td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No trips awaiting closeout</td></tr>';
+}
 
 // ============ HR: CONTRACTS ============
 DB.contracts=[];
@@ -10768,6 +10896,47 @@ if(document.getElementById('afg-map')) initMap();
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-disposal')">Cancel</button><button class="b bn" onclick="saveDisposal()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-routeassess"><div class="md">
+<div class="mh"><h3>Add Route &amp; Security Assessment</h3><button class="mx" onclick="closeM('m-routeassess')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Route / Destination *</label><input type="text" id="ra-route" placeholder="e.g. Kabul to Herat via Highway 1"></div>
+    <div class="fg ff"><label>Risk Assessment *</label><textarea rows="2" id="ra-risk" placeholder="e.g. Moderate - checkpoints along route, no recent incidents reported"></textarea></div>
+    <div class="fg ff"><label>Required Precautions *</label><textarea rows="2" id="ra-precautions" placeholder="e.g. Travel in daylight only, convoy of 2+ vehicles, check in every 2 hours"></textarea></div>
+    <div class="fg"><label>Review Owner *</label><input type="text" id="ra-owner" placeholder="e.g. Zabihullah Sarwari"></div>
+    <div class="fg"><label>Review Date *</label><input type="date" id="ra-date"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-routeassess')">Cancel</button><button class="b bn" onclick="saveRouteAssessment()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-emergencycontact"><div class="md">
+<div class="mh"><h3>Add Emergency Contact</h3><button class="mx" onclick="closeM('m-emergencycontact')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Staff / Contact *</label><input type="text" id="ec-staff" placeholder="e.g. Hamid Agha"></div>
+    <div class="fg"><label>Safe Contact Channel *</label><input type="text" id="ec-channel" placeholder="e.g. Personal mobile +93 70 xxx xxxx"></div>
+    <div class="fg ff"><label>Alert / Response Plan *</label><input type="text" id="ec-response" placeholder="e.g. If no check-in within 2 hours of due time, call Access on-duty officer"></div>
+    <div class="fg ff"><label>Authorized Access *</label><input type="text" id="ec-authorized" placeholder="e.g. Access Department and Operations Manager only"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-emergencycontact')">Cancel</button><button class="b bn" onclick="saveEmergencyContact()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-tarcloseout"><div class="md">
+<div class="mh"><h3>Travel Closeout</h3><button class="mx" onclick="closeM('m-tarcloseout')">&times;</button></div>
+<div class="mbd">
+  <div id="tc-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr">
+    <div class="fg ff"><label>Trip Log *</label><textarea rows="2" id="tc-log" placeholder="e.g. Departed on schedule, arrived Herat 15:40, return check-in received, no incidents"></textarea></div>
+    <div class="fg"><label>Advance Settlement</label><input type="text" id="tc-advance" placeholder="e.g. $120 advance, $95 spent, $25 returned to Finance"></div>
+    <div class="fg"><label>Outstanding Actions</label><input type="text" id="tc-outstanding" placeholder="e.g. None / Fuel receipt still pending from driver"></div>
+    <div class="fg ff"><label><input type="checkbox" id="tc-confirmed"> Return confirmed *</label></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-tarcloseout')">Cancel</button><button class="b bn" onclick="saveTarCloseout()">Complete Closeout</button></div>
 </div></div>
 
 <div class="mb" id="m-itaccess"><div class="md">
