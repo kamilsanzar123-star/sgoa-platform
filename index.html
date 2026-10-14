@@ -1011,6 +1011,19 @@ tbody tr:hover td{background:var(--g50);}
     <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
   </div>
   <div class="stats" id="admin-stats"></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Correspondence Register</div><button class="b bn bs" onclick="openCorrespondenceModal()">+ Log Letter</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Letter Reference</th><th>Sender / Recipient</th><th>Received / Dispatch Date</th><th>Action / Owner</th><th>Status</th><th></th></tr></thead><tbody id="correspondence-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Leases, Licenses &amp; Renewals</div><button class="b bn bs" onclick="openLeaseModal()">+ Add Record</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Record / Agreement</th><th>Start / Expiry Date</th><th>Renewal Owner</th><th>Approval / Attachment</th><th>Expiry Status</th></tr></thead><tbody id="lease-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Facilities &amp; Office Services</div><button class="b bn bs" onclick="openFacilitiesModal()">+ Log Request</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Location / Service</th><th>Issue / Priority</th><th>Assigned Provider</th><th>Completion / Cost</th><th>Status</th><th></th></tr></thead><tbody id="facilities-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Visitors &amp; Meetings</div><button class="b bn bs" onclick="openVisitorModal()">+ Log Visit / Meeting</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Meeting / Visitor Reference</th><th>Host / Date</th><th>Office Location</th><th>Required Arrangements</th></tr></thead><tbody id="visitor-body"></tbody></table></div></div>
+
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="admin-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="admin-alerts"></div></div>
@@ -2417,6 +2430,10 @@ payrollPeriods:[],
 accessLinks:[],
 bidEvaluations:[],
 receiptIssues:[],
+correspondence:[],
+leases:[],
+facilitiesRequests:[],
+visitorMeetings:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3445,7 +3462,7 @@ function render(pg){
       else if(pg==='supply-po'){renderPOs();}
       else if(pg==='supply-grn'){renderGRNs();renderInvoices();renderReceiptIssues();}
       else if(pg==='supply-warehouse'){renderStockItems();renderStockLedger();}
-      else if(pg==='admin'){renderDept('admin','Admin');}
+      else if(pg==='admin'){renderDept('admin','Admin');renderCorrespondence();renderLeases();renderFacilitiesRequests();renderVisitorMeetings();}
       else if(pg==='admin-registry'){renderDocRegistry();}
       else if(pg==='safeguarding'){renderDept('safeguarding','Safeguarding');renderSGCases();}
       else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();}
@@ -7019,6 +7036,123 @@ function renderReceiptIssues(){
   }).join('');
 }
 
+// ============ CORRESPONDENCE REGISTER (Administration) ============
+function openCorrespondenceModal(){
+  $('co-direction').value='Incoming';$('co-ref').value='';$('co-sender').value='';$('co-recipient').value='';
+  $('co-date').value=today();$('co-action').value='';$('co-owner').value='';
+  openM('m-correspondence');
+}
+function saveCorrespondence(){
+  var ref=$('co-ref').value.trim(),owner=$('co-owner').value.trim(),date=$('co-date').value;
+  if(!ref||!owner||!date){alert('Please complete the letter reference, date, and owner.');return;}
+  DB.correspondence.unshift({id:nid('CORR'),direction:$('co-direction').value,ref:ref,sender:$('co-sender').value.trim(),
+    recipient:$('co-recipient').value.trim(),date:date,action:$('co-action').value.trim(),owner:owner,
+    status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('correspondence-logged',ref,'Letter logged by '+SES.name);
+  closeM('m-correspondence');
+  renderCorrespondence();
+  queueCloudSave();
+}
+function closeCorrespondence(id){
+  var c=DB.correspondence.find(function(x){return x.id===id;});if(!c)return;
+  c.status='Closed';c.closedBy=SES.name;c.closedOn=today();
+  renderCorrespondence();
+  queueCloudSave();
+}
+function renderCorrespondence(){
+  var body=$('correspondence-body');if(!body)return;
+  body.innerHTML=DB.correspondence.length?DB.correspondence.map(function(c){
+    return '<tr><td>'+esc(c.ref)+' <span class="bdg bN" style="margin-left:4px">'+c.direction+'</span></td>'+
+      '<td style="font-size:11.5px">'+esc(c.sender||'—')+' / '+esc(c.recipient||'—')+'</td>'+
+      '<td>'+dt(c.date)+'</td><td style="font-size:11.5px">'+esc(c.action||'—')+' · '+esc(c.owner)+'</td>'+
+      '<td><span class="bdg '+(c.status==='Closed'?'bG':'bO')+'">'+c.status+'</span></td>'+
+      '<td>'+(c.status==='Open'?'<button class="b bo bs" onclick="closeCorrespondence(\''+c.id+'\')">Close</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No correspondence logged yet.</td></tr>';
+}
+
+// ============ LEASES, LICENSES & RENEWALS (Administration) ============
+function openLeaseModal(){
+  $('le-record').value='';$('le-start').value='';$('le-expiry').value='';$('le-owner').value='';$('le-approval').value='';
+  openM('m-lease');
+}
+function saveLease(){
+  var record=$('le-record').value.trim(),start=$('le-start').value,expiry=$('le-expiry').value,owner=$('le-owner').value.trim();
+  if(!record||!start||!expiry||!owner){alert('Please complete the record, start/expiry dates, and renewal owner.');return;}
+  DB.leases.unshift({id:nid('LEASE'),record:record,start:start,expiry:expiry,owner:owner,approval:$('le-approval').value.trim(),
+    createdBy:SES.name,createdOn:today()});
+  logAudit('lease-added',record,'Lease/license record added by '+SES.name);
+  closeM('m-lease');
+  renderLeases();
+  queueCloudSave();
+}
+function renderLeases(){
+  var body=$('lease-body');if(!body)return;
+  body.innerHTML=DB.leases.length?DB.leases.slice().sort(function(a,b){return a.expiry<b.expiry?-1:1;}).map(function(l){
+    var daysLeft=Math.round((new Date(l.expiry)-new Date(today()))/86400000);
+    var expStatus=daysLeft<0?'<span class="bdg bR">Expired</span>':daysLeft<=30?'<span class="bdg bR">'+daysLeft+'d left</span>':daysLeft<=90?'<span class="bdg bO">'+daysLeft+'d left</span>':'<span class="bdg bG">'+daysLeft+'d left</span>';
+    return '<tr><td>'+esc(l.record)+'</td><td>'+dt(l.start)+' – '+dt(l.expiry)+'</td><td>'+esc(l.owner)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(l.approval||'—')+'</td><td>'+expStatus+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No leases or licenses recorded yet.</td></tr>';
+}
+
+// ============ FACILITIES & OFFICE SERVICES (Administration) ============
+function openFacilitiesModal(){
+  $('fa-location').value='';$('fa-priority').value='Medium';$('fa-issue').value='';$('fa-provider').value='';
+  openM('m-facilities');
+}
+function saveFacilitiesRequest(){
+  var location=$('fa-location').value.trim(),issue=$('fa-issue').value.trim();
+  if(!location||!issue){alert('Please complete the location/service and the issue.');return;}
+  DB.facilitiesRequests.unshift({id:nid('FAC'),location:location,priority:$('fa-priority').value,issue:issue,
+    provider:$('fa-provider').value.trim(),cost:null,status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('facilities-request-logged',location,'Facilities request logged by '+SES.name);
+  closeM('m-facilities');
+  renderFacilitiesRequests();
+  queueCloudSave();
+}
+function completeFacilitiesRequest(id){
+  var r=DB.facilitiesRequests.find(function(x){return x.id===id;});if(!r)return;
+  var costStr=window.prompt('Completion cost (USD, optional):','0');
+  if(costStr===null)return;
+  r.status='Complete';r.cost=parseFloat(costStr)||0;r.completedBy=SES.name;r.completedOn=today();
+  logAudit('facilities-request-completed',r.location,'Completed by '+SES.name);
+  renderFacilitiesRequests();
+  queueCloudSave();
+}
+function renderFacilitiesRequests(){
+  var body=$('facilities-body');if(!body)return;
+  var pb={'Low':'bY','Medium':'bO','High':'bR'};
+  body.innerHTML=DB.facilitiesRequests.length?DB.facilitiesRequests.map(function(r){
+    return '<tr><td>'+esc(r.location)+'</td><td>'+esc(r.issue)+' <span class="bdg '+(pb[r.priority]||'bY')+'">'+r.priority+'</span></td>'+
+      '<td>'+esc(r.provider||'—')+'</td><td>'+(r.status==='Complete'?dt(r.completedOn)+' · '+money(r.cost||0,'USD'):'—')+'</td>'+
+      '<td><span class="bdg '+(r.status==='Complete'?'bG':'bO')+'">'+r.status+'</span></td>'+
+      '<td>'+(r.status==='Open'?'<button class="b bn bs" onclick="completeFacilitiesRequest(\''+r.id+'\')">Mark Complete</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No facilities requests recorded yet.</td></tr>';
+}
+
+// ============ VISITORS & MEETINGS (Administration) ============
+function openVisitorModal(){
+  $('vi-ref').value='';$('vi-host').value='';$('vi-date').value=today();$('vi-location').value='';$('vi-arrangements').value='';
+  openM('m-visitor');
+}
+function saveVisitorMeeting(){
+  var ref=$('vi-ref').value.trim(),host=$('vi-host').value.trim(),date=$('vi-date').value,location=$('vi-location').value.trim();
+  if(!ref||!host||!date||!location){alert('Please complete the reference, host, date, and office location.');return;}
+  DB.visitorMeetings.unshift({id:nid('VIS'),ref:ref,host:host,date:date,location:location,
+    arrangements:$('vi-arrangements').value.trim(),createdBy:SES.name,createdOn:today()});
+  logAudit('visitor-meeting-logged',ref,'Visit/meeting logged by '+SES.name);
+  closeM('m-visitor');
+  renderVisitorMeetings();
+  queueCloudSave();
+}
+function renderVisitorMeetings(){
+  var body=$('visitor-body');if(!body)return;
+  body.innerHTML=DB.visitorMeetings.length?DB.visitorMeetings.map(function(v){
+    return '<tr><td>'+esc(v.ref)+'</td><td>'+esc(v.host)+' · '+dt(v.date)+'</td><td>'+esc(v.location)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(v.arrangements||'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--g400)">No visits or meetings logged yet.</td></tr>';
+}
+
 function renderGRNs(){
   var body=$('grn-body');if(!body)return;
   body.innerHTML='';
@@ -10071,6 +10205,63 @@ if(document.getElementById('afg-map')) initMap();
 })();
 </script>
 
+
+<div class="mb" id="m-correspondence"><div class="md">
+<div class="mh"><h3>Log Letter</h3><button class="mx" onclick="closeM('m-correspondence')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Direction *</label><select id="co-direction"><option>Incoming</option><option>Outgoing</option></select></div>
+    <div class="fg"><label>Letter Reference *</label><input type="text" id="co-ref" placeholder="e.g. SGOA-OUT-2026-045"></div>
+    <div class="fg"><label>Sender</label><input type="text" id="co-sender" placeholder="e.g. Ministry of Economy"></div>
+    <div class="fg"><label>Recipient</label><input type="text" id="co-recipient" placeholder="e.g. SGOA Executive Director"></div>
+    <div class="fg"><label>Date *</label><input type="date" id="co-date"></div>
+    <div class="fg"><label>Action Required</label><input type="text" id="co-action" placeholder="e.g. Respond with updated registration docs"></div>
+    <div class="fg"><label>Owner *</label><input type="text" id="co-owner" placeholder="e.g. Malali Safi"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-correspondence')">Cancel</button><button class="b bn" onclick="saveCorrespondence()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-lease"><div class="md">
+<div class="mh"><h3>Add Lease / License Record</h3><button class="mx" onclick="closeM('m-lease')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Record / Agreement *</label><input type="text" id="le-record" placeholder="e.g. Kabul Office Lease - Landlord X"></div>
+    <div class="fg"><label>Start Date *</label><input type="date" id="le-start"></div>
+    <div class="fg"><label>Expiry Date *</label><input type="date" id="le-expiry"></div>
+    <div class="fg"><label>Renewal Owner *</label><input type="text" id="le-owner" placeholder="e.g. Malali Safi"></div>
+    <div class="fg ff"><label>Approval / Attachment Note</label><input type="text" id="le-approval" placeholder="e.g. Approved by ED, scanned copy filed in registry"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-lease')">Cancel</button><button class="b bn" onclick="saveLease()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-facilities"><div class="md">
+<div class="mh"><h3>Log Facilities / Office Request</h3><button class="mx" onclick="closeM('m-facilities')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Location / Service *</label><input type="text" id="fa-location" placeholder="e.g. Kabul Office - Generator"></div>
+    <div class="fg"><label>Priority</label><select id="fa-priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
+    <div class="fg ff"><label>Issue *</label><input type="text" id="fa-issue" placeholder="e.g. Generator not starting"></div>
+    <div class="fg"><label>Assigned Provider</label><input type="text" id="fa-provider" placeholder="e.g. ABC Technical Services"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-facilities')">Cancel</button><button class="b bn" onclick="saveFacilitiesRequest()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-visitor"><div class="md">
+<div class="mh"><h3>Log Visit / Meeting</h3><button class="mx" onclick="closeM('m-visitor')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Meeting / Visitor Reference *</label><input type="text" id="vi-ref" placeholder="e.g. Partner review - ACBAR"></div>
+    <div class="fg"><label>Host *</label><input type="text" id="vi-host" placeholder="e.g. Hamid Agha"></div>
+    <div class="fg"><label>Date *</label><input type="date" id="vi-date"></div>
+    <div class="fg"><label>Office Location *</label><input type="text" id="vi-location" placeholder="e.g. Kabul Office - Meeting Room 2"></div>
+    <div class="fg ff"><label>Required Arrangements</label><input type="text" id="vi-arrangements" placeholder="e.g. Projector, refreshments, visitor badge"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-visitor')">Cancel</button><button class="b bn" onclick="saveVisitorMeeting()">Save</button></div>
+</div></div>
 
 <div class="mb" id="m-receiptissue"><div class="md">
 <div class="mh"><h3>Log Receipt Issue</h3><button class="mx" onclick="closeM('m-receiptissue')">&times;</button></div>
