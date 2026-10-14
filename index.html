@@ -901,6 +901,9 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Monthly Attendance Summary</div><button class="b bn bs" onclick="openM('m-attendance')">+ Log Attendance</button></div>
   <div class="cdb tw"><table><thead><tr><th>Staff Name</th><th>Department</th><th>Month</th><th>Present</th><th>Absent</th><th>Late</th><th>On Leave</th></tr></thead><tbody id="hr-attendance"></tbody></table></div></div>
 
+  <div class="cd"><div class="cdh"><div class="cdt">Employment &amp; Access Linkage</div><button class="b bn bs" onclick="openAccessLinkModal()">+ Record Approved Change</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Staff Identity</th><th>Linked Account Status</th><th>Approved Role / Scope</th><th>Effective Dates</th><th></th></tr></thead><tbody id="accesslink-body"></tbody></table></div></div>
+
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-hr"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-hr"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Human Resources documents</b></p></div></div></div>
@@ -2406,6 +2409,7 @@ strategy:[],
 workplanRevisions:[],
 budgetRevisions:[],
 payrollPeriods:[],
+accessLinks:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3418,7 +3422,7 @@ function render(pg){
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();renderFinanceInvoiceControls();renderBudgetRevisions();renderPayrollPeriods();}
       else if(pg==='finance-commitments'){renderCommitments();}
       else if(pg==='finance-advances'){renderAdvances();renderReconciliations();}
-      else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();renderStaffLeaveBalances();}
+      else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();renderStaffLeaveBalances();renderAccessLinks();}
       else if(pg==='hr-recruitment'){renderVacancies();renderCandidatePipeline();}
       else if(pg==='hr-training'){renderTrainings();}
       else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();renderWorkplanRevisions();}
@@ -6869,6 +6873,51 @@ function renderPayrollPeriods(){
   }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No payroll periods recorded yet.</td></tr>';
 }
 
+// ============ EMPLOYMENT & ACCESS LINKAGE (HR) ============
+function openAccessLinkModal(){
+  $('al-staff').value='';$('al-role').value='';$('al-from').value=today();$('al-to').value='';
+  var sel=$('al-account');
+  sel.innerHTML='<option value="">No matching account yet</option>'+loginAccountsList().map(function(a){return '<option value="'+esc(a.username)+'">'+esc(a.name)+' ('+esc(a.username)+')</option>';}).join('');
+  openM('m-accesslink');
+}
+function saveAccessLink(){
+  var staff=$('al-staff').value.trim(),role=$('al-role').value.trim(),from=$('al-from').value;
+  if(!staff||!role||!from){alert('Please complete staff identity, approved role/scope, and effective from date.');return;}
+  var username=$('al-account').value;
+  var rec={id:nid('ACL'),staff:staff,account:username||null,role:role,from:from,to:$('al-to').value||null,
+    status:username?'Applied':'Pending',requestedBy:SES.name,requestedOn:today()};
+  if(username){
+    var u=DB.users.find(function(x){return x.username===username;});
+    if(u){u.position=role;rec.appliedBy=SES.name;rec.appliedOn=today();}
+  }
+  DB.accessLinks.unshift(rec);
+  logAudit('access-link-recorded',staff,'Employment/access change recorded by '+SES.name+(username?' and applied to account '+username:''));
+  closeM('m-accesslink');
+  renderAccessLinks();
+  queueCloudSave();
+}
+function applyAccessLink(id){
+  var r=DB.accessLinks.find(function(x){return x.id===id;});if(!r)return;
+  var accts=loginAccountsList();
+  var match=accts.find(function(a){return a.name===r.staff;});
+  if(!match){alert('No account yet exists for "'+r.staff+'". Create their staff account first (Staff Directory), then apply this change.');return;}
+  var u=DB.users.find(function(x){return x.username===match.username;});
+  if(u){u.position=r.role;}
+  r.account=match.username;r.status='Applied';r.appliedBy=SES.name;r.appliedOn=today();
+  logAudit('access-link-applied',r.staff,'Applied to account '+match.username+' by '+SES.name);
+  renderAccessLinks();
+  queueCloudSave();
+}
+function renderAccessLinks(){
+  var body=$('accesslink-body');if(!body)return;
+  body.innerHTML=DB.accessLinks.length?DB.accessLinks.map(function(r){
+    var dates=dt(r.from)+(r.to?' – '+dt(r.to):' – ongoing');
+    var statusHtml=r.status==='Applied'?'<span class="bdg bG">Applied to '+esc(r.account||'')+'</span>':'<span class="bdg bO">Pending — no account yet</span>';
+    return '<tr><td>'+esc(r.staff)+'</td><td>'+statusHtml+'</td><td>'+esc(r.role)+'</td><td style="font-size:11.5px">'+dates+'</td>'+
+      '<td>'+(r.status==='Pending'?'<button class="b bo bs" onclick="applyAccessLink(\''+r.id+'\')">Apply Now</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No employment/access changes recorded yet.</td></tr>';
+}
+
 function renderGRNs(){
   var body=$('grn-body');if(!body)return;
   body.innerHTML='';
@@ -9921,6 +9970,20 @@ if(document.getElementById('afg-map')) initMap();
 })();
 </script>
 
+
+<div class="mb" id="m-accesslink"><div class="md">
+<div class="mh"><h3>Record Approved Employment / Access Change</h3><button class="mx" onclick="closeM('m-accesslink')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Staff Identity *</label><input type="text" id="al-staff" placeholder="e.g. Farida Noori"></div>
+    <div class="fg"><label>Linked Account (optional)</label><select id="al-account"><option value="">No matching account yet</option></select></div>
+    <div class="fg ff"><label>Approved Role / Scope *</label><input type="text" id="al-role" placeholder="e.g. Senior Programs Officer, Programs Department"></div>
+    <div class="fg"><label>Effective From *</label><input type="date" id="al-from"></div>
+    <div class="fg"><label>Effective To (optional)</label><input type="date" id="al-to"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-accesslink')">Cancel</button><button class="b bn" onclick="saveAccessLink()">Save</button></div>
+</div></div>
 
 <div class="mb" id="m-budrev"><div class="md">
 <div class="mh"><h3>Request Budget Revision</h3><button class="mx" onclick="closeM('m-budrev')">&times;</button></div>
