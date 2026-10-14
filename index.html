@@ -541,6 +541,27 @@ tbody tr:hover td{background:var(--g50);}
       </div>
     </div>
   </div>
+
+  <div class="cd">
+    <div class="cdh"><div class="cdt">Verified Monthly Results</div>
+      <input type="month" id="vmr-month" onchange="renderVerifiedMonthlyResults()" style="font-size:12px;padding:5px 9px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+    </div>
+    <div class="cdb">
+      <div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+        <div class="st nv"><div class="stl">Verified</div><div class="stv" id="vmr-reporting">0</div></div>
+        <div class="st og"><div class="stl">Pending Verification</div><div class="stv" id="vmr-pending">0</div></div>
+        <div class="st rd"><div class="stl">Missing Reports</div><div class="stv" id="vmr-missing">0</div></div>
+        <div class="st og"><div class="stl">Off Track</div><div class="stv" id="vmr-offtrack">0</div></div>
+      </div>
+      <div style="font-size:10.5px;color:var(--g500);margin-bottom:8px">Achieved = MEAL's verified, locked value for the month where one exists; otherwise the latest submitted entry, shown as Pending Verification until MEAL locks it.</div>
+      <div class="tw"><table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Achieved (Month)</th><th>Remaining</th><th>Status</th></tr></thead><tbody id="vmr-body"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="cd">
+    <div class="cdh"><div class="cdt">Strategy &amp; Board Actions</div><button class="b bn bs" onclick="openStrategyModal()">+ Add Objective</button></div>
+    <div class="cdb tw"><table><thead><tr><th>Strategic Objective</th><th>Linked Projects</th><th>Board Decision</th><th>Action Owner</th><th>Status</th><th></th></tr></thead><tbody id="strategy-body"></tbody></table></div>
+  </div>
 </div>
 
 <!-- ========= PROJECTS LIST ========= -->
@@ -645,6 +666,22 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Gender &amp; CWD Disaggregation</div>
     <select id="mg-proj" onchange="renderMealHome()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
       <option value="all">All Projects</option></select></div><div class="cdb" id="meal-gender"></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Monthly Verification &amp; Locking</div>
+    <input type="month" id="mv-month" onchange="renderMonthlyVerification();renderMonthlyReport();" style="font-size:12px;padding:5px 9px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+  </div>
+  <div class="cdb tw"><table><thead><tr><th>Indicator</th><th>Project</th><th>Submitted Result</th><th>Verification Decision</th><th>Correction History</th><th></th></tr></thead><tbody id="mv-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Monthly Report &amp; Charts</div><button class="b bo bs" onclick="exportMonthlyReport()">Download CSV</button></div>
+  <div class="cdb">
+    <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+      <div class="st nv"><div class="stl">Locked Month</div><div class="stv" id="mr-locked">—</div></div>
+      <div class="st gr"><div class="stl">Verified &amp; On Track</div><div class="stv" id="mr-achieved">0</div></div>
+      <div class="st rd"><div class="stl">Verified &amp; Off Track</div><div class="stv" id="mr-offtrack">0</div></div>
+      <div class="st og"><div class="stl">Outstanding (Unverified)</div><div class="stv" id="mr-outstanding">0</div></div>
+    </div>
+  </div></div>
+
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
 </div>
 
@@ -789,6 +826,17 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Expenditure Ledger</div><button class="b bn bs" onclick="openM('m-expenditure')">+ Record Expenditure</button></div>
   <div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>Category</th><th>Description</th><th>Paid To</th><th>Method</th><th>Amount</th><th>Action</th></tr></thead><tbody id="fin-ledger"></tbody></table>
   <div style="text-align:right;padding:10px 0;font-weight:800;color:var(--navy)">Total Recorded: <span id="fin-ledger-total">$0</span></div></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Invoice &amp; Payment Controls</div>
+    <span style="font-size:10.5px;color:var(--g500)"><span id="fin-inv-pending">0</span> pending · <span id="fin-inv-discrepancy">0</span> discrepancies</span></div>
+  <div class="cdb tw"><table><thead><tr><th>Invoice</th><th>PO / Receipt</th><th>Matching Result</th><th>Payment Approver</th><th>Payment Reference</th><th></th></tr></thead><tbody id="fin-inv-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Budget Revision Approval</div><button class="b bn bs" onclick="openBudgetRevisionModal()">+ Request Revision</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Project</th><th>Budget-Line Changes</th><th>Reason / Donor Consent</th><th>Status</th><th>Authorized Approval</th></tr></thead><tbody id="budrev-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Payroll &amp; Accounting Connection</div><button class="b bn bs" onclick="openPayrollPeriodModal()">+ Add Payroll Period</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Approved Payroll Period</th><th>Cost Allocations</th><th>Accounting Reference</th><th>Reconciliation Status</th><th></th></tr></thead><tbody id="payroll-body"></tbody></table></div></div>
+
   <div class="stats" id="finance-stats"></div>
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="finance-tasks"></div></div>
@@ -852,6 +900,9 @@ tbody tr:hover td{background:var(--g50);}
 
   <div class="cd"><div class="cdh"><div class="cdt">Monthly Attendance Summary</div><button class="b bn bs" onclick="openM('m-attendance')">+ Log Attendance</button></div>
   <div class="cdb tw"><table><thead><tr><th>Staff Name</th><th>Department</th><th>Month</th><th>Present</th><th>Absent</th><th>Late</th><th>On Leave</th></tr></thead><tbody id="hr-attendance"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Employment &amp; Access Linkage</div><button class="b bn bs" onclick="openAccessLinkModal()">+ Record Approved Change</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Staff Identity</th><th>Linked Account Status</th><th>Approved Role / Scope</th><th>Effective Dates</th><th></th></tr></thead><tbody id="accesslink-body"></tbody></table></div></div>
 
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-hr"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
@@ -918,6 +969,9 @@ tbody tr:hover td{background:var(--g50);}
 
   <div class="cd"><div class="cdh"><div class="cdt">Project Implementation Progress</div></div><div class="cdb" id="prog-progress"></div></div>
 
+  <div class="cd"><div class="cdh"><div class="cdt">Workplan Revisions</div><button class="b bn bs" onclick="openWorkplanRevisionModal()">+ Request Revision</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Project</th><th>Change Type</th><th>Original Plan</th><th>Requested Change</th><th>Impact / Reason</th><th>Status</th><th></th></tr></thead><tbody id="wpr-body"></tbody></table></div></div>
+
   <div class="cd"><div class="cdh"><div class="cdt">Findings &amp; Verification</div></div><div class="cdb" id="programs-findings"></div></div>
 
   <div class="g2">
@@ -957,6 +1011,19 @@ tbody tr:hover td{background:var(--g50);}
     <div class="qi" onclick="openM('m-task')"><div class="qii">&#9989;</div><div class="qil">Add Task</div></div>
   </div>
   <div class="stats" id="admin-stats"></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Correspondence Register</div><button class="b bn bs" onclick="openCorrespondenceModal()">+ Log Letter</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Letter Reference</th><th>Sender / Recipient</th><th>Received / Dispatch Date</th><th>Action / Owner</th><th>Status</th><th></th></tr></thead><tbody id="correspondence-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Leases, Licenses &amp; Renewals</div><button class="b bn bs" onclick="openLeaseModal()">+ Add Record</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Record / Agreement</th><th>Start / Expiry Date</th><th>Renewal Owner</th><th>Approval / Attachment</th><th>Expiry Status</th></tr></thead><tbody id="lease-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Facilities &amp; Office Services</div><button class="b bn bs" onclick="openFacilitiesModal()">+ Log Request</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Location / Service</th><th>Issue / Priority</th><th>Assigned Provider</th><th>Completion / Cost</th><th>Status</th><th></th></tr></thead><tbody id="facilities-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Visitors &amp; Meetings</div><button class="b bn bs" onclick="openVisitorModal()">+ Log Visit / Meeting</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Meeting / Visitor Reference</th><th>Host / Date</th><th>Office Location</th><th>Required Arrangements</th></tr></thead><tbody id="visitor-body"></tbody></table></div></div>
+
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="admin-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="admin-alerts"></div></div>
@@ -992,6 +1059,16 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt"><span class="dot"></span>Active Investigations</div><button class="b bd bs" onclick="openM('m-incident')">Report Incident</button></div>
   <div class="cdb" id="sg-cases"></div></div>
   <div class="stats" id="safeguarding-stats"></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Consent &amp; Safe Communication</div><button class="b bn bs" onclick="openSGConsentModal()">+ Record Consent</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Consent Record</th><th>Safe Contact Channel</th><th>Communication Restrictions</th><th>Referral Permission</th></tr></thead><tbody id="sgconsent-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Training &amp; Prevention</div><button class="b bn bs" onclick="openSGTrainingModal()">+ Log Training</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Training Audience</th><th>Completion / Evidence</th><th>Focal Point</th><th>Refresher Date</th></tr></thead><tbody id="sgtraining-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Restricted Access &amp; Access History</div>
+    <span style="font-size:10.5px;color:var(--g500)">Full case detail is restricted to Safeguarding; other roles see a permitted summary only</span></div>
+  <div class="cdb tw"><table><thead><tr><th>Case</th><th>Viewed By</th><th>Role</th><th>When</th></tr></thead><tbody id="sgaccess-body"></tbody></table></div></div>
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="safeguarding-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="safeguarding-alerts"></div></div>
@@ -1016,6 +1093,14 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt clk" onclick="go('ops-fleet')">Fleet Quick View</div><button class="b bo bs" onclick="go('ops-fleet')">Full Fleet</button></div>
   <div class="stats" id="ops-fleet-mini-stats" style="padding:0 15px"></div>
   <div class="cdb tw"><table><thead><tr><th>Plate</th><th>Model</th><th>Assigned</th><th>Location</th><th>Status</th></tr></thead><tbody id="fleet-quick"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Custody, Transfers &amp; Returns</div><button class="b bn bs" onclick="openCustodyModal()">+ Log Custody / Transfer</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Asset / Staff</th><th>Handover Date</th><th>Return / Condition</th><th>Approved Transfer</th><th>Status</th><th>Action</th></tr></thead><tbody id="custody-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Maintenance Schedule</div><button class="b bn bs" onclick="openMaintenanceModal()">+ Schedule Maintenance</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Asset / Vehicle</th><th>Service Due</th><th>Provider / Cost</th><th>Completion Evidence</th><th>Status</th><th>Action</th></tr></thead><tbody id="maintenance-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Fuel &amp; Trip Logs</div><button class="b bn bs" onclick="openFuelLogModal()">+ Log Fuel / Trip</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Travel Authorization</th><th>Trip / Odometer</th><th>Fuel Quantity / Cost</th><th>Driver / Reconciliation</th><th>Action</th></tr></thead><tbody id="fuellog-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Disposal &amp; Insurance</div><button class="b bn bs" onclick="openDisposalModal()">+ Log Disposal / Insurance</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Asset / Policy</th><th>Disposal Reason / Approval</th><th>Sale / Write-off Evidence</th><th>Coverage Expiry</th><th>Status</th><th>Action</th></tr></thead><tbody id="disposal-body"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-operations"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-operations"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Operations documents</b></p></div></div></div>
@@ -1143,6 +1228,9 @@ tbody tr:hover td{background:var(--g50);}
   <div class="ph"><div><h1>Procurement Tracker</h1><p>All procurement requests and status</p></div>
   <div class="pha"><button class="b bo bs" onclick="go('supply')">Back</button><button class="b bn bs" onclick="openM('m-proc')">+ New Request</button></div></div>
   <div class="cd"><div class="cdb tw"><table><thead><tr><th>Ref</th><th>Item</th><th>Project</th><th>Qty</th><th>Est. Cost</th><th>Compliance</th><th>Requested By</th><th>Status</th><th>Action</th></tr></thead><tbody id="proc-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Bid Evaluation &amp; Committee</div><button class="b bn bs" onclick="openBidEvalModal()">+ New Evaluation</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Item / Reference</th><th>Bid References</th><th>Evaluation Criteria / Scores</th><th>Committee Decision</th><th>Conflict Declaration</th></tr></thead><tbody id="bideval-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-supply-dist">
@@ -1187,6 +1275,8 @@ tbody tr:hover td{background:var(--g50);}
     <div class="cdb tw"><table><thead><tr><th>GRN #</th><th>PO #</th><th>Supplier</th><th>Received Date</th><th>Items (Received/Ordered)</th><th>Status</th></tr></thead><tbody id="grn-body"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Supplier Invoices &amp; 3-Way Match</div></div>
     <div class="cdb tw"><table><thead><tr><th>Invoice #</th><th>PO #</th><th>Supplier</th><th>Invoice Amount</th><th>PO Amount</th><th>Match Status</th><th>Action</th></tr></thead><tbody id="invoices-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Partial Receipts &amp; Returns</div></div>
+    <div class="cdb tw"><table><thead><tr><th>PO / Item</th><th>Accepted / Rejected / Remaining</th><th>Return / Replacement</th><th>Stock &amp; Payment Effect</th><th>Status</th><th></th></tr></thead><tbody id="receiptissue-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-supply-warehouse">
@@ -1319,6 +1409,16 @@ tbody tr:hover td{background:var(--g50);}
     <div class="st gr"><div class="stl">Verified &amp; Closed</div><div class="stv" id="it-closed">0</div></div>
   </div>
   <div class="cd"><div class="cdh"><div class="cdt">Ticket Queue</div></div><div class="cdb" id="it-queue"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Accounts, Roles &amp; Access</div><button class="b bn bs" onclick="openITAccessModal()">+ Log Access Grant</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Auth-Linked Staff</th><th>Role / Project Scope</th><th>Approver / Effective Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="itaccess-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Onboarding &amp; Offboarding Access</div><button class="b bn bs" onclick="openITOnboardingModal()">+ New Checklist</button></div>
+  <div class="cdb" id="itonboard-body"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Incidents &amp; Change Control</div><button class="b bn bs" onclick="openITIncidentModal()">+ Log Incident / Change</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Incident / Change</th><th>Impact / Priority</th><th>Approval / Rollout</th><th>Verification / Rollback</th><th>Status</th><th>Action</th></tr></thead><tbody id="itincident-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Backup &amp; Recovery</div><button class="b bn bs" onclick="openITBackupModal()">+ Log Backup</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Backup Date / Scope</th><th>Restricted Storage</th><th>Restore Test / Result</th><th>Recovery Owner</th><th>Status</th><th>Action</th></tr></thead><tbody id="itbackup-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Access &amp; System Audit</div></div>
+  <div class="cdb tw"><table><thead><tr><th>Actor / Event</th><th>Record / Timestamp</th><th>Access Review</th><th>Follow-up Action</th></tr></thead><tbody id="itaudit-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-it-tickets">
@@ -1348,6 +1448,14 @@ tbody tr:hover td{background:var(--g50);}
   </div>
   <div class="cd"><div class="cdh"><div class="cdt">TAR Requests — Awaiting Action</div></div><div class="cdb" id="tar-queue"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Current &amp; Upcoming Field Movements — Awareness Log</div></div><div class="cdb" id="tar-awareness"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Route &amp; Security Assessment</div><button class="b bn bs" onclick="openRouteAssessModal()">+ Add Assessment</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Route / Destination</th><th>Risk Assessment</th><th>Required Precautions</th><th>Review Owner / Date</th></tr></thead><tbody id="routeassess-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Movement &amp; Check-ins</div></div>
+  <div class="cdb tw"><table><thead><tr><th>Approved Movement</th><th>Departure / Arrival</th><th>Check-in Due / Received</th><th>Escalation Contact</th><th>Action</th></tr></thead><tbody id="checkin-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Emergency Contacts &amp; Alerts</div><button class="b bn bs" onclick="openEmergencyContactModal()">+ Add Contact</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Staff / Contact</th><th>Safe Contact Channel</th><th>Alert / Response</th><th>Authorized Access</th></tr></thead><tbody id="emergencycontact-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Travel Closeout</div></div>
+  <div class="cdb tw"><table><thead><tr><th>Trip</th><th>Return Confirmation</th><th>Advance Settlement</th><th>Outstanding Actions</th><th>Action</th></tr></thead><tbody id="closeout-tar-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-deputy">
@@ -1377,6 +1485,12 @@ tbody tr:hover td{background:var(--g50);}
   </div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Department Snapshot</div></div>
     <div class="cdb tw"><table><thead><tr><th>Department</th><th>Staff</th><th>Open Tasks</th><th>Pending PRs</th></tr></thead><tbody id="deputy-dept-snapshot"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Cross-Department Action Register</div><button class="b bn bs" onclick="openCrossDeptActionModal()">+ Log Action</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Issue / Departments</th><th>Agreed Action</th><th>Accountable Owner</th><th>Closure Evidence</th><th>Status</th><th>Action</th></tr></thead><tbody id="crossdeptaction-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Delegation &amp; Acting Authority</div><button class="b bn bs" onclick="openDelegationModal()">+ Add Delegation</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Delegating Role</th><th>Authorized Scope</th><th>Valid Dates</th><th>Approver / Limits</th><th>Status</th><th>Action</th></tr></thead><tbody id="delegation-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Monthly Management Review</div><button class="b bn bs" onclick="openMgmtReviewModal()">+ New Review</button></div>
+  <div class="cdb" id="mgmtreview-body"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-deputy"></div></div>
 </div>
 
@@ -2351,6 +2465,34 @@ expenditures:[],
 timesheets:[],
 deletionLog:[],
 loginLog:[],
+strategy:[],
+workplanRevisions:[],
+budgetRevisions:[],
+payrollPeriods:[],
+accessLinks:[],
+bidEvaluations:[],
+receiptIssues:[],
+correspondence:[],
+leases:[],
+facilitiesRequests:[],
+visitorMeetings:[],
+sgConsents:[],
+sgTraining:[],
+sgAccessLog:[],
+custodyRecords:[],
+maintenanceSchedule:[],
+fuelTripLogs:[],
+disposalInsurance:[],
+itAccessRecords:[],
+itOnboarding:[],
+itIncidents:[],
+itBackups:[],
+itAuditReviews:[],
+routeAssessments:[],
+emergencyContacts:[],
+crossDeptActions:[],
+delegations:[],
+mgmtReviews:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3341,16 +3483,16 @@ function render(pg){
       }
       else if(pg==='raise-pr'){initRaisePR();renderMyPRs();}
       else if(pg==='pr-approvals'){renderPRApprovals();renderPRAgeing();}
-      else if(pg==='it'){renderITQueue();}
+      else if(pg==='it'){renderITQueue();renderITAccess();renderITOnboarding();renderITIncidents();renderITBackups();renderITAudit();}
       else if(pg==='it-tickets'){renderMyITTickets();}
-      else if(pg==='access'){renderTARQueue();}
-      else if(pg==='deputy'){renderApprovalRoleHome('deputy');}
+      else if(pg==='access'){renderTARQueue();renderRouteAssessments();renderCheckins();renderEmergencyContacts();renderTravelCloseouts();}
+      else if(pg==='deputy'){renderApprovalRoleHome('deputy');renderCrossDeptActions();renderDelegations();renderMgmtReviews();}
       else if(pg==='progdeputy'){renderApprovalRoleHome('progdeputy');}
       else if(pg==='tar-request'){initTARForm();renderMyTARs();}
       else if(pg==='leave-request'){renderMyLeaveRequests();renderMyLeaveBalance();}
       else if(pg==='users'){renderUsers();renderUserMgmt();renderLoginActivity();}
       else if(pg==='settings'){renderSettings();}
-      else if(pg==='meal'){renderMealHome();}
+      else if(pg==='meal'){renderMealHome();renderMonthlyVerification();renderMonthlyReport();}
       else if(pg==='meal-ind'){renderInd();}
       else if(pg==='meal-lf'){renderLF();}
       else if(pg==='meal-cfrm'){renderCFRM();}
@@ -3360,29 +3502,29 @@ function render(pg){
       else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
       else if(pg==='meal-data'){renderDataHistory();}
-      else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();}
+      else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();renderFinanceInvoiceControls();renderBudgetRevisions();renderPayrollPeriods();}
       else if(pg==='finance-commitments'){renderCommitments();}
       else if(pg==='finance-advances'){renderAdvances();renderReconciliations();}
-      else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();renderStaffLeaveBalances();}
+      else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();renderStaffLeaveBalances();renderAccessLinks();}
       else if(pg==='hr-recruitment'){renderVacancies();renderCandidatePipeline();}
       else if(pg==='hr-training'){renderTrainings();}
-      else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();}
+      else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();renderWorkplanRevisions();}
       else if(pg==='prog-activities'){renderActivities();}
       else if(pg==='prog-benef'){renderBenef();renderDocs('benef','Programs');}
       else if(pg==='prog-analysis'){renderAnalysis();}
       else if(pg==='prog-partners'){renderPartners();}
       else if(pg==='prog-grants'){renderGrants();renderGrantReports();}
       else if(pg==='supply'){renderDept('supply','Supply Chain');}
-      else if(pg==='supply-proc'){renderProc();}
+      else if(pg==='supply-proc'){renderProc();renderBidEvals();}
       else if(pg==='supply-dist'){renderDist();}
       else if(pg==='supply-suppliers'){renderSuppliers();}
       else if(pg==='supply-po'){renderPOs();}
-      else if(pg==='supply-grn'){renderGRNs();renderInvoices();}
+      else if(pg==='supply-grn'){renderGRNs();renderInvoices();renderReceiptIssues();}
       else if(pg==='supply-warehouse'){renderStockItems();renderStockLedger();}
-      else if(pg==='admin'){renderDept('admin','Admin');}
+      else if(pg==='admin'){renderDept('admin','Admin');renderCorrespondence();renderLeases();renderFacilitiesRequests();renderVisitorMeetings();}
       else if(pg==='admin-registry'){renderDocRegistry();}
-      else if(pg==='safeguarding'){renderDept('safeguarding','Safeguarding');renderSGCases();}
-      else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();}
+      else if(pg==='safeguarding'){renderDept('safeguarding','Safeguarding');renderSGCases();renderSGConsents();renderSGTraining();renderSGAccessLog();logSGAccess();}
+      else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();renderCustody();renderMaintenance();renderFuelLogs();renderDisposal();}
       else if(pg==='ops-assets'){renderAssets();}
       else if(pg==='ops-fleet'){renderFleet();}
       else if(pg==='timesheet'){setTimeout(renderMyTimesheet,100);}
@@ -3570,10 +3712,10 @@ function drawAll(){
   if($('k-act-s'))$('k-act-s').textContent=d.done+' done · '+d.prog+' in progress';
   if($('k-bud'))$('k-bud').textContent=d.budget?Math.round(d.spent/d.budget*100)+'%':'0%';
   if($('k-bud-s'))$('k-bud-s').textContent=money(Math.round(d.spent),dispCur)+' of '+money(Math.round(d.budget),dispCur);
-  if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).length:1;
+  if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).length:1;
   if($('k-proj-sub')){
     if(pf==='all'){
-      var allKeys=Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';});
+      var allKeys=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';});
       var donors=new Set(allKeys.map(function(k){return PROJ[k].donor;}).filter(Boolean));
       var sectors=new Set(allKeys.map(function(k){return PROJ[k].sector;}).filter(Boolean));
       $('k-proj-sub').textContent=allKeys.length?(donors.size+' donor'+(donors.size!==1?'s':'')+' · '+sectors.size+' sector'+(sectors.size!==1?'s':'')):'No projects yet';
@@ -3659,11 +3801,13 @@ function renderExec(){
   renderExecDeadlines();
   renderExecDepts();
   renderCompletedProjectsImpact();
+  renderVerifiedMonthlyResults();
+  renderStrategy();
 }
 
 function renderExecProjects(){
   var c=$('exec-projects');if(!c)return;c.innerHTML='';
-  Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).forEach(function(k){
+  Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).forEach(function(k){
     var p=PROJ[k];
     var row=el('div','pr');
     row.setAttribute('data-proj',k);
@@ -3757,7 +3901,7 @@ function renderExecDepts(){
 // ============ PROJECTS ============
 function renderProjectCards(){
   var c=$('project-cards');if(!c)return;c.innerHTML='';
-  Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).forEach(function(k){
+  Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).forEach(function(k){
     var p=PROJ[k];
     var acts=DB.activities.filter(function(a){return a.proj===k;});
     var done=acts.filter(function(a){return a.status==='Complete';}).length;
@@ -3821,23 +3965,77 @@ function reopenProject(code){
 }
 function renderCompletedProjects(){
   var list=$('completed-projects-list');if(!list)return;
-  var codes=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed';});
+  var codes=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed'||PROJ[k].status==='Archived';});
   if(!codes.length){list.innerHTML='<div class="empty">No completed projects yet.</div>';return;}
   var canManage=SES.role==='meal'||SES.role==='executive';
   list.innerHTML=codes.map(function(k){
     var p=PROJ[k];
+    var archived=p.status==='Archived';
     return '<div class="cd" style="margin-bottom:10px;border-left:4px solid var(--g400)"><div class="cdb">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;flex-wrap:wrap">'+
       '<div><b>'+esc(p.name)+'</b> ('+esc(k)+')<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(p.loc||'-')+' · '+fmt(p.benef)+' beneficiaries · '+money(Math.round(p.budget/1000),p.currency)+'K budget · Completed '+dt(p.completedOn)+' by '+esc(p.completedBy||'-')+'</div></div>'+
-      '<span class="bdg bN">Completed</span></div>'+
+      '<span class="bdg '+(archived?'bB':'bN')+'">'+(archived?'Archived':'Completed')+'</span></div>'+
+      renderCloseoutChecklist(p,k)+
       '<div class="wfa" style="margin-top:9px"><button class="b bo bs" data-proj="'+k+'">View Full Details</button>'+
-      (canManage?'<button class="b bo bs" onclick="reopenProject(\''+k+'\')">Reopen</button>':'')+
+      (canManage&&!archived?'<button class="b bo bs" onclick="reopenProject(\''+k+'\')">Reopen</button>':'')+
       '</div></div></div>';
   }).join('');
 }
 
+// ============ PROJECT CLOSEOUT CHECKLIST (Programs) ============
+function getCloseout(p){
+  if(!p.closeout)p.closeout={mealCleared:false,financeCleared:false,donorReportSubmitted:false,archiveApproved:false};
+  return p.closeout;
+}
+function toggleCloseoutItem(code,key,role){
+  var p=PROJ[code];if(!p)return;
+  var c=getCloseout(p);
+  if(c.archiveApproved)return;
+  var orgWide=['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  if(!orgWide && SES.role!==role){alert('Only '+(DEPTNAME[role]||role)+' can set this item.');return;}
+  c[key]=!c[key];
+  c[key+'By']=c[key]?SES.name:null;
+  c[key+'On']=c[key]?today():null;
+  logAudit('closeout-'+key,code,(c[key]?'Marked cleared':'Unmarked')+' by '+SES.name);
+  renderCompletedProjects();
+  queueCloudSave();
+}
+function approveProjectArchive(code){
+  var p=PROJ[code];if(!p)return;
+  var c=getCloseout(p);
+  if(!c.mealCleared||!c.financeCleared||!c.donorReportSubmitted){alert('All three clearances (MEAL, Finance, Donor Report) must be complete before archiving.');return;}
+  if(!confirm('Archive "'+p.name+'"? This is the final closeout step and cannot be undone from here.'))return;
+  c.archiveApproved=true;c.archiveApprovedBy=SES.name;c.archiveApprovedOn=today();
+  p.status='Archived';
+  logAudit('project-archived',code,'Archived by '+SES.name);
+  renderCompletedProjects();renderProjectCards();refreshAll();
+  queueCloudSave();
+  alert('Project archived.');
+}
+function renderCloseoutChecklist(p,k){
+  var c=getCloseout(p);
+  var items=[{key:'mealCleared',label:'MEAL Clearance',role:'meal'},
+    {key:'financeCleared',label:'Finance Clearance',role:'finance'},
+    {key:'donorReportSubmitted',label:'Donor Report Submitted',role:'programs'}];
+  var orgWide=['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  var rows=items.map(function(it){
+    var done=c[it.key];
+    var canToggle=(orgWide||SES.role===it.role)&&!c.archiveApproved;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--g100);font-size:12px">'+
+      '<span>'+(done?'✅':'⬜')+' '+it.label+(done?' — '+esc(c[it.key+'By']||'')+' · '+dt(c[it.key+'On']):'')+'</span>'+
+      (canToggle?'<button class="b bo bs" onclick="toggleCloseoutItem(\''+k+'\',\''+it.key+'\',\''+it.role+'\')">'+(done?'Undo':'Clear')+'</button>':'')+
+      '</div>';
+  }).join('');
+  var allCleared=c.mealCleared&&c.financeCleared&&c.donorReportSubmitted;
+  var archiveRow='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">'+
+    '<span>'+(c.archiveApproved?'✅ Archived — '+esc(c.archiveApprovedBy||'')+' · '+dt(c.archiveApprovedOn):(allCleared?'⬜ Ready to archive':'⬜ Archive (locked until all clearances above are complete)'))+'</span>'+
+    (SES.role==='executive'&&!c.archiveApproved&&allCleared?'<button class="b bn bs" onclick="approveProjectArchive(\''+k+'\')">Archive</button>':'')+
+    '</div>';
+  return '<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px"><div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">CLOSEOUT CHECKLIST</div>'+rows+archiveRow+'</div>';
+}
+
 function completedProjectsImpact(){
-  var completed=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed';});
+  var completed=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed'||PROJ[k].status==='Archived';});
   var totalBenef=0,provinces={};
   completed.forEach(function(k){
     var p=PROJ[k];
@@ -3871,6 +4069,134 @@ function renderCompletedProjectsImpact(){
     tbody.innerHTML=d.provinces.length?d.provinces.map(function(p){return '<tr><td>'+esc(p.name)+'</td><td>'+p.projects+'</td><td>'+fmt(p.benef)+'</td></tr>';}).join('')
       :'<tr><td colspan="3" style="text-align:center;color:var(--g400)">No completed projects yet.</td></tr>';
   }
+}
+
+// ============ VERIFIED MONTHLY RESULTS (Executive) ============
+// Reads MEAL's verification/locking state when it exists (getVerification, defined with the
+// Monthly Verification & Locking module) and falls back to the latest raw submission -- marked
+// Pending Verification -- when MEAL hasn't locked the month yet.
+function renderVerifiedMonthlyResults(){
+  var body=$('vmr-body');if(!body)return;
+  var monthEl=$('vmr-month');
+  if(monthEl && !monthEl.value)monthEl.value=today().slice(0,7);
+  var month=monthEl?monthEl.value:today().slice(0,7);
+  var verified=0,pending=0,missing=0,offtrack=0,rows=[];
+  DB.indicators.forEach(function(i){
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    var achieved=(v&&v.status==='Verified')?v.value:(sub?sub.actual:null);
+    var remaining=achieved!=null?Math.max(0,(i.target||0)-achieved):null;
+    var status;
+    if(achieved==null){status='Missing Report';missing++;}
+    else if(v&&v.status==='Verified'){
+      verified++;
+      var pct=i.target?achieved/i.target:1;
+      status=pct<0.7?'Off Track':'On Track';
+      if(pct<0.7)offtrack++;
+    } else {
+      status='Pending Verification';pending++;
+    }
+    rows.push({name:i.name,proj:i.proj,target:i.target,achieved:achieved,remaining:remaining,status:status,unit:i.unit});
+  });
+  if($('vmr-reporting'))$('vmr-reporting').textContent=verified;
+  if($('vmr-pending'))$('vmr-pending').textContent=pending;
+  if($('vmr-missing'))$('vmr-missing').textContent=missing;
+  if($('vmr-offtrack'))$('vmr-offtrack').textContent=offtrack;
+  var sb={'Missing Report':'bR','Off Track':'bO','On Track':'bG','Pending Verification':'bY'};
+  body.innerHTML=rows.length?rows.map(function(r){
+    return '<tr><td>'+esc(r.name)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.target)+' '+esc(r.unit||'')+'</td>'+
+      '<td>'+(r.achieved!=null?fmt(r.achieved)+' '+esc(r.unit||''):'<span style="color:var(--g400)">—</span>')+'</td>'+
+      '<td>'+(r.remaining!=null?fmt(r.remaining):'—')+'</td>'+
+      '<td><span class="bdg '+(sb[r.status]||'bY')+'">'+r.status+'</span></td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No indicators yet.</td></tr>';
+}
+
+// ============ STRATEGY & BOARD ACTIONS (Executive) ============
+var _editingStrategyId=null;
+function openStrategyModal(id){
+  _editingStrategyId=id||null;
+  var s=id?DB.strategy.find(function(x){return x.id===id;}):null;
+  $('strategy-modal-title').textContent=s?'Edit Strategic Objective':'Add Strategic Objective';
+  $('sg-objective').value=s?s.objective:'';
+  $('sg-owner').value=s?s.owner:'';
+  $('sg-decision').value=s?s.decision:'Pending';
+  $('sg-status').value=s?s.status:'Open';
+  var sel=$('sg-projects');
+  sel.innerHTML=Object.keys(PROJ).map(function(k){return '<option value="'+esc(k)+'">'+esc(PROJ[k].name)+' ('+esc(k)+')</option>';}).join('');
+  if(s)Array.from(sel.options).forEach(function(o){if(s.projects.indexOf(o.value)!==-1)o.selected=true;});
+  openM('m-strategy');
+}
+function saveStrategy(){
+  var objective=$('sg-objective').value.trim();
+  if(!objective){alert('Please enter the strategic objective.');return;}
+  var owner=$('sg-owner').value.trim();
+  if(!owner){alert('Please enter an action owner.');return;}
+  var projects=Array.from($('sg-projects').selectedOptions).map(function(o){return o.value;});
+  var decision=$('sg-decision').value,status=$('sg-status').value;
+  if(_editingStrategyId){
+    var s=DB.strategy.find(function(x){return x.id===_editingStrategyId;});
+    if(s){s.objective=objective;s.owner=owner;s.projects=projects;s.decision=decision;s.status=status;}
+    logAudit('strategy-edit',_editingStrategyId,'Strategic objective updated');
+  } else {
+    DB.strategy.unshift({id:nid('STRAT'),objective:objective,owner:owner,projects:projects,decision:decision,status:status,
+      createdBy:SES.name,createdOn:today()});
+    logAudit('strategy-add',objective,'Strategic objective added');
+  }
+  closeM('m-strategy');
+  renderStrategy();
+  queueCloudSave();
+}
+function renderStrategy(){
+  var body=$('strategy-body');if(!body)return;
+  var sb={'Approved':'bG','Pending':'bO','Deferred':'bY','Rejected':'bR'};
+  var stb={'Open':'bO','In Progress':'bB','Done':'bG'};
+  body.innerHTML=DB.strategy.length?DB.strategy.map(function(s){
+    var projNames=s.projects.map(function(k){return PROJ[k]?PROJ[k].name:k;}).join(', ')||'—';
+    return '<tr><td>'+esc(s.objective)+'</td><td style="font-size:11.5px">'+esc(projNames)+'</td>'+
+      '<td><span class="bdg '+(sb[s.decision]||'bY')+'">'+esc(s.decision)+'</span></td><td>'+esc(s.owner)+'</td>'+
+      '<td><span class="bdg '+(stb[s.status]||'bY')+'">'+esc(s.status)+'</span></td>'+
+      '<td><button class="b bo bs" onclick="openStrategyModal(\''+s.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'strategy\',\''+s.id+'\')">Del</button></td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No strategic objectives recorded yet.</td></tr>';
+}
+
+// ============ WORKPLAN REVISIONS (Programs) ============
+function openWorkplanRevisionModal(){
+  var sel=$('wpr-proj');
+  sel.innerHTML=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).map(function(k){return '<option value="'+esc(k)+'">'+esc(PROJ[k].name)+' ('+esc(k)+')</option>';}).join('');
+  $('wpr-type').value='Timeline';$('wpr-original').value='';$('wpr-change').value='';$('wpr-impact').value='';
+  openM('m-wpr');
+}
+function saveWorkplanRevision(){
+  var proj=$('wpr-proj').value;
+  if(!proj){alert('No active project to select. Please select a project.');return;}
+  var original=$('wpr-original').value.trim(),change=$('wpr-change').value.trim(),impact=$('wpr-impact').value.trim();
+  if(!original||!change||!impact){alert('Please complete the original plan, requested change, and impact/reason.');return;}
+  DB.workplanRevisions.unshift({id:nid('WPR'),proj:proj,changeType:$('wpr-type').value,original:original,change:change,impact:impact,
+    status:'Pending',createdBy:SES.name,createdOn:today()});
+  logAudit('workplan-revision-requested',proj,'Revision requested by '+SES.name);
+  closeM('m-wpr');
+  renderWorkplanRevisions();
+  queueCloudSave();
+  alert('Revision submitted to the Executive Director for approval.');
+}
+function decideWorkplanRevision(id,decision){
+  var r=DB.workplanRevisions.find(function(x){return x.id===id;});if(!r)return;
+  r.status=decision;r.decidedBy=SES.name;r.decidedOn=today();
+  logAudit('workplan-revision-'+decision.toLowerCase(),r.proj,'Revision '+decision.toLowerCase()+' by '+SES.name);
+  renderWorkplanRevisions();
+  queueCloudSave();
+  alert('Revision '+decision.toLowerCase()+'.');
+}
+function renderWorkplanRevisions(){
+  var body=$('wpr-body');if(!body)return;
+  var sb={'Pending':'bO','Approved':'bG','Rejected':'bR'};
+  var canDecide=SES.role==='executive';
+  body.innerHTML=DB.workplanRevisions.length?DB.workplanRevisions.map(function(r){
+    var projName=PROJ[r.proj]?PROJ[r.proj].name:r.proj;
+    return '<tr><td>'+esc(projName)+'</td><td>'+esc(r.changeType)+'</td><td style="font-size:11.5px">'+esc(r.original)+'</td><td style="font-size:11.5px">'+esc(r.change)+'</td><td style="font-size:11.5px">'+esc(r.impact)+'</td>'+
+      '<td><span class="bdg '+(sb[r.status]||'bY')+'">'+esc(r.status)+'</span></td>'+
+      '<td>'+(canDecide&&r.status==='Pending'?'<button class="b bn bs" onclick="decideWorkplanRevision(\''+r.id+'\',\'Approved\')">Approve</button> <button class="b bo bs" onclick="decideWorkplanRevision(\''+r.id+'\',\'Rejected\')">Reject</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--g400)">No workplan revisions recorded yet.</td></tr>';
 }
 
 var curProjectCode=null;
@@ -5258,20 +5584,35 @@ var sgStageBdg={'Intake':'bO','Under Investigation':'bB','Closed':'bG'};
 function renderSGCases(){
   var c=$('sg-cases');if(!c)return;c.innerHTML='';
   if(!DB.sgCases.length){c.innerHTML='<div class="empty">No active investigations</div>';return;}
+  // The Safeguarding page is already locked out of ACCESS entirely for every other role, so
+  // "only assigned staff see case details" has to mean something inside the Safeguarding team
+  // itself: the department head and the specific assigned investigator get full detail; any
+  // other Safeguarding account (a second case worker, say) gets the permitted summary for a
+  // case that isn't theirs.
+  var isHead=tsIsHeadAccount();
   DB.sgCases.forEach(function(x){
+    var fullAccess=isHead||x.investigator===SES.name;
     var card=el('div','cd');card.style.marginBottom='10px';
     var body='<div class="cdb"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">';
-    body+='<div><b>'+x.id+'</b> \u2014 '+esc(x.title)+(x.confidential?' <span class="bdg bR" style="margin-left:4px">CONFIDENTIAL</span>':'')+
-      '<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(x.type)+' \u00b7 '+(x.proj?esc(x.proj):'-')+' \u00b7 '+esc(x.loc)+' \u00b7 Reported '+dt(x.date)+' \u00b7 Investigator: '+esc(x.investigator)+'</div></div>';
+    if(fullAccess){
+      body+='<div><b>'+x.id+'</b> \u2014 '+esc(x.title)+(x.confidential?' <span class="bdg bR" style="margin-left:4px">CONFIDENTIAL</span>':'')+
+        (x.legalHold?' <span class="bdg bD" style="margin-left:4px">LEGAL HOLD</span>':'')+
+        '<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(x.type)+' \u00b7 '+(x.proj?esc(x.proj):'-')+' \u00b7 '+esc(x.loc)+' \u00b7 Reported '+dt(x.date)+' \u00b7 Investigator: '+esc(x.investigator)+'</div></div>';
+    } else {
+      body+='<div><b>'+x.id+'</b> \u2014 '+esc(x.type)+' case'+(x.confidential?' <span class="bdg bR" style="margin-left:4px">CONFIDENTIAL</span>':'')+
+        '<div style="font-size:11px;color:var(--g500);margin-top:3px">Reported '+dt(x.date)+' \u00b7 Permitted summary only \u2014 assigned to another investigator</div></div>';
+    }
     body+='<span class="bdg '+sgStageBdg[x.stage]+'">'+esc(x.stage)+'</span></div>';
-    if(x.notes&&x.notes.length){
+    if(fullAccess && x.notes&&x.notes.length){
       body+='<div style="margin-top:9px">';
       x.notes.forEach(function(n){
         body+='<div style="font-size:11.5px;color:var(--g600);background:var(--g50);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(n.n)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(n.by)+' \u00b7 '+n.dt+'</div></div>';
       });
       body+='</div>';
+    } else if(!fullAccess && x.notes&&x.notes.length){
+      body+='<div style="margin-top:9px;font-size:11px;color:var(--g400)">'+x.notes.length+' investigation note(s) on file \u2014 visible to the assigned investigator and the Safeguarding Head only</div>';
     }
-    if(x.stage!=='Closed' && SES.role==='safeguarding'){
+    if(x.stage!=='Closed' && fullAccess){
       body+='<div class="wfa">';
       body+='<textarea data-sgnote="'+x.id+'" rows="2" placeholder="Add investigation note..." style="width:100%;padding:7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit;font-size:12px;margin-bottom:6px"></textarea>';
       body+='<button class="b bo bs" data-sgaddnote="'+x.id+'">Add Note</button>';
@@ -5279,10 +5620,83 @@ function renderSGCases(){
       if(x.stage==='Under Investigation')body+='<button class="b bn bs" data-sgclose="'+x.id+'">Close Case</button>';
       body+='</div>';
     }
+    if(fullAccess){
+      body+='<div class="wfa" style="margin-top:6px"><button class="b bo bs" onclick="toggleSGLegalHold(\''+x.id+'\')">'+(x.legalHold?'Release Legal Hold':'Place Legal Hold')+'</button></div>';
+    }
     body+='</div>';
     card.innerHTML=body;
     c.appendChild(card);
   });
+}
+function toggleSGLegalHold(id){
+  var x=DB.sgCases.find(function(c){return c.id===id;});if(!x)return;
+  x.legalHold=!x.legalHold;
+  logAudit('sg-legal-hold',id,(x.legalHold?'Legal hold placed':'Legal hold released')+' by '+SES.name);
+  renderSGCases();
+  queueCloudSave();
+}
+// Logged once per navigation to the Safeguarding page (not on every re-render), so the
+// Safeguarding Head can audit who on the team has been looking at which case.
+function logSGAccess(){
+  DB.sgCases.forEach(function(x){
+    DB.sgAccessLog.unshift({caseId:x.id,by:SES.name,role:SES.role,at:new Date().toISOString()});
+  });
+  if(DB.sgAccessLog.length>200)DB.sgAccessLog.length=200;
+  renderSGAccessLog();
+}
+function renderSGAccessLog(){
+  var body=$('sgaccess-body');if(!body)return;
+  if(!tsIsHeadAccount()){body.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--g400)">Access history is visible to the Safeguarding Head only.</td></tr>';return;}
+  body.innerHTML=DB.sgAccessLog.length?DB.sgAccessLog.slice(0,30).map(function(a){
+    return '<tr><td>'+esc(a.caseId)+'</td><td>'+esc(a.by)+'</td><td>'+esc(DEPTNAME[a.role]||a.role)+'</td><td style="font-size:11px">'+new Date(a.at).toLocaleString('en-GB')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--g400)">No access recorded yet.</td></tr>';
+}
+
+// ============ CONSENT & SAFE COMMUNICATION (Safeguarding) ============
+function openSGConsentModal(){
+  $('sgc-record').value='';$('sgc-channel').value='';$('sgc-restrictions').value='';$('sgc-referral').value='';
+  openM('m-sgconsent');
+}
+function saveSGConsent(){
+  var record=$('sgc-record').value.trim(),channel=$('sgc-channel').value.trim(),referral=$('sgc-referral').value.trim();
+  if(!record||!channel||!referral){alert('Please complete the consent record, safe contact channel, and referral permission.');return;}
+  DB.sgConsents.unshift({id:nid('SGC'),record:record,channel:channel,restrictions:$('sgc-restrictions').value.trim(),
+    referral:referral,createdBy:SES.name,createdOn:today()});
+  logAudit('sg-consent-recorded',record,'Consent record added by '+SES.name);
+  closeM('m-sgconsent');
+  renderSGConsents();
+  queueCloudSave();
+}
+function renderSGConsents(){
+  var body=$('sgconsent-body');if(!body)return;
+  if(SES.role!=='safeguarding'){body.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--g400)">Visible to Safeguarding only.</td></tr>';return;}
+  body.innerHTML=DB.sgConsents.length?DB.sgConsents.map(function(c){
+    return '<tr><td>'+esc(c.record)+'</td><td>'+esc(c.channel)+'</td><td style="font-size:11.5px">'+esc(c.restrictions||'\u2014')+'</td><td style="font-size:11.5px">'+esc(c.referral)+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--g400)">No consent records yet.</td></tr>';
+}
+
+// ============ TRAINING & PREVENTION (Safeguarding) ============
+function openSGTrainingModal(){
+  $('sgt-audience').value='';$('sgt-focal').value='';$('sgt-evidence').value='';$('sgt-refresher').value='';
+  openM('m-sgtraining');
+}
+function saveSGTraining(){
+  var audience=$('sgt-audience').value.trim(),focal=$('sgt-focal').value.trim(),evidence=$('sgt-evidence').value.trim(),refresher=$('sgt-refresher').value;
+  if(!audience||!focal||!evidence||!refresher){alert('Please complete every field.');return;}
+  DB.sgTraining.unshift({id:nid('SGT'),audience:audience,focal:focal,evidence:evidence,refresher:refresher,
+    createdBy:SES.name,createdOn:today()});
+  logAudit('sg-training-logged',audience,'Training/prevention record added by '+SES.name);
+  closeM('m-sgtraining');
+  renderSGTraining();
+  queueCloudSave();
+}
+function renderSGTraining(){
+  var body=$('sgtraining-body');if(!body)return;
+  body.innerHTML=DB.sgTraining.length?DB.sgTraining.map(function(t){
+    var overdue=t.refresher<today();
+    return '<tr><td>'+esc(t.audience)+'</td><td style="font-size:11.5px">'+esc(t.evidence)+'</td><td>'+esc(t.focal)+'</td>'+
+      '<td><span class="bdg '+(overdue?'bR':'bG')+'">'+dt(t.refresher)+(overdue?' \u2014 overdue':'')+'</span></td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--g400)">No training records yet.</td></tr>';
 }
 
 // ============ OPERATIONS ============
@@ -5356,6 +5770,170 @@ function renderFleetQuick(){
       '<div class="st og"><div class="stl">Service Due</div><div class="stv">'+due+'</div></div>'+
       '<div class="st rd"><div class="stl">In Maintenance</div><div class="stv">'+mt+'</div></div>';
   }
+}
+
+// ============ OPERATIONS: CUSTODY, TRANSFERS & RETURNS ============
+function openCustodyModal(){
+  $('cu-asset').value='';$('cu-handover').value=today();$('cu-approved').value='';
+  openM('m-custody');
+}
+function saveCustody(){
+  var asset=$('cu-asset').value.trim();
+  if(!asset){alert('Please identify the asset / staff.');return;}
+  DB.custodyRecords.unshift({id:nid('CUS'),asset:asset,handover:$('cu-handover').value||today(),
+    approved:$('cu-approved').value.trim(),returnDate:null,returnCondition:null,status:'With Staff',
+    createdBy:SES.name,createdOn:today()});
+  logAudit('custody-logged',asset,'Custody/transfer logged by '+SES.name);
+  closeM('m-custody');
+  renderCustody();
+  queueCloudSave();
+}
+function returnCustody(id){
+  var c=DB.custodyRecords.find(function(x){return x.id===id;});if(!c)return;
+  var cond=window.prompt('Return condition (e.g. Good / Fair / Damaged):','Good');
+  if(cond===null)return;
+  c.returnDate=today();c.returnCondition=cond;c.status='Returned';
+  logAudit('custody-returned',c.asset,'Returned by '+SES.name+' — condition: '+cond);
+  renderCustody();
+  queueCloudSave();
+}
+function renderCustody(){
+  var body=$('custody-body');if(!body)return;
+  body.innerHTML=DB.custodyRecords.length?DB.custodyRecords.map(function(c){
+    return '<tr><td>'+esc(c.asset)+'</td><td>'+dt(c.handover)+'</td>'+
+      '<td style="font-size:11.5px">'+(c.returnDate?dt(c.returnDate)+' · '+esc(c.returnCondition):'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(c.approved||'—')+'</td>'+
+      '<td><span class="bdg '+(c.status==='Returned'?'bG':'bO')+'">'+c.status+'</span></td>'+
+      '<td>'+(c.status==='With Staff'?'<button class="b bo bs" onclick="returnCustody(\''+c.id+'\')">Mark Returned</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No custody records yet</td></tr>';
+}
+
+// ============ OPERATIONS: MAINTENANCE SCHEDULE ============
+function openMaintenanceModal(){
+  $('mt-item').value='';$('mt-due').value='';$('mt-provider').value='';$('mt-cost').value='';
+  openM('m-maintenance');
+}
+function saveMaintenance(){
+  var item=$('mt-item').value.trim(),due=$('mt-due').value;
+  if(!item||!due){alert('Please identify the asset/vehicle and the service due date.');return;}
+  DB.maintenanceSchedule.unshift({id:nid('MNT'),item:item,due:due,provider:$('mt-provider').value.trim(),
+    cost:parseFloat($('mt-cost').value)||0,evidence:null,status:'Scheduled',createdBy:SES.name,createdOn:today()});
+  logAudit('maintenance-scheduled',item,'Maintenance scheduled by '+SES.name);
+  closeM('m-maintenance');
+  renderMaintenance();
+  queueCloudSave();
+}
+function completeMaintenance(id){
+  var m=DB.maintenanceSchedule.find(function(x){return x.id===id;});if(!m)return;
+  var evidence=window.prompt('Completion evidence (e.g. invoice ref, signed service sheet):','');
+  if(evidence===null)return;
+  m.evidence=evidence;m.status='Completed';m.completedBy=SES.name;m.completedOn=today();
+  logAudit('maintenance-completed',m.item,'Completed by '+SES.name);
+  renderMaintenance();
+  queueCloudSave();
+}
+function renderMaintenance(){
+  var body=$('maintenance-body');if(!body)return;
+  body.innerHTML=DB.maintenanceSchedule.length?DB.maintenanceSchedule.map(function(m){
+    var dueCls=m.status==='Scheduled'&&overdue(m.due)?' style="color:var(--red);font-weight:600"':'';
+    return '<tr><td>'+esc(m.item)+'</td><td'+dueCls+'>'+dt(m.due)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(m.provider||'—')+(m.cost?' · '+money(m.cost):'')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(m.evidence||'—')+'</td>'+
+      '<td><span class="bdg '+(m.status==='Completed'?'bG':'bO')+'">'+m.status+'</span></td>'+
+      '<td>'+(m.status==='Scheduled'?'<button class="b bo bs" onclick="completeMaintenance(\''+m.id+'\')">Mark Completed</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No maintenance scheduled yet</td></tr>';
+}
+
+// ============ OPERATIONS: FUEL & TRIP LOGS ============
+function openFuelLogModal(){
+  $('fl-auth').value='';$('fl-date').value=today();$('fl-odo').value='';$('fl-qty').value='';$('fl-cost').value='';$('fl-driver').value='';
+  var sel=$('fl-vehicle');sel.innerHTML=DB.fleet.map(function(v){return '<option value="'+v.id+'">'+esc(v.plate)+' - '+esc(v.model)+'</option>';}).join('')||'<option value="">No vehicles registered</option>';
+  openM('m-fuellog');
+}
+function saveFuelLog(){
+  var auth=$('fl-auth').value.trim(),vehicleId=$('fl-vehicle').value;
+  if(!auth||!vehicleId){alert('Please provide the travel authorization and select a vehicle.');return;}
+  var v=DB.fleet.find(function(x){return x.id===vehicleId;});
+  DB.fuelTripLogs.unshift({id:nid('FUEL'),auth:auth,vehicleId:vehicleId,plate:v?v.plate:vehicleId,date:$('fl-date').value||today(),
+    odo:parseFloat($('fl-odo').value)||0,qty:parseFloat($('fl-qty').value)||0,cost:parseFloat($('fl-cost').value)||0,
+    driver:$('fl-driver').value.trim(),reconciled:false,createdBy:SES.name,createdOn:today()});
+  logAudit('fuel-trip-logged',auth,'Fuel/trip log recorded by '+SES.name);
+  closeM('m-fuellog');
+  renderFuelLogs();
+  queueCloudSave();
+}
+function reconcileFuelLog(id){
+  var f=DB.fuelTripLogs.find(function(x){return x.id===id;});if(!f)return;
+  f.reconciled=true;f.reconciledBy=SES.name;f.reconciledOn=today();
+  logAudit('fuel-trip-reconciled',f.auth,'Reconciled by '+SES.name);
+  renderFuelLogs();
+  queueCloudSave();
+}
+function renderFuelLogs(){
+  var body=$('fuellog-body');if(!body)return;
+  body.innerHTML=DB.fuelTripLogs.length?DB.fuelTripLogs.map(function(f){
+    return '<tr><td>'+esc(f.auth)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(f.plate)+' · '+dt(f.date)+' · '+f.odo+'km</td>'+
+      '<td style="font-size:11.5px">'+f.qty+'L · '+money(f.cost)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(f.driver||'—')+' · <span class="bdg '+(f.reconciled?'bG':'bO')+'">'+(f.reconciled?'Reconciled':'Pending')+'</span></td>'+
+      '<td>'+(f.reconciled?'—':'<button class="b bo bs" onclick="reconcileFuelLog(\''+f.id+'\')">Reconcile</button>')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No fuel/trip logs yet</td></tr>';
+}
+
+// ============ OPERATIONS: DISPOSAL & INSURANCE ============
+function toggleDisposalFields(){
+  var isDisposal=$('ds-type').value==='Disposal';
+  $('ds-reason-wrap').style.display=isDisposal?'':'none';
+  $('ds-approval-wrap').style.display=isDisposal?'':'none';
+  $('ds-evidence-wrap').style.display=isDisposal?'':'none';
+  $('ds-expiry-wrap').style.display=isDisposal?'none':'';
+}
+function openDisposalModal(){
+  $('ds-type').value='Disposal';$('ds-ref').value='';$('ds-reason').value='';$('ds-approval').value='';$('ds-evidence').value='';$('ds-expiry').value='';
+  toggleDisposalFields();
+  openM('m-disposal');
+}
+function saveDisposal(){
+  var type=$('ds-type').value,ref=$('ds-ref').value.trim();
+  if(!ref){alert('Please identify the asset / policy.');return;}
+  var rec={id:nid('DSP'),type:type,ref:ref,createdBy:SES.name,createdOn:today()};
+  if(type==='Disposal'){
+    rec.reason=$('ds-reason').value.trim();rec.approval=$('ds-approval').value.trim();
+    rec.evidence=$('ds-evidence').value.trim();rec.status=rec.evidence?'Disposed':'Pending';
+  } else {
+    rec.expiry=$('ds-expiry').value||null;rec.status='Active';
+  }
+  DB.disposalInsurance.unshift(rec);
+  logAudit('disposal-insurance-logged',ref,type+' record logged by '+SES.name);
+  closeM('m-disposal');
+  renderDisposal();
+  queueCloudSave();
+}
+function markDisposed(id){
+  var r=DB.disposalInsurance.find(function(x){return x.id===id;});if(!r)return;
+  var evidence=window.prompt('Sale / write-off evidence (e.g. sold for $150, receipt filed):','');
+  if(evidence===null)return;
+  r.evidence=evidence;r.status='Disposed';r.disposedBy=SES.name;r.disposedOn=today();
+  logAudit('asset-disposed',r.ref,'Disposed by '+SES.name);
+  renderDisposal();
+  queueCloudSave();
+}
+function renderDisposal(){
+  var body=$('disposal-body');if(!body)return;
+  body.innerHTML=DB.disposalInsurance.length?DB.disposalInsurance.map(function(r){
+    if(r.type==='Disposal'){
+      return '<tr><td>'+esc(r.ref)+' <span class="bdg bN" style="margin-left:4px">Disposal</span></td>'+
+        '<td style="font-size:11.5px">'+esc(r.reason||'—')+' · '+esc(r.approval||'—')+'</td>'+
+        '<td style="font-size:11.5px">'+esc(r.evidence||'—')+'</td><td>—</td>'+
+        '<td><span class="bdg '+(r.status==='Disposed'?'bG':'bO')+'">'+r.status+'</span></td>'+
+        '<td>'+(r.status==='Pending'?'<button class="b bo bs" onclick="markDisposed(\''+r.id+'\')">Mark Disposed</button>':'—')+'</td></tr>';
+    }
+    var daysLeft=r.expiry?Math.round((new Date(r.expiry)-new Date(today()))/86400000):null;
+    var expBadge=daysLeft===null?'<span class="bdg bN">No expiry set</span>':daysLeft<0?'<span class="bdg bR">Expired</span>':daysLeft<=30?'<span class="bdg bR">'+daysLeft+'d left</span>':daysLeft<=90?'<span class="bdg bO">'+daysLeft+'d left</span>':'<span class="bdg bG">'+daysLeft+'d left</span>';
+    return '<tr><td>'+esc(r.ref)+' <span class="bdg bN" style="margin-left:4px">Insurance</span></td>'+
+      '<td>—</td><td>—</td><td>'+(r.expiry?dt(r.expiry):'—')+' '+expBadge+'</td>'+
+      '<td><span class="bdg bN">'+r.status+'</span></td><td>—</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No disposal or insurance records yet</td></tr>';
 }
 
 function editVehicle(id){
@@ -5607,6 +6185,12 @@ function openIndicatorUpdateModal(id){
 function saveIndicatorUpdate(){
   if(!_indUpdateId)return;
   var i=DB.indicators.find(function(x){return x.id===_indUpdateId;});if(!i)return;
+  var updateDate=$('iu-date').value||today();
+  var month=updateDate.slice(0,7);
+  if(i.verifications && i.verifications[month] && i.verifications[month].status==='Verified'){
+    alert('MEAL has verified and locked '+month+' for this indicator. Contact MEAL to reopen the month before submitting a new value.');
+    return;
+  }
   var actual=parseInt($('iu-actual').value);
   if(isNaN(actual)){alert('Please enter the new actual value.');return;}
   var femaleStr=$('iu-female').value.trim(),maleStr=$('iu-male').value.trim();
@@ -5616,11 +6200,96 @@ function saveIndicatorUpdate(){
     return;
   }
   i.updates=i.updates||[];
-  i.updates.push({date:$('iu-date').value||today(),actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name});
+  i.updates.push({date:updateDate,actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name});
   i.actual=actual;
   if(female!==null)i.actualFemale=female;
   if(male!==null)i.actualMale=male;
   closeM('m-ind-update');renderInd();queueCloudSave();
+}
+
+// ============ MONTHLY VERIFICATION & LOCKING (MEAL) ============
+function indicatorMonthSubmission(i,month){
+  var inMonth=(i.updates||[]).filter(function(u){return u.date&&u.date.slice(0,7)===month;});
+  return inMonth.length?inMonth[inMonth.length-1]:null;
+}
+function getVerification(i,month){
+  if(!i.verifications)i.verifications={};
+  if(!i.verifications[month])i.verifications[month]={status:'Pending',corrections:[]};
+  return i.verifications[month];
+}
+function verifyIndicatorMonth(indId,month){
+  var i=DB.indicators.find(function(x){return x.id===indId;});if(!i)return;
+  var sub=indicatorMonthSubmission(i,month);
+  if(!sub){alert('No submitted result for this month yet.');return;}
+  var v=getVerification(i,month);
+  v.status='Verified';v.value=sub.actual;v.by=SES.name;v.on=today();
+  logAudit('indicator-verified',indId,month+' verified at '+sub.actual+' by '+SES.name);
+  renderMonthlyVerification();renderMonthlyReport();renderVerifiedMonthlyResults();
+  queueCloudSave();
+}
+function returnIndicatorMonth(indId,month){
+  var note=window.prompt("Reason for returning this month's result for correction:",'');
+  if(!note)return;
+  var i=DB.indicators.find(function(x){return x.id===indId;});if(!i)return;
+  var v=getVerification(i,month);
+  v.status='Returned';
+  v.corrections.push({by:SES.name,on:today(),note:note});
+  logAudit('indicator-returned',indId,month+' returned for correction by '+SES.name+': '+note);
+  renderMonthlyVerification();renderMonthlyReport();renderVerifiedMonthlyResults();
+  queueCloudSave();
+}
+function renderMonthlyVerification(){
+  var body=$('mv-body');if(!body)return;
+  var monthEl=$('mv-month');
+  if(monthEl && !monthEl.value)monthEl.value=today().slice(0,7);
+  var month=monthEl?monthEl.value:today().slice(0,7);
+  var sb={'Pending':'bO','Verified':'bG','Returned':'bR'};
+  var canAct=SES.role==='meal';
+  body.innerHTML=DB.indicators.length?DB.indicators.map(function(i){
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    var corrections=v&&v.corrections.length?v.corrections.map(function(c){return esc(c.on)+': '+esc(c.note);}).join('<br>'):'—';
+    var decision=!sub?'<span style="color:var(--g400)">No submission</span>':'<span class="bdg '+(sb[v.status]||'bY')+'">'+esc(v.status)+(v.status==='Verified'?' · '+dt(v.on):'')+'</span>';
+    var actions='';
+    if(canAct && sub && v.status!=='Verified'){
+      actions='<button class="b bn bs" onclick="verifyIndicatorMonth(\''+i.id+'\',\''+month+'\')">Verify &amp; Lock</button> <button class="b bo bs" onclick="returnIndicatorMonth(\''+i.id+'\',\''+month+'\')">Return</button>';
+    }
+    return '<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+(sub?fmt(sub.actual)+' '+esc(i.unit||''):'—')+'</td>'+
+      '<td>'+decision+'</td><td style="font-size:11px">'+corrections+'</td><td>'+actions+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No indicators yet.</td></tr>';
+}
+
+// ============ MONTHLY REPORT & CHARTS (MEAL) ============
+function renderMonthlyReport(){
+  var monthEl=$('mv-month');
+  var month=monthEl&&monthEl.value?monthEl.value:today().slice(0,7);
+  var achieved=0,offtrack=0,outstanding=0;
+  DB.indicators.forEach(function(i){
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    if(!sub||!v||v.status!=='Verified'){outstanding++;return;}
+    var pct=i.target?v.value/i.target:1;
+    if(pct<0.7)offtrack++;else achieved++;
+  });
+  if($('mr-locked'))$('mr-locked').textContent=month;
+  if($('mr-achieved'))$('mr-achieved').textContent=achieved;
+  if($('mr-offtrack'))$('mr-offtrack').textContent=offtrack;
+  if($('mr-outstanding'))$('mr-outstanding').textContent=outstanding;
+}
+function exportMonthlyReport(){
+  var monthEl=$('mv-month');
+  var month=monthEl&&monthEl.value?monthEl.value:today().slice(0,7);
+  var rows=[['Indicator','Project','Target','Submitted Result','Verification Status','Verified Value','Verified By','Verified On']];
+  DB.indicators.forEach(function(i){
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    rows.push([i.name,i.proj,i.target,sub?sub.actual:'',v?v.status:'No submission',v&&v.status==='Verified'?v.value:'',v&&v.status==='Verified'?v.by:'',v&&v.status==='Verified'?v.on:'']);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='MEAL-monthly-report-'+month+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function saveCFRM(){
@@ -6422,10 +7091,377 @@ function invoiceMatchStatus(inv){
 function approveInvoicePayment(id){
   var inv=DB.invoices.find(function(x){return x.id===id;});
   if(!inv)return;
+  // Independent control: the department that received the goods and matched the invoice
+  // (Supply Chain) is not the one who approves it for payment -- that's Finance's job, so a
+  // single department can never push its own invoice all the way through to payment alone.
+  var orgWide=['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  if(SES.role!=='finance' && !orgWide){alert('Only Finance can approve an invoice for payment.');return;}
   var m=invoiceMatchStatus(inv);
   if(m.label!=='Matched'){alert('This invoice cannot be approved for payment yet: '+m.label+'. Resolve the mismatch first.');return;}
   inv.status='Approved for Payment';
-  renderInvoices();queueCloudSave();
+  inv.paymentApprover=SES.name;inv.paymentApprovedOn=today();
+  logAudit('invoice-payment-approved',id,'Approved for payment by '+SES.name);
+  renderInvoices();renderFinanceInvoiceControls();queueCloudSave();
+}
+function recordInvoicePayment(id){
+  var inv=DB.invoices.find(function(x){return x.id===id;});
+  if(!inv||inv.status!=='Approved for Payment')return;
+  var ref=window.prompt('Payment reference (bank transfer ref / cheque number):','');
+  if(!ref||!ref.trim())return;
+  inv.status='Paid';inv.paymentRef=ref.trim();inv.paidOn=today();
+  logAudit('invoice-paid',id,'Payment recorded by '+SES.name+': '+ref.trim());
+  renderInvoices();renderFinanceInvoiceControls();queueCloudSave();
+}
+function renderFinanceInvoiceControls(){
+  var body=$('fin-inv-body');if(!body)return;
+  if($('fin-inv-pending'))$('fin-inv-pending').textContent=DB.invoices.filter(function(inv){return inv.status==='Pending';}).length;
+  if($('fin-inv-discrepancy'))$('fin-inv-discrepancy').textContent=DB.invoices.filter(function(inv){return invoiceMatchStatus(inv).label==='Discrepancy';}).length;
+  var canAct=SES.role==='finance'||['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  body.innerHTML=DB.invoices.length?DB.invoices.slice().reverse().map(function(inv){
+    var po=DB.po.find(function(p){return p.id===inv.poId;});
+    var m=invoiceMatchStatus(inv);
+    var grn=grnForPO(inv.poId);
+    var action='';
+    if(canAct && m.label==='Matched' && inv.status==='Pending')action='<button class="b bn bs" onclick="approveInvoicePayment(\''+inv.id+'\')">Approve for Payment</button>';
+    else if(canAct && inv.status==='Approved for Payment')action='<button class="b bo bs" onclick="recordInvoicePayment(\''+inv.id+'\')">Record Payment</button>';
+    return '<tr><td>'+esc(inv.invoiceNumber)+'</td><td>'+esc(inv.poNumber)+(grn?' / '+esc(grn.grnNumber):' / awaiting GRN')+'</td>'+
+      '<td><span class="bdg '+m.cls+'">'+m.label+'</span></td>'+
+      '<td>'+(inv.paymentApprover?esc(inv.paymentApprover)+' · '+dt(inv.paymentApprovedOn):'<span style="color:var(--g400)">—</span>')+'</td>'+
+      '<td>'+(inv.paymentRef?esc(inv.paymentRef)+' · '+dt(inv.paidOn):'<span style="color:var(--g400)">—</span>')+'</td>'+
+      '<td>'+action+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No supplier invoices recorded yet.</td></tr>';
+}
+
+// ============ BUDGET REVISION APPROVAL (Finance) ============
+function openBudgetRevisionModal(){
+  var sel=$('br-proj');
+  sel.innerHTML=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).map(function(k){return '<option value="'+esc(k)+'">'+esc(PROJ[k].name)+' ('+esc(k)+')</option>';}).join('');
+  $('br-changes').value='';$('br-reason').value='';
+  openM('m-budrev');
+}
+function saveBudgetRevision(){
+  var proj=$('br-proj').value;
+  if(!proj){alert('No active project to select.');return;}
+  var changes=$('br-changes').value.trim(),reason=$('br-reason').value.trim();
+  if(!changes||!reason){alert('Please complete the budget-line changes and reason/donor consent.');return;}
+  DB.budgetRevisions.unshift({id:nid('BREV'),proj:proj,changes:changes,reason:reason,status:'Pending',createdBy:SES.name,createdOn:today()});
+  logAudit('budget-revision-requested',proj,'Budget revision requested by '+SES.name);
+  closeM('m-budrev');
+  renderBudgetRevisions();
+  queueCloudSave();
+  alert('Budget revision submitted to the Executive Director for approval.');
+}
+function decideBudgetRevision(id,decision){
+  var r=DB.budgetRevisions.find(function(x){return x.id===id;});if(!r)return;
+  r.status=decision;r.decidedBy=SES.name;r.decidedOn=today();
+  logAudit('budget-revision-'+decision.toLowerCase(),r.proj,'Budget revision '+decision.toLowerCase()+' by '+SES.name);
+  renderBudgetRevisions();
+  queueCloudSave();
+}
+function renderBudgetRevisions(){
+  var body=$('budrev-body');if(!body)return;
+  var sb={'Pending':'bO','Approved':'bG','Rejected':'bR'};
+  var canDecide=SES.role==='executive';
+  body.innerHTML=DB.budgetRevisions.length?DB.budgetRevisions.map(function(r){
+    var projName=PROJ[r.proj]?PROJ[r.proj].name:r.proj;
+    return '<tr><td>'+esc(projName)+'</td><td style="font-size:11.5px">'+esc(r.changes)+'</td><td style="font-size:11.5px">'+esc(r.reason)+'</td>'+
+      '<td><span class="bdg '+(sb[r.status]||'bY')+'">'+esc(r.status)+'</span></td>'+
+      '<td>'+(canDecide&&r.status==='Pending'?'<button class="b bn bs" onclick="decideBudgetRevision(\''+r.id+'\',\'Approved\')">Approve</button> <button class="b bo bs" onclick="decideBudgetRevision(\''+r.id+'\',\'Rejected\')">Reject</button>':(r.decidedBy?esc(r.decidedBy)+' · '+dt(r.decidedOn):'<span style="color:var(--g400)">—</span>'))+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No budget revisions recorded yet.</td></tr>';
+}
+
+// ============ PAYROLL & ACCOUNTING CONNECTION (Finance) ============
+function openPayrollPeriodModal(){
+  $('pp-period').value=today().slice(0,7);$('pp-cost').value='';$('pp-allocations').value='';$('pp-accref').value='';
+  openM('m-payroll');
+}
+function savePayrollPeriod(){
+  var period=$('pp-period').value;
+  if(!period){alert('Please select the payroll period.');return;}
+  var cost=parseFloat($('pp-cost').value);
+  if(!cost||cost<=0){alert('Please enter a valid approved total cost.');return;}
+  var allocations=$('pp-allocations').value.trim();
+  if(!allocations){alert('Please describe the cost allocations.');return;}
+  if(DB.payrollPeriods.some(function(p){return p.period===period;})){alert('A payroll period for '+period+' already exists.');return;}
+  DB.payrollPeriods.unshift({id:nid('PAYP'),period:period,cost:cost,allocations:allocations,accountingRef:$('pp-accref').value.trim(),
+    reconciliationStatus:'Pending',createdBy:SES.name,createdOn:today()});
+  logAudit('payroll-period-added',period,'Payroll period added by '+SES.name);
+  closeM('m-payroll');
+  renderPayrollPeriods();
+  queueCloudSave();
+}
+function markPayrollReconciled(id){
+  var p=DB.payrollPeriods.find(function(x){return x.id===id;});if(!p)return;
+  p.reconciliationStatus='Reconciled';p.reconciledBy=SES.name;p.reconciledOn=today();
+  logAudit('payroll-reconciled',p.period,'Marked reconciled by '+SES.name);
+  renderPayrollPeriods();
+  queueCloudSave();
+}
+function renderPayrollPeriods(){
+  var body=$('payroll-body');if(!body)return;
+  var sb={'Pending':'bO','Reconciled':'bG'};
+  body.innerHTML=DB.payrollPeriods.length?DB.payrollPeriods.map(function(p){
+    return '<tr><td>'+esc(p.period)+' · '+money(p.cost,'USD')+'</td><td style="font-size:11.5px">'+esc(p.allocations)+'</td>'+
+      '<td>'+esc(p.accountingRef||'—')+'</td>'+
+      '<td><span class="bdg '+(sb[p.reconciliationStatus]||'bY')+'">'+esc(p.reconciliationStatus)+'</span></td>'+
+      '<td>'+(p.reconciliationStatus==='Pending'?'<button class="b bo bs" onclick="markPayrollReconciled(\''+p.id+'\')">Mark Reconciled</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No payroll periods recorded yet.</td></tr>';
+}
+
+// ============ EMPLOYMENT & ACCESS LINKAGE (HR) ============
+function openAccessLinkModal(){
+  $('al-staff').value='';$('al-role').value='';$('al-from').value=today();$('al-to').value='';
+  var sel=$('al-account');
+  sel.innerHTML='<option value="">No matching account yet</option>'+loginAccountsList().map(function(a){return '<option value="'+esc(a.username)+'">'+esc(a.name)+' ('+esc(a.username)+')</option>';}).join('');
+  openM('m-accesslink');
+}
+function saveAccessLink(){
+  var staff=$('al-staff').value.trim(),role=$('al-role').value.trim(),from=$('al-from').value;
+  if(!staff||!role||!from){alert('Please complete staff identity, approved role/scope, and effective from date.');return;}
+  var username=$('al-account').value;
+  var rec={id:nid('ACL'),staff:staff,account:username||null,role:role,from:from,to:$('al-to').value||null,
+    status:username?'Applied':'Pending',requestedBy:SES.name,requestedOn:today()};
+  if(username){
+    var u=DB.users.find(function(x){return x.username===username;});
+    if(u){u.position=role;rec.appliedBy=SES.name;rec.appliedOn=today();}
+  }
+  DB.accessLinks.unshift(rec);
+  logAudit('access-link-recorded',staff,'Employment/access change recorded by '+SES.name+(username?' and applied to account '+username:''));
+  closeM('m-accesslink');
+  renderAccessLinks();
+  queueCloudSave();
+}
+function applyAccessLink(id){
+  var r=DB.accessLinks.find(function(x){return x.id===id;});if(!r)return;
+  var accts=loginAccountsList();
+  var match=accts.find(function(a){return a.name===r.staff;});
+  if(!match){alert('No account yet exists for "'+r.staff+'". Create their staff account first (Staff Directory), then apply this change.');return;}
+  var u=DB.users.find(function(x){return x.username===match.username;});
+  if(u){u.position=r.role;}
+  r.account=match.username;r.status='Applied';r.appliedBy=SES.name;r.appliedOn=today();
+  logAudit('access-link-applied',r.staff,'Applied to account '+match.username+' by '+SES.name);
+  renderAccessLinks();
+  queueCloudSave();
+}
+function renderAccessLinks(){
+  var body=$('accesslink-body');if(!body)return;
+  body.innerHTML=DB.accessLinks.length?DB.accessLinks.map(function(r){
+    var dates=dt(r.from)+(r.to?' – '+dt(r.to):' – ongoing');
+    var statusHtml=r.status==='Applied'?'<span class="bdg bG">Applied to '+esc(r.account||'')+'</span>':'<span class="bdg bO">Pending — no account yet</span>';
+    return '<tr><td>'+esc(r.staff)+'</td><td>'+statusHtml+'</td><td>'+esc(r.role)+'</td><td style="font-size:11.5px">'+dates+'</td>'+
+      '<td>'+(r.status==='Pending'?'<button class="b bo bs" onclick="applyAccessLink(\''+r.id+'\')">Apply Now</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No employment/access changes recorded yet.</td></tr>';
+}
+
+// ============ BID EVALUATION & COMMITTEE (Supply Chain) ============
+function openBidEvalModal(){
+  $('be-item').value='';$('be-bids').value='';$('be-scores').value='';$('be-decision').value='';
+  $('be-conflict').value='No committee member declared a conflict of interest';
+  openM('m-bideval');
+}
+function saveBidEval(){
+  var item=$('be-item').value.trim(),bids=$('be-bids').value.trim(),scores=$('be-scores').value.trim(),
+    decision=$('be-decision').value.trim(),conflict=$('be-conflict').value.trim();
+  if(!item||!bids||!scores||!decision||!conflict){alert('Please complete every field.');return;}
+  DB.bidEvaluations.unshift({id:nid('BID'),item:item,bids:bids,scores:scores,decision:decision,conflict:conflict,
+    createdBy:SES.name,createdOn:today()});
+  logAudit('bid-evaluation-recorded',item,'Bid evaluation recorded by '+SES.name);
+  closeM('m-bideval');
+  renderBidEvals();
+  queueCloudSave();
+}
+function renderBidEvals(){
+  var body=$('bideval-body');if(!body)return;
+  body.innerHTML=DB.bidEvaluations.length?DB.bidEvaluations.map(function(b){
+    return '<tr><td>'+esc(b.item)+'</td><td style="font-size:11.5px">'+esc(b.bids)+'</td><td style="font-size:11.5px">'+esc(b.scores)+'</td>'+
+      '<td>'+esc(b.decision)+'</td><td style="font-size:11.5px">'+esc(b.conflict)+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No bid evaluations recorded yet.</td></tr>';
+}
+
+// ============ PARTIAL RECEIPTS & RETURNS (Supply Chain) ============
+function shortReceivedItems(){
+  var list=[];
+  DB.grn.forEach(function(g){
+    (g.items||[]).forEach(function(it,idx){
+      if(it.receivedQty<it.orderedQty){
+        var issue=DB.receiptIssues.find(function(r){return r.grnId===g.id&&r.itemIndex===idx;});
+        list.push({grn:g,item:it,idx:idx,issue:issue});
+      }
+    });
+  });
+  return list;
+}
+var _curReceiptIssueKey=null;
+function openReceiptIssueModal(grnId,idx){
+  _curReceiptIssueKey={grnId:grnId,idx:idx};
+  var g=DB.grn.find(function(x){return x.id===grnId;});if(!g)return;
+  var it=g.items[idx];
+  var existing=DB.receiptIssues.find(function(r){return r.grnId===grnId&&r.itemIndex===idx;});
+  $('ri-ctx').innerHTML='<b>'+esc(g.poNumber)+'</b> — '+esc(it.desc)+'<div style="font-size:11px;color:var(--g500);margin-top:3px">Ordered '+it.orderedQty+' · Received '+it.receivedQty+' · Remaining '+(it.orderedQty-it.receivedQty)+'</div>';
+  $('ri-return').value=existing?existing.returnReplacement:'';
+  $('ri-effect').value=existing?existing.stockEffect:'';
+  openM('m-receiptissue');
+}
+function saveReceiptIssue(){
+  var k=_curReceiptIssueKey;if(!k)return;
+  var ret=$('ri-return').value.trim(),effect=$('ri-effect').value.trim();
+  if(!ret||!effect){alert('Please complete the return/replacement plan and the stock & payment effect.');return;}
+  var existing=DB.receiptIssues.find(function(r){return r.grnId===k.grnId&&r.itemIndex===k.idx;});
+  if(existing){
+    existing.returnReplacement=ret;existing.stockEffect=effect;
+  } else {
+    var g=DB.grn.find(function(x){return x.id===k.grnId;});if(!g)return;
+    var it=g.items[k.idx];
+    DB.receiptIssues.push({id:nid('RI'),grnId:k.grnId,itemIndex:k.idx,poNumber:g.poNumber,itemDesc:it.desc,
+      accepted:it.receivedQty,rejected:0,remaining:it.orderedQty-it.receivedQty,
+      returnReplacement:ret,stockEffect:effect,status:'Open',createdBy:SES.name,createdOn:today()});
+  }
+  logAudit('receipt-issue-logged',k.grnId,'Receipt issue logged by '+SES.name);
+  closeM('m-receiptissue');
+  renderReceiptIssues();
+  queueCloudSave();
+}
+function resolveReceiptIssue(id){
+  var r=DB.receiptIssues.find(function(x){return x.id===id;});if(!r)return;
+  r.status='Resolved';r.resolvedBy=SES.name;r.resolvedOn=today();
+  logAudit('receipt-issue-resolved',r.poNumber,'Resolved by '+SES.name);
+  renderReceiptIssues();
+  queueCloudSave();
+}
+function renderReceiptIssues(){
+  var body=$('receiptissue-body');if(!body)return;
+  var rows=shortReceivedItems();
+  if(!rows.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--g400)">No short-received items on record.</td></tr>';return;}
+  body.innerHTML=rows.map(function(r){
+    var qty=r.item.receivedQty+' accepted / 0 rejected / '+(r.item.orderedQty-r.item.receivedQty)+' remaining';
+    var ref=esc(r.grn.poNumber)+' — '+esc(r.item.desc);
+    if(r.issue){
+      return '<tr><td>'+ref+'</td><td>'+qty+'</td>'+
+        '<td style="font-size:11.5px">'+esc(r.issue.returnReplacement)+'</td><td style="font-size:11.5px">'+esc(r.issue.stockEffect)+'</td>'+
+        '<td><span class="bdg '+(r.issue.status==='Resolved'?'bG':'bO')+'">'+r.issue.status+'</span></td>'+
+        '<td>'+(r.issue.status==='Open'?'<button class="b bo bs" onclick="openReceiptIssueModal(\''+r.grn.id+'\','+r.idx+')">Edit</button> <button class="b bn bs" onclick="resolveReceiptIssue(\''+r.issue.id+'\')">Resolve</button>':'')+'</td></tr>';
+    }
+    return '<tr><td>'+ref+'</td><td>'+qty+'</td>'+
+      '<td style="color:var(--g400)">Not logged</td><td style="color:var(--g400)">Not logged</td><td><span class="bdg bR">Needs Log</span></td>'+
+      '<td><button class="b bn bs" onclick="openReceiptIssueModal(\''+r.grn.id+'\','+r.idx+')">Log Issue</button></td></tr>';
+  }).join('');
+}
+
+// ============ CORRESPONDENCE REGISTER (Administration) ============
+function openCorrespondenceModal(){
+  $('co-direction').value='Incoming';$('co-ref').value='';$('co-sender').value='';$('co-recipient').value='';
+  $('co-date').value=today();$('co-action').value='';$('co-owner').value='';
+  openM('m-correspondence');
+}
+function saveCorrespondence(){
+  var ref=$('co-ref').value.trim(),owner=$('co-owner').value.trim(),date=$('co-date').value;
+  if(!ref||!owner||!date){alert('Please complete the letter reference, date, and owner.');return;}
+  DB.correspondence.unshift({id:nid('CORR'),direction:$('co-direction').value,ref:ref,sender:$('co-sender').value.trim(),
+    recipient:$('co-recipient').value.trim(),date:date,action:$('co-action').value.trim(),owner:owner,
+    status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('correspondence-logged',ref,'Letter logged by '+SES.name);
+  closeM('m-correspondence');
+  renderCorrespondence();
+  queueCloudSave();
+}
+function closeCorrespondence(id){
+  var c=DB.correspondence.find(function(x){return x.id===id;});if(!c)return;
+  c.status='Closed';c.closedBy=SES.name;c.closedOn=today();
+  renderCorrespondence();
+  queueCloudSave();
+}
+function renderCorrespondence(){
+  var body=$('correspondence-body');if(!body)return;
+  body.innerHTML=DB.correspondence.length?DB.correspondence.map(function(c){
+    return '<tr><td>'+esc(c.ref)+' <span class="bdg bN" style="margin-left:4px">'+c.direction+'</span></td>'+
+      '<td style="font-size:11.5px">'+esc(c.sender||'—')+' / '+esc(c.recipient||'—')+'</td>'+
+      '<td>'+dt(c.date)+'</td><td style="font-size:11.5px">'+esc(c.action||'—')+' · '+esc(c.owner)+'</td>'+
+      '<td><span class="bdg '+(c.status==='Closed'?'bG':'bO')+'">'+c.status+'</span></td>'+
+      '<td>'+(c.status==='Open'?'<button class="b bo bs" onclick="closeCorrespondence(\''+c.id+'\')">Close</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No correspondence logged yet.</td></tr>';
+}
+
+// ============ LEASES, LICENSES & RENEWALS (Administration) ============
+function openLeaseModal(){
+  $('le-record').value='';$('le-start').value='';$('le-expiry').value='';$('le-owner').value='';$('le-approval').value='';
+  openM('m-lease');
+}
+function saveLease(){
+  var record=$('le-record').value.trim(),start=$('le-start').value,expiry=$('le-expiry').value,owner=$('le-owner').value.trim();
+  if(!record||!start||!expiry||!owner){alert('Please complete the record, start/expiry dates, and renewal owner.');return;}
+  DB.leases.unshift({id:nid('LEASE'),record:record,start:start,expiry:expiry,owner:owner,approval:$('le-approval').value.trim(),
+    createdBy:SES.name,createdOn:today()});
+  logAudit('lease-added',record,'Lease/license record added by '+SES.name);
+  closeM('m-lease');
+  renderLeases();
+  queueCloudSave();
+}
+function renderLeases(){
+  var body=$('lease-body');if(!body)return;
+  body.innerHTML=DB.leases.length?DB.leases.slice().sort(function(a,b){return a.expiry<b.expiry?-1:1;}).map(function(l){
+    var daysLeft=Math.round((new Date(l.expiry)-new Date(today()))/86400000);
+    var expStatus=daysLeft<0?'<span class="bdg bR">Expired</span>':daysLeft<=30?'<span class="bdg bR">'+daysLeft+'d left</span>':daysLeft<=90?'<span class="bdg bO">'+daysLeft+'d left</span>':'<span class="bdg bG">'+daysLeft+'d left</span>';
+    return '<tr><td>'+esc(l.record)+'</td><td>'+dt(l.start)+' – '+dt(l.expiry)+'</td><td>'+esc(l.owner)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(l.approval||'—')+'</td><td>'+expStatus+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No leases or licenses recorded yet.</td></tr>';
+}
+
+// ============ FACILITIES & OFFICE SERVICES (Administration) ============
+function openFacilitiesModal(){
+  $('fa-location').value='';$('fa-priority').value='Medium';$('fa-issue').value='';$('fa-provider').value='';
+  openM('m-facilities');
+}
+function saveFacilitiesRequest(){
+  var location=$('fa-location').value.trim(),issue=$('fa-issue').value.trim();
+  if(!location||!issue){alert('Please complete the location/service and the issue.');return;}
+  DB.facilitiesRequests.unshift({id:nid('FAC'),location:location,priority:$('fa-priority').value,issue:issue,
+    provider:$('fa-provider').value.trim(),cost:null,status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('facilities-request-logged',location,'Facilities request logged by '+SES.name);
+  closeM('m-facilities');
+  renderFacilitiesRequests();
+  queueCloudSave();
+}
+function completeFacilitiesRequest(id){
+  var r=DB.facilitiesRequests.find(function(x){return x.id===id;});if(!r)return;
+  var costStr=window.prompt('Completion cost (USD, optional):','0');
+  if(costStr===null)return;
+  r.status='Complete';r.cost=parseFloat(costStr)||0;r.completedBy=SES.name;r.completedOn=today();
+  logAudit('facilities-request-completed',r.location,'Completed by '+SES.name);
+  renderFacilitiesRequests();
+  queueCloudSave();
+}
+function renderFacilitiesRequests(){
+  var body=$('facilities-body');if(!body)return;
+  var pb={'Low':'bY','Medium':'bO','High':'bR'};
+  body.innerHTML=DB.facilitiesRequests.length?DB.facilitiesRequests.map(function(r){
+    return '<tr><td>'+esc(r.location)+'</td><td>'+esc(r.issue)+' <span class="bdg '+(pb[r.priority]||'bY')+'">'+r.priority+'</span></td>'+
+      '<td>'+esc(r.provider||'—')+'</td><td>'+(r.status==='Complete'?dt(r.completedOn)+' · '+money(r.cost||0,'USD'):'—')+'</td>'+
+      '<td><span class="bdg '+(r.status==='Complete'?'bG':'bO')+'">'+r.status+'</span></td>'+
+      '<td>'+(r.status==='Open'?'<button class="b bn bs" onclick="completeFacilitiesRequest(\''+r.id+'\')">Mark Complete</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No facilities requests recorded yet.</td></tr>';
+}
+
+// ============ VISITORS & MEETINGS (Administration) ============
+function openVisitorModal(){
+  $('vi-ref').value='';$('vi-host').value='';$('vi-date').value=today();$('vi-location').value='';$('vi-arrangements').value='';
+  openM('m-visitor');
+}
+function saveVisitorMeeting(){
+  var ref=$('vi-ref').value.trim(),host=$('vi-host').value.trim(),date=$('vi-date').value,location=$('vi-location').value.trim();
+  if(!ref||!host||!date||!location){alert('Please complete the reference, host, date, and office location.');return;}
+  DB.visitorMeetings.unshift({id:nid('VIS'),ref:ref,host:host,date:date,location:location,
+    arrangements:$('vi-arrangements').value.trim(),createdBy:SES.name,createdOn:today()});
+  logAudit('visitor-meeting-logged',ref,'Visit/meeting logged by '+SES.name);
+  closeM('m-visitor');
+  renderVisitorMeetings();
+  queueCloudSave();
+}
+function renderVisitorMeetings(){
+  var body=$('visitor-body');if(!body)return;
+  body.innerHTML=DB.visitorMeetings.length?DB.visitorMeetings.map(function(v){
+    return '<tr><td>'+esc(v.ref)+'</td><td>'+esc(v.host)+' · '+dt(v.date)+'</td><td>'+esc(v.location)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(v.arrangements||'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--g400)">No visits or meetings logged yet.</td></tr>';
 }
 
 function renderGRNs(){
@@ -6459,8 +7495,9 @@ function renderInvoices(){
     DB.invoices.slice().reverse().forEach(function(inv){
       var po=DB.po.find(function(p){return p.id===inv.poId;});
       var m=invoiceMatchStatus(inv);
-      var actions=(m.label==='Matched'&&inv.status==='Pending')?'<button class="b bn bs" onclick="approveInvoicePayment(\''+inv.id+'\')">Approve for Payment</button>':
-        (inv.status==='Approved for Payment'?'<span class="bdg bG">Approved</span>':'<span style="color:var(--g400);font-size:11px">-</span>');
+      // Approval for payment is Finance's independent control (see renderFinanceInvoiceControls) --
+      // Supply Chain, which matched this invoice, only ever sees its status here, never an action.
+      var actions='<span class="bdg '+(inv.status==='Paid'?'bG':inv.status==='Approved for Payment'?'bB':'bY')+'">'+esc(inv.status)+'</span>';
       var r=el('tr');
       r.innerHTML='<td>'+esc(inv.invoiceNumber)+'</td><td>'+esc(inv.poNumber)+'</td><td>'+esc(inv.supplierName)+'</td>'+
         '<td>'+money(inv.amount,inv.currency)+'</td><td>'+(po?money(po.total,po.currency):'-')+'</td>'+
@@ -7768,6 +8805,121 @@ function renderApprovalRoleHome(roleKey){
   renderDeputyProgramCharts(roleKey);
 }
 
+// ============ DEPUTY DIRECTOR: CROSS-DEPARTMENT ACTION REGISTER ============
+function openCrossDeptActionModal(){
+  $('cda-issue').value='';$('cda-action').value='';$('cda-owner').value='';
+  openM('m-crossdeptaction');
+}
+function saveCrossDeptAction(){
+  var issue=$('cda-issue').value.trim(),action=$('cda-action').value.trim(),owner=$('cda-owner').value.trim();
+  if(!issue||!action||!owner){alert('Please complete the issue, agreed action, and accountable owner.');return;}
+  DB.crossDeptActions.unshift({id:nid('CDA'),issue:issue,action:action,owner:owner,closureEvidence:null,
+    status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('cross-dept-action-logged',issue,'Cross-department action logged by '+SES.name);
+  closeM('m-crossdeptaction');
+  renderCrossDeptActions();
+  queueCloudSave();
+}
+function closeCrossDeptAction(id){
+  var a=DB.crossDeptActions.find(function(x){return x.id===id;});if(!a)return;
+  var evidence=window.prompt('Closure evidence (what confirms the action is complete):','');
+  if(evidence===null)return;
+  a.closureEvidence=evidence;a.status='Closed';a.closedBy=SES.name;a.closedOn=today();
+  logAudit('cross-dept-action-closed',a.issue,'Closed by '+SES.name);
+  renderCrossDeptActions();
+  queueCloudSave();
+}
+function renderCrossDeptActions(){
+  var body=$('crossdeptaction-body');if(!body)return;
+  body.innerHTML=DB.crossDeptActions.length?DB.crossDeptActions.map(function(a){
+    return '<tr><td>'+esc(a.issue)+'</td><td style="font-size:11.5px">'+esc(a.action)+'</td><td>'+esc(a.owner)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(a.closureEvidence||'—')+'</td>'+
+      '<td><span class="bdg '+(a.status==='Closed'?'bG':'bO')+'">'+a.status+'</span></td>'+
+      '<td>'+(a.status==='Open'?'<button class="b bo bs" onclick="closeCrossDeptAction(\''+a.id+'\')">Close</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No cross-department actions logged yet</td></tr>';
+}
+
+// ============ DEPUTY DIRECTOR: DELEGATION & ACTING AUTHORITY ============
+function openDelegationModal(){
+  $('dg-role').value='';$('dg-scope').value='';$('dg-from').value=today();$('dg-to').value='';$('dg-limits').value='';
+  openM('m-delegation');
+}
+function saveDelegation(){
+  var role=$('dg-role').value.trim(),scope=$('dg-scope').value.trim(),from=$('dg-from').value,to=$('dg-to').value;
+  if(!role||!scope||!from||!to){alert('Please complete the delegating role, scope, and valid dates.');return;}
+  DB.delegations.unshift({id:nid('DEL'),role:role,scope:scope,from:from,to:to,limits:$('dg-limits').value.trim(),
+    revoked:false,createdBy:SES.name,createdOn:today()});
+  logAudit('delegation-logged',role,'Delegation logged by '+SES.name);
+  closeM('m-delegation');
+  renderDelegations();
+  queueCloudSave();
+}
+function revokeDelegation(id){
+  var d=DB.delegations.find(function(x){return x.id===id;});if(!d)return;
+  if(!window.confirm('Revoke this delegation before its valid-to date?'))return;
+  d.revoked=true;d.revokedBy=SES.name;d.revokedOn=today();
+  logAudit('delegation-revoked',d.role,'Revoked early by '+SES.name);
+  renderDelegations();
+  queueCloudSave();
+}
+function delegationStatus(d){
+  if(d.revoked)return 'Revoked';
+  var t=today();
+  if(t<d.from)return 'Upcoming';
+  if(t>d.to)return 'Expired';
+  return 'Active';
+}
+function renderDelegations(){
+  var body=$('delegation-body');if(!body)return;
+  var sb={'Active':'bG','Upcoming':'bB','Expired':'bN','Revoked':'bR'};
+  body.innerHTML=DB.delegations.length?DB.delegations.map(function(d){
+    var st=delegationStatus(d);
+    return '<tr><td>'+esc(d.role)+'</td><td style="font-size:11.5px">'+esc(d.scope)+'</td>'+
+      '<td style="font-size:11.5px">'+dt(d.from)+' - '+dt(d.to)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(d.limits||'—')+'</td>'+
+      '<td><span class="bdg '+sb[st]+'">'+st+'</span></td>'+
+      '<td>'+(st==='Active'||st==='Upcoming'?'<button class="b bo bs" onclick="revokeDelegation(\''+d.id+'\')">Revoke</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No delegations logged yet</td></tr>';
+}
+
+// ============ DEPUTY DIRECTOR: MONTHLY MANAGEMENT REVIEW ============
+function openMgmtReviewModal(){
+  $('mr-month').value=today().slice(0,7);$('mr-summary').value='';$('mr-decisions').value='';
+  openM('m-mgmtreview');
+}
+function saveMgmtReview(){
+  var month=$('mr-month').value,summary=$('mr-summary').value.trim();
+  if(!month||!summary){alert('Please set the reporting month and the department summary.');return;}
+  DB.mgmtReviews.unshift({id:nid('MGR'),month:month,summary:summary,decisions:$('mr-decisions').value.trim(),
+    edEscalated:false,status:'Draft',createdBy:SES.name,createdOn:today()});
+  logAudit('mgmt-review-created',month,'Monthly management review created by '+SES.name);
+  closeM('m-mgmtreview');
+  renderMgmtReviews();
+  queueCloudSave();
+}
+function escalateMgmtReview(id){
+  var r=DB.mgmtReviews.find(function(x){return x.id===id;});if(!r)return;
+  if(!window.confirm('Escalate this review to the Executive Director?'))return;
+  r.edEscalated=true;r.status='Escalated to ED';r.escalatedBy=SES.name;r.escalatedOn=today();
+  notify('Gull Mohammad Aryan','wf','Monthly management review for '+r.month+' escalated by '+SES.name+' for ED decision','deputy');
+  logAudit('mgmt-review-escalated',r.month,'Escalated to ED by '+SES.name);
+  renderMgmtReviews();
+  queueCloudSave();
+}
+function renderMgmtReviews(){
+  var box=$('mgmtreview-body');if(!box)return;
+  if(!DB.mgmtReviews.length){box.innerHTML='<div class="empty">No monthly management reviews yet</div>';return;}
+  box.innerHTML=DB.mgmtReviews.map(function(r){
+    return '<div class="cd" style="margin-bottom:10px"><div class="cdb">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b>'+esc(r.month)+'</b></div>'+
+      '<span class="bdg '+(r.status==='Escalated to ED'?'bR':'bO')+'">'+r.status+'</span></div>'+
+      '<div style="font-size:12px;color:var(--g600);margin-top:7px">'+esc(r.summary)+'</div>'+
+      (r.decisions?'<div style="font-size:12px;color:var(--g600);margin-top:7px"><b>Decisions required:</b> '+esc(r.decisions)+'</div>':'')+
+      (r.edEscalated?'':'<div class="wfa"><button class="b bn bs" onclick="escalateMgmtReview(\''+r.id+'\')">Escalate to ED</button></div>')+
+      '</div></div>';
+  }).join('');
+}
+
 // The Deputy Director / Program Deputy Director dashboards used to be nothing but stat tiles
 // and tables -- no visual read on the org's actual program performance, which is exactly what
 // these two roles are meant to oversee. Reuses the same Budget-vs-Spent and Activities-Status
@@ -7909,6 +9061,196 @@ function renderMyITTickets(){
   box.innerHTML='';
   if(!mine.length){box.innerHTML='<div class="empty">You have not reported any IT problems.</div>';return;}
   mine.forEach(function(t){box.appendChild(renderITTicketCard(t,false));});
+}
+
+// ============ IT: ACCOUNTS, ROLES & ACCESS ============
+function openITAccessModal(){
+  var sel=$('ia-staff');
+  sel.innerHTML=loginAccountsList().map(function(a){return '<option value="'+esc(a.username)+'">'+esc(a.name)+' ('+esc(a.role)+')</option>';}).join('');
+  $('ia-scope').value='';$('ia-approver').value=SES.name;$('ia-effective').value=today();
+  openM('m-itaccess');
+}
+function saveITAccess(){
+  var username=$('ia-staff').value,scope=$('ia-scope').value.trim();
+  if(!username||!scope){alert('Please select the staff member and describe the role/project scope.');return;}
+  var acct=loginAccountsList().find(function(a){return a.username===username;});
+  DB.itAccessRecords.unshift({id:nid('IAC'),username:username,staffName:acct?acct.name:username,scope:scope,
+    approver:$('ia-approver').value.trim(),effective:$('ia-effective').value||today(),status:'Active',
+    createdBy:SES.name,createdOn:today()});
+  logAudit('it-access-granted',username,'Access grant logged by '+SES.name+': '+scope);
+  closeM('m-itaccess');
+  renderITAccess();
+  queueCloudSave();
+}
+function revokeITAccess(id){
+  var r=DB.itAccessRecords.find(function(x){return x.id===id;});if(!r)return;
+  if(!window.confirm('Disable and revoke live sessions for '+r.staffName+'? This also deactivates their login account.'))return;
+  r.status='Revoked';r.revokedBy=SES.name;r.revokedOn=today();
+  var u=DB.users.find(function(x){return x.username===r.username;});
+  if(u)u.status='Inactive';
+  logAudit('it-access-revoked',r.username,'Access revoked by '+SES.name);
+  renderITAccess();
+  queueCloudSave();
+}
+function renderITAccess(){
+  var body=$('itaccess-body');if(!body)return;
+  body.innerHTML=DB.itAccessRecords.length?DB.itAccessRecords.map(function(r){
+    return '<tr><td>'+esc(r.staffName)+'</td><td style="font-size:11.5px">'+esc(r.scope)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(r.approver||'—')+' · '+dt(r.effective)+'</td>'+
+      '<td><span class="bdg '+(r.status==='Active'?'bG':'bR')+'">'+r.status+'</span></td>'+
+      '<td>'+(r.status==='Active'?'<button class="b bo bs" onclick="revokeITAccess(\''+r.id+'\')">Disable / Revoke</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No access grants logged yet</td></tr>';
+}
+
+// ============ IT: ONBOARDING & OFFBOARDING ACCESS ============
+var IT_ONBOARD_CHECKLIST={
+  Onboarding:['Account created','System access granted','Asset issued','Building/badge access'],
+  Offboarding:['System access disabled','Assets returned/confirmed','Building/badge access revoked','Email/account archived']
+};
+function openITOnboardingModal(){
+  $('io-type').value='Onboarding';$('io-request').value='';$('io-assets').value='';
+  openM('m-itonboard');
+}
+function saveITOnboarding(){
+  var type=$('io-type').value,request=$('io-request').value.trim();
+  if(!request){alert('Please provide the HR request reference.');return;}
+  DB.itOnboarding.unshift({id:nid('ONB'),type:type,hrRequest:request,assetLinkage:$('io-assets').value.trim(),
+    checklist:IT_ONBOARD_CHECKLIST[type].map(function(label){return {label:label,done:false};}),
+    verified:false,createdBy:SES.name,createdOn:today()});
+  logAudit('it-onboarding-created',request,type+' checklist created by '+SES.name);
+  closeM('m-itonboard');
+  renderITOnboarding();
+  queueCloudSave();
+}
+function toggleITOnboardItem(id,idx){
+  var o=DB.itOnboarding.find(function(x){return x.id===id;});if(!o||o.verified)return;
+  o.checklist[idx].done=!o.checklist[idx].done;
+  renderITOnboarding();
+  queueCloudSave();
+}
+function verifyITOnboarding(id){
+  var o=DB.itOnboarding.find(function(x){return x.id===id;});if(!o)return;
+  if(!o.checklist.every(function(c){return c.done;})){alert('All checklist items must be completed before verifying.');return;}
+  o.verified=true;o.verifiedBy=SES.name;o.verifiedOn=today();
+  logAudit('it-onboarding-verified',o.hrRequest,'Verified complete by '+SES.name);
+  renderITOnboarding();
+  queueCloudSave();
+}
+function renderITOnboarding(){
+  var box=$('itonboard-body');if(!box)return;
+  if(!DB.itOnboarding.length){box.innerHTML='<div class="empty">No onboarding/offboarding checklists yet</div>';return;}
+  box.innerHTML=DB.itOnboarding.map(function(o){
+    var items=o.checklist.map(function(c,idx){
+      return '<div style="font-size:12px;margin-bottom:4px;cursor:'+(o.verified?'default':'pointer')+'" onclick="'+(o.verified?'':'toggleITOnboardItem(\''+o.id+'\','+idx+')')+'">'+(c.done?'<span style="color:var(--green)">&#10003;</span>':'<span style="color:var(--g400)">&#9633;</span>')+' '+esc(c.label)+'</div>';
+    }).join('');
+    return '<div class="cd" style="margin-bottom:10px"><div class="cdb">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b>'+esc(o.hrRequest)+'</b> <span class="bdg bN" style="margin-left:4px">'+o.type+'</span>'+
+      (o.assetLinkage?'<div style="font-size:11px;color:var(--g500);margin-top:3px">Assets: '+esc(o.assetLinkage)+'</div>':'')+'</div>'+
+      '<span class="bdg '+(o.verified?'bG':'bO')+'">'+(o.verified?'Verified Complete':'In Progress')+'</span></div>'+
+      '<div style="margin-top:9px">'+items+'</div>'+
+      (o.verified?'':'<div class="wfa"><button class="b bn bs" onclick="verifyITOnboarding(\''+o.id+'\')">Verify Completion</button></div>')+
+      '</div></div>';
+  }).join('');
+}
+
+// ============ IT: INCIDENTS & CHANGE CONTROL ============
+function openITIncidentModal(){
+  $('ii-type').value='Incident';$('ii-title').value='';$('ii-impact').value='';$('ii-priority').value='Medium';$('ii-rollout').value='';
+  openM('m-itincident');
+}
+function saveITIncident(){
+  var title=$('ii-title').value.trim();
+  if(!title){alert('Please describe the incident or change.');return;}
+  DB.itIncidents.unshift({id:nid('INC'),type:$('ii-type').value,title:title,impact:$('ii-impact').value.trim(),
+    priority:$('ii-priority').value,rollout:$('ii-rollout').value.trim(),verification:null,rollback:null,
+    status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('it-incident-logged',title,$('ii-type').value+' logged by '+SES.name);
+  closeM('m-itincident');
+  renderITIncidents();
+  queueCloudSave();
+}
+function resolveITIncident(id){
+  var i=DB.itIncidents.find(function(x){return x.id===id;});if(!i)return;
+  var verification=window.prompt('Verification result (and rollback plan if this was rolled back):','Verified working as expected');
+  if(verification===null)return;
+  i.verification=verification;i.status='Resolved';i.resolvedBy=SES.name;i.resolvedOn=today();
+  logAudit('it-incident-resolved',i.title,'Resolved by '+SES.name);
+  renderITIncidents();
+  queueCloudSave();
+}
+function renderITIncidents(){
+  var body=$('itincident-body');if(!body)return;
+  var pb={'Low':'bY','Medium':'bO','High':'bR','Critical':'bD'};
+  body.innerHTML=DB.itIncidents.length?DB.itIncidents.map(function(i){
+    return '<tr><td>'+esc(i.title)+' <span class="bdg bN" style="margin-left:4px">'+i.type+'</span></td>'+
+      '<td style="font-size:11.5px">'+esc(i.impact||'—')+' <span class="bdg '+(pb[i.priority]||'bN')+'" style="margin-left:4px">'+i.priority+'</span></td>'+
+      '<td style="font-size:11.5px">'+esc(i.rollout||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(i.verification||'—')+'</td>'+
+      '<td><span class="bdg '+(i.status==='Resolved'?'bG':'bO')+'">'+i.status+'</span></td>'+
+      '<td>'+(i.status==='Open'?'<button class="b bo bs" onclick="resolveITIncident(\''+i.id+'\')">Resolve</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No incidents or changes logged yet</td></tr>';
+}
+
+// ============ IT: BACKUP & RECOVERY ============
+function openITBackupModal(){
+  $('ib-date').value=today();$('ib-scope').value='';$('ib-storage').value='';$('ib-owner').value=SES.name;
+  openM('m-itbackup');
+}
+function saveITBackup(){
+  var scope=$('ib-scope').value.trim(),storage=$('ib-storage').value.trim();
+  if(!scope||!storage){alert('Please describe the backup scope and the restricted storage location.');return;}
+  DB.itBackups.unshift({id:nid('BKP'),date:$('ib-date').value||today(),scope:scope,storage:storage,
+    owner:$('ib-owner').value.trim(),restoreTestDate:null,restoreResult:null,status:'Backed Up',
+    createdBy:SES.name,createdOn:today()});
+  logAudit('it-backup-logged',scope,'Backup logged by '+SES.name);
+  closeM('m-itbackup');
+  renderITBackups();
+  queueCloudSave();
+}
+function logRestoreTest(id){
+  var b=DB.itBackups.find(function(x){return x.id===id;});if(!b)return;
+  var result=window.prompt('Restore test result:','Restore verified successfully');
+  if(result===null)return;
+  b.restoreTestDate=today();b.restoreResult=result;b.status='Restore Verified';
+  logAudit('it-restore-tested',b.scope,'Restore test logged by '+SES.name+': '+result);
+  renderITBackups();
+  queueCloudSave();
+}
+function renderITBackups(){
+  var body=$('itbackup-body');if(!body)return;
+  body.innerHTML=DB.itBackups.length?DB.itBackups.map(function(b){
+    return '<tr><td>'+dt(b.date)+'<div style="font-size:11px;color:var(--g500)">'+esc(b.scope)+'</div></td>'+
+      '<td style="font-size:11.5px">'+esc(b.storage)+'</td>'+
+      '<td style="font-size:11.5px">'+(b.restoreTestDate?dt(b.restoreTestDate)+' · '+esc(b.restoreResult):'—')+'</td>'+
+      '<td>'+esc(b.owner||'—')+'</td>'+
+      '<td><span class="bdg '+(b.status==='Restore Verified'?'bG':'bO')+'">'+b.status+'</span></td>'+
+      '<td>'+(b.status==='Backed Up'?'<button class="b bo bs" onclick="logRestoreTest(\''+b.id+'\')">Log Restore Test</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No backups logged yet</td></tr>';
+}
+
+// ============ IT: ACCESS & SYSTEM AUDIT ============
+// Surfaces the app's existing audit trail (logAudit() -> DB.deletionLog, despite the name,
+// is the generic cross-department action log used throughout this app) for IT's own review,
+// rather than building a second, parallel audit log that would drift from the real one.
+function flagAuditEntry(at){
+  var note=window.prompt('Access review note:','Reviewed - no action needed');
+  if(note===null)return;
+  var followUp=window.prompt('Follow-up action (leave blank if none):','');
+  if(followUp===null)return;
+  DB.itAuditReviews.unshift({at:at,note:note,followUp:followUp,by:SES.name,on:today()});
+  renderITAudit();
+  queueCloudSave();
+}
+function renderITAudit(){
+  var body=$('itaudit-body');if(!body)return;
+  var entries=DB.deletionLog.slice(0,30);
+  body.innerHTML=entries.length?entries.map(function(e){
+    var review=DB.itAuditReviews.find(function(r){return r.at===e.at;});
+    return '<tr><td style="font-size:11.5px">'+esc(e.by)+' — '+esc(e.type)+'</td>'+
+      '<td style="font-size:11px">'+esc(e.recordId||'—')+'<div style="color:var(--g400)">'+new Date(e.at).toLocaleString('en-GB')+'</div></td>'+
+      '<td style="font-size:11.5px">'+(review?esc(review.note):'<button class="b bo bs" onclick="flagAuditEntry(\''+e.at+'\')">Flag for Review</button>')+'</td>'+
+      '<td style="font-size:11.5px">'+(review?esc(review.followUp||'None'):'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" class="empty">No audit events recorded yet</td></tr>';
 }
 
 function renderITQueue(){
@@ -8136,7 +9478,125 @@ function denyTAR(id){
   alert('TAR denied. '+t.dept+' has been notified with your comment.');
 }
 
+// ============ ACCESS: ROUTE & SECURITY ASSESSMENT ============
+function openRouteAssessModal(){
+  $('ra-route').value='';$('ra-risk').value='';$('ra-precautions').value='';$('ra-owner').value=SES.name;$('ra-date').value=today();
+  openM('m-routeassess');
+}
+function saveRouteAssessment(){
+  var route=$('ra-route').value.trim();
+  if(!route){alert('Please identify the route / destination.');return;}
+  DB.routeAssessments.unshift({id:nid('RA'),route:route,risk:$('ra-risk').value.trim(),
+    precautions:$('ra-precautions').value.trim(),owner:$('ra-owner').value.trim(),date:$('ra-date').value||today(),
+    createdBy:SES.name,createdOn:today()});
+  logAudit('route-assessment-logged',route,'Route assessment logged by '+SES.name);
+  closeM('m-routeassess');
+  renderRouteAssessments();
+  queueCloudSave();
+}
+function renderRouteAssessments(){
+  var body=$('routeassess-body');if(!body)return;
+  body.innerHTML=DB.routeAssessments.length?DB.routeAssessments.map(function(r){
+    return '<tr><td>'+esc(r.route)+'</td><td style="font-size:11.5px">'+esc(r.risk||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(r.precautions||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(r.owner||'—')+' · '+dt(r.date)+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" class="empty">No route assessments logged yet</td></tr>';
+}
 
+// ============ ACCESS: MOVEMENT & CHECK-INS ============
+// Check-in state lives on the TAR record itself (lazy-initialized), the same pattern used
+// for project closeout (getCloseout()) -- there's no separate "create" step because every
+// approved TAR already needs one.
+function getTarCheckin(t){
+  if(!t.checkin)t.checkin={checkinDue:t.ret,checkinReceived:null,escalationContact:''};
+  return t.checkin;
+}
+function logTarCheckin(id){
+  var t=DB.tars.find(function(x){return x.id===id;});if(!t)return;
+  var c=getTarCheckin(t);
+  if(!window.confirm('Confirm check-in received for this movement?'))return;
+  c.checkinReceived=new Date().toISOString();
+  logAudit('tar-checkin-received',id,'Check-in received, logged by '+SES.name);
+  renderCheckins();
+  queueCloudSave();
+}
+function updateEscalationContact(id,value){
+  var t=DB.tars.find(function(x){return x.id===id;});if(!t)return;
+  getTarCheckin(t).escalationContact=value;
+  queueCloudSave();
+}
+function renderCheckins(){
+  var body=$('checkin-body');if(!body)return;
+  var active=DB.tars.filter(function(t){return t.status==='Approved';});
+  body.innerHTML=active.length?active.map(function(t){
+    var c=getTarCheckin(t);
+    var overdueNow=!c.checkinReceived&&overdue(c.checkinDue);
+    return '<tr><td>'+esc(t.purpose)+'<div style="font-size:10px;color:var(--g400)">'+esc(t.dest)+' · '+esc(t.dept)+'</div></td>'+
+      '<td style="font-size:11.5px">'+dt(t.depart)+' / '+dt(t.ret)+'</td>'+
+      '<td style="font-size:11.5px'+(overdueNow?';color:var(--red);font-weight:600':'')+'">'+dt(c.checkinDue)+' / '+(c.checkinReceived?new Date(c.checkinReceived).toLocaleString('en-GB'):(overdueNow?'OVERDUE':'Pending'))+'</td>'+
+      '<td><input type="text" value="'+esc(c.escalationContact||'')+'" placeholder="e.g. Access on-duty officer" style="font-size:11px;padding:4px 6px;border:1px solid var(--g200);border-radius:5px;width:100%" onchange="updateEscalationContact(\''+t.id+'\',this.value)"></td>'+
+      '<td>'+(c.checkinReceived?'—':'<button class="b bo bs" onclick="logTarCheckin(\''+t.id+'\')">Log Check-in</button>')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No approved movements awaiting check-in</td></tr>';
+}
+
+// ============ ACCESS: EMERGENCY CONTACTS & ALERTS ============
+function openEmergencyContactModal(){
+  $('ec-staff').value='';$('ec-channel').value='';$('ec-response').value='';$('ec-authorized').value='';
+  openM('m-emergencycontact');
+}
+function saveEmergencyContact(){
+  var staff=$('ec-staff').value.trim();
+  if(!staff){alert('Please identify the staff / contact.');return;}
+  DB.emergencyContacts.unshift({id:nid('EC'),staff:staff,channel:$('ec-channel').value.trim(),
+    response:$('ec-response').value.trim(),authorized:$('ec-authorized').value.trim(),
+    createdBy:SES.name,createdOn:today()});
+  logAudit('emergency-contact-logged',staff,'Emergency contact logged by '+SES.name);
+  closeM('m-emergencycontact');
+  renderEmergencyContacts();
+  queueCloudSave();
+}
+function renderEmergencyContacts(){
+  var body=$('emergencycontact-body');if(!body)return;
+  body.innerHTML=DB.emergencyContacts.length?DB.emergencyContacts.map(function(c){
+    return '<tr><td>'+esc(c.staff)+'</td><td style="font-size:11.5px">'+esc(c.channel||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(c.response||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(c.authorized||'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" class="empty">No emergency contacts logged yet</td></tr>';
+}
+
+// ============ ACCESS: TRAVEL CLOSEOUT ============
+function openTarCloseoutModal(id){
+  var t=DB.tars.find(function(x){return x.id===id;});if(!t)return;
+  $('tc-ctx').textContent=t.purpose+' — '+t.dest+' ('+dt(t.depart)+' to '+dt(t.ret)+')';
+  $('m-tarcloseout').setAttribute('data-tarid',id);
+  $('tc-log').value='';$('tc-advance').value='';$('tc-outstanding').value='';$('tc-confirmed').checked=false;
+  openM('m-tarcloseout');
+}
+function saveTarCloseout(){
+  var id=$('m-tarcloseout').getAttribute('data-tarid');
+  var t=DB.tars.find(function(x){return x.id===id;});if(!t)return;
+  var log=$('tc-log').value.trim(),confirmed=$('tc-confirmed').checked;
+  if(!log||!confirmed){alert('Please add a trip log and confirm the return before completing closeout.');return;}
+  t.closeout={returnConfirmed:true,tripLog:log,advanceSettlement:$('tc-advance').value.trim(),
+    outstandingActions:$('tc-outstanding').value.trim(),closedBy:SES.name,closedOn:today()};
+  t.status='Completed';
+  t.hist.push({a:'Closed Out',by:SES.name,dt:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),n:'Travel closeout completed'});
+  logAudit('tar-closeout',id,'Travel closeout completed by '+SES.name);
+  closeM('m-tarcloseout');
+  renderTravelCloseouts();
+  renderCheckins();
+  renderTARQueue();
+  queueCloudSave();
+}
+function renderTravelCloseouts(){
+  var body=$('closeout-tar-body');if(!body)return;
+  var pending=DB.tars.filter(function(t){return t.status==='Approved';});
+  body.innerHTML=pending.length?pending.map(function(t){
+    return '<tr><td>'+esc(t.purpose)+'<div style="font-size:10px;color:var(--g400)">'+esc(t.dest)+'</div></td>'+
+      '<td>—</td><td>—</td><td>—</td>'+
+      '<td><button class="b bo bs" onclick="openTarCloseoutModal(\''+t.id+'\')">Open Closeout</button></td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No trips awaiting closeout</td></tr>';
+}
 
 // ============ HR: CONTRACTS ============
 DB.contracts=[];
@@ -8997,6 +10457,10 @@ function confirmDelete(){
     idx=DB.pr.findIndex(function(x){return x.id===id;});
     if(idx>-1){DB.pr.splice(idx,1);}
     closeM('m-delete-confirm');renderMyPRs();renderPRApprovals();refreshAll();
+  } else if(type==='strategy'){
+    idx=DB.strategy.findIndex(function(x){return x.id===id;});
+    if(idx>-1){DB.strategy.splice(idx,1);}
+    closeM('m-delete-confirm');renderStrategy();
   }
   DB.deletionLog.unshift({type:type,recordId:id,reason:reason,by:SES.name,at:new Date().toISOString()});
   queueCloudSave();
@@ -9475,6 +10939,369 @@ if(document.getElementById('afg-map')) initMap();
 })();
 </script>
 
+
+<div class="mb" id="m-sgconsent"><div class="md">
+<div class="mh"><h3>Record Consent &amp; Safe Communication</h3><button class="mx" onclick="closeM('m-sgconsent')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Consent Record *</label><input type="text" id="sgc-record" placeholder="e.g. CON-014 - survivor consent for referral follow-up"></div>
+    <div class="fg"><label>Safe Contact Channel *</label><input type="text" id="sgc-channel" placeholder="e.g. Assigned focal point only"></div>
+    <div class="fg"><label>Communication Restrictions</label><input type="text" id="sgc-restrictions" placeholder="e.g. No unapproved outreach"></div>
+    <div class="fg ff"><label>Referral Permission *</label><input type="text" id="sgc-referral" placeholder="e.g. Referral follow-up permitted; no third-party disclosure"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-sgconsent')">Cancel</button><button class="b bn" onclick="saveSGConsent()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-sgtraining"><div class="md">
+<div class="mh"><h3>Log Training &amp; Prevention</h3><button class="mx" onclick="closeM('m-sgtraining')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Training Audience *</label><input type="text" id="sgt-audience" placeholder="e.g. All staff / Partner focal points"></div>
+    <div class="fg"><label>Focal Point *</label><input type="text" id="sgt-focal" placeholder="e.g. Arzo Hotak"></div>
+    <div class="fg ff"><label>Completion / Evidence *</label><input type="text" id="sgt-evidence" placeholder="e.g. 88% completed, attendance sheets on file"></div>
+    <div class="fg"><label>Refresher Date *</label><input type="date" id="sgt-refresher"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-sgtraining')">Cancel</button><button class="b bn" onclick="saveSGTraining()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-custody"><div class="md">
+<div class="mh"><h3>Log Custody / Transfer</h3><button class="mx" onclick="closeM('m-custody')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Asset / Staff *</label><input type="text" id="cu-asset" placeholder="e.g. A-014 Laptop -> Hamid Agha"></div>
+    <div class="fg"><label>Handover Date *</label><input type="date" id="cu-handover"></div>
+    <div class="fg ff"><label>Approved Transfer *</label><input type="text" id="cu-approved" placeholder="e.g. Approved by Eng Abdul Habiab, Operations Manager"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-custody')">Cancel</button><button class="b bn" onclick="saveCustody()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-maintenance"><div class="md">
+<div class="mh"><h3>Schedule Maintenance</h3><button class="mx" onclick="closeM('m-maintenance')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Asset / Vehicle *</label><input type="text" id="mt-item" placeholder="e.g. Toyota Hilux - Plate KBL-4471"></div>
+    <div class="fg"><label>Service Due *</label><input type="date" id="mt-due"></div>
+    <div class="fg"><label>Provider *</label><input type="text" id="mt-provider" placeholder="e.g. ABC Technical Services"></div>
+    <div class="fg"><label>Cost (USD)</label><input type="number" id="mt-cost" placeholder="e.g. 180"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-maintenance')">Cancel</button><button class="b bn" onclick="saveMaintenance()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-fuellog"><div class="md">
+<div class="mh"><h3>Log Fuel / Trip</h3><button class="mx" onclick="closeM('m-fuellog')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Travel Authorization *</label><input type="text" id="fl-auth" placeholder="e.g. TA-2026-088 - Kabul to Herat supervision visit"></div>
+    <div class="fg"><label>Vehicle *</label><select id="fl-vehicle"></select></div>
+    <div class="fg"><label>Trip Date *</label><input type="date" id="fl-date"></div>
+    <div class="fg"><label>Odometer (km) *</label><input type="number" id="fl-odo" placeholder="e.g. 48210"></div>
+    <div class="fg"><label>Fuel Quantity (L) *</label><input type="number" id="fl-qty" placeholder="e.g. 40"></div>
+    <div class="fg"><label>Fuel Cost (USD) *</label><input type="number" id="fl-cost" placeholder="e.g. 32"></div>
+    <div class="fg"><label>Driver *</label><input type="text" id="fl-driver" placeholder="e.g. Najib Rahimi"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-fuellog')">Cancel</button><button class="b bn" onclick="saveFuelLog()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-disposal"><div class="md">
+<div class="mh"><h3>Log Disposal / Insurance</h3><button class="mx" onclick="closeM('m-disposal')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Record Type *</label><select id="ds-type" onchange="toggleDisposalFields()"><option value="Disposal">Asset Disposal</option><option value="Insurance">Insurance Coverage</option></select></div>
+    <div class="fg ff"><label>Asset / Policy *</label><input type="text" id="ds-ref" placeholder="e.g. A-002 Generator / Policy AFG-INS-2026-11"></div>
+    <div class="fg ff" id="ds-reason-wrap"><label>Disposal Reason</label><input type="text" id="ds-reason" placeholder="e.g. Beyond economical repair"></div>
+    <div class="fg" id="ds-approval-wrap"><label>Approval</label><input type="text" id="ds-approval" placeholder="e.g. Approved by Executive Director"></div>
+    <div class="fg ff" id="ds-evidence-wrap"><label>Sale / Write-off Evidence</label><input type="text" id="ds-evidence" placeholder="e.g. Sold for $150, receipt filed"></div>
+    <div class="fg" id="ds-expiry-wrap"><label>Coverage Expiry</label><input type="date" id="ds-expiry"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-disposal')">Cancel</button><button class="b bn" onclick="saveDisposal()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-routeassess"><div class="md">
+<div class="mh"><h3>Add Route &amp; Security Assessment</h3><button class="mx" onclick="closeM('m-routeassess')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Route / Destination *</label><input type="text" id="ra-route" placeholder="e.g. Kabul to Herat via Highway 1"></div>
+    <div class="fg ff"><label>Risk Assessment *</label><textarea rows="2" id="ra-risk" placeholder="e.g. Moderate - checkpoints along route, no recent incidents reported"></textarea></div>
+    <div class="fg ff"><label>Required Precautions *</label><textarea rows="2" id="ra-precautions" placeholder="e.g. Travel in daylight only, convoy of 2+ vehicles, check in every 2 hours"></textarea></div>
+    <div class="fg"><label>Review Owner *</label><input type="text" id="ra-owner" placeholder="e.g. Zabihullah Sarwari"></div>
+    <div class="fg"><label>Review Date *</label><input type="date" id="ra-date"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-routeassess')">Cancel</button><button class="b bn" onclick="saveRouteAssessment()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-emergencycontact"><div class="md">
+<div class="mh"><h3>Add Emergency Contact</h3><button class="mx" onclick="closeM('m-emergencycontact')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Staff / Contact *</label><input type="text" id="ec-staff" placeholder="e.g. Hamid Agha"></div>
+    <div class="fg"><label>Safe Contact Channel *</label><input type="text" id="ec-channel" placeholder="e.g. Personal mobile +93 70 xxx xxxx"></div>
+    <div class="fg ff"><label>Alert / Response Plan *</label><input type="text" id="ec-response" placeholder="e.g. If no check-in within 2 hours of due time, call Access on-duty officer"></div>
+    <div class="fg ff"><label>Authorized Access *</label><input type="text" id="ec-authorized" placeholder="e.g. Access Department and Operations Manager only"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-emergencycontact')">Cancel</button><button class="b bn" onclick="saveEmergencyContact()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-tarcloseout"><div class="md">
+<div class="mh"><h3>Travel Closeout</h3><button class="mx" onclick="closeM('m-tarcloseout')">&times;</button></div>
+<div class="mbd">
+  <div id="tc-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr">
+    <div class="fg ff"><label>Trip Log *</label><textarea rows="2" id="tc-log" placeholder="e.g. Departed on schedule, arrived Herat 15:40, return check-in received, no incidents"></textarea></div>
+    <div class="fg"><label>Advance Settlement</label><input type="text" id="tc-advance" placeholder="e.g. $120 advance, $95 spent, $25 returned to Finance"></div>
+    <div class="fg"><label>Outstanding Actions</label><input type="text" id="tc-outstanding" placeholder="e.g. None / Fuel receipt still pending from driver"></div>
+    <div class="fg ff"><label><input type="checkbox" id="tc-confirmed"> Return confirmed *</label></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-tarcloseout')">Cancel</button><button class="b bn" onclick="saveTarCloseout()">Complete Closeout</button></div>
+</div></div>
+
+<div class="mb" id="m-crossdeptaction"><div class="md">
+<div class="mh"><h3>Log Cross-Department Action</h3><button class="mx" onclick="closeM('m-crossdeptaction')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Issue / Departments Involved *</label><input type="text" id="cda-issue" placeholder="e.g. Delayed PR approvals - Supply Chain and Finance"></div>
+    <div class="fg ff"><label>Agreed Action *</label><textarea rows="2" id="cda-action" placeholder="e.g. Finance to clear PR approvals within 2 working days; Supply Chain to flag urgent PRs explicitly"></textarea></div>
+    <div class="fg"><label>Accountable Owner *</label><input type="text" id="cda-owner" placeholder="e.g. Aminullah Amin, Finance Manager"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-crossdeptaction')">Cancel</button><button class="b bn" onclick="saveCrossDeptAction()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-delegation"><div class="md">
+<div class="mh"><h3>Add Delegation / Acting Authority</h3><button class="mx" onclick="closeM('m-delegation')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Delegating Role *</label><input type="text" id="dg-role" placeholder="e.g. Executive Director"></div>
+    <div class="fg ff"><label>Authorized Scope *</label><input type="text" id="dg-scope" placeholder="e.g. Approve PRs up to $5,000 and sign off on timesheets"></div>
+    <div class="fg"><label>Valid From *</label><input type="date" id="dg-from"></div>
+    <div class="fg"><label>Valid To *</label><input type="date" id="dg-to"></div>
+    <div class="fg ff"><label>Approver / Limits</label><input type="text" id="dg-limits" placeholder="e.g. Approved by Board Chair; excludes HR disciplinary decisions"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-delegation')">Cancel</button><button class="b bn" onclick="saveDelegation()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-mgmtreview"><div class="md">
+<div class="mh"><h3>New Monthly Management Review</h3><button class="mx" onclick="closeM('m-mgmtreview')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Reporting Month *</label><input type="month" id="mr-month"></div>
+    <div class="fg ff"><label>Department Summary *</label><textarea rows="3" id="mr-summary" placeholder="e.g. Programs on track across 4 projects; Supply Chain procurement delays on GPE-STG; HR vacancy rate at 12%"></textarea></div>
+    <div class="fg ff"><label>Decisions Required</label><textarea rows="2" id="mr-decisions" placeholder="e.g. Approve expedited procurement process for GPE-STG; approve 2 new MEAL positions"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-mgmtreview')">Cancel</button><button class="b bn" onclick="saveMgmtReview()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-itaccess"><div class="md">
+<div class="mh"><h3>Log Access Grant</h3><button class="mx" onclick="closeM('m-itaccess')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Auth-Linked Staff *</label><select id="ia-staff"></select></div>
+    <div class="fg ff"><label>Role / Project Scope *</label><input type="text" id="ia-scope" placeholder="e.g. Finance - full ledger access, GPE-STG project scope"></div>
+    <div class="fg"><label>Approver *</label><input type="text" id="ia-approver" placeholder="e.g. Toryalia Rahimi"></div>
+    <div class="fg"><label>Effective Date *</label><input type="date" id="ia-effective"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-itaccess')">Cancel</button><button class="b bn" onclick="saveITAccess()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-itonboard"><div class="md">
+<div class="mh"><h3>New Onboarding / Offboarding Checklist</h3><button class="mx" onclick="closeM('m-itonboard')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Type *</label><select id="io-type"><option value="Onboarding">Onboarding</option><option value="Offboarding">Offboarding</option></select></div>
+    <div class="fg ff"><label>HR Request *</label><input type="text" id="io-request" placeholder="e.g. HR-2026-041 - New Field Monitor, MEAL Department"></div>
+    <div class="fg ff"><label>Asset Linkage</label><input type="text" id="io-assets" placeholder="e.g. Laptop A-021, SIM card, office badge"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-itonboard')">Cancel</button><button class="b bn" onclick="saveITOnboarding()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-itincident"><div class="md">
+<div class="mh"><h3>Log Incident / Change</h3><button class="mx" onclick="closeM('m-itincident')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Type *</label><select id="ii-type"><option value="Incident">Incident</option><option value="Change">Change</option></select></div>
+    <div class="fg ff"><label>Incident / Change *</label><input type="text" id="ii-title" placeholder="e.g. Shared drive outage / Migrate email to new provider"></div>
+    <div class="fg"><label>Impact</label><input type="text" id="ii-impact" placeholder="e.g. All Finance staff unable to access ledger files"></div>
+    <div class="fg"><label>Priority</label><select id="ii-priority"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></div>
+    <div class="fg ff"><label>Approval / Rollout Plan</label><textarea rows="2" id="ii-rollout" placeholder="e.g. Approved by IT lead, rollout scheduled for off-hours Friday"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-itincident')">Cancel</button><button class="b bn" onclick="saveITIncident()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-itbackup"><div class="md">
+<div class="mh"><h3>Log Backup</h3><button class="mx" onclick="closeM('m-itbackup')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Backup Date *</label><input type="date" id="ib-date"></div>
+    <div class="fg ff"><label>Scope *</label><input type="text" id="ib-scope" placeholder="e.g. Full sgoa_store database export, all DB.users and DB.assets"></div>
+    <div class="fg ff"><label>Restricted Storage *</label><input type="text" id="ib-storage" placeholder="e.g. Encrypted offsite drive, access limited to IT lead"></div>
+    <div class="fg"><label>Recovery Owner *</label><input type="text" id="ib-owner" placeholder="e.g. Toryalia Rahimi"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-itbackup')">Cancel</button><button class="b bn" onclick="saveITBackup()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-correspondence"><div class="md">
+<div class="mh"><h3>Log Letter</h3><button class="mx" onclick="closeM('m-correspondence')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Direction *</label><select id="co-direction"><option>Incoming</option><option>Outgoing</option></select></div>
+    <div class="fg"><label>Letter Reference *</label><input type="text" id="co-ref" placeholder="e.g. SGOA-OUT-2026-045"></div>
+    <div class="fg"><label>Sender</label><input type="text" id="co-sender" placeholder="e.g. Ministry of Economy"></div>
+    <div class="fg"><label>Recipient</label><input type="text" id="co-recipient" placeholder="e.g. SGOA Executive Director"></div>
+    <div class="fg"><label>Date *</label><input type="date" id="co-date"></div>
+    <div class="fg"><label>Action Required</label><input type="text" id="co-action" placeholder="e.g. Respond with updated registration docs"></div>
+    <div class="fg"><label>Owner *</label><input type="text" id="co-owner" placeholder="e.g. Malali Safi"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-correspondence')">Cancel</button><button class="b bn" onclick="saveCorrespondence()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-lease"><div class="md">
+<div class="mh"><h3>Add Lease / License Record</h3><button class="mx" onclick="closeM('m-lease')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Record / Agreement *</label><input type="text" id="le-record" placeholder="e.g. Kabul Office Lease - Landlord X"></div>
+    <div class="fg"><label>Start Date *</label><input type="date" id="le-start"></div>
+    <div class="fg"><label>Expiry Date *</label><input type="date" id="le-expiry"></div>
+    <div class="fg"><label>Renewal Owner *</label><input type="text" id="le-owner" placeholder="e.g. Malali Safi"></div>
+    <div class="fg ff"><label>Approval / Attachment Note</label><input type="text" id="le-approval" placeholder="e.g. Approved by ED, scanned copy filed in registry"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-lease')">Cancel</button><button class="b bn" onclick="saveLease()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-facilities"><div class="md">
+<div class="mh"><h3>Log Facilities / Office Request</h3><button class="mx" onclick="closeM('m-facilities')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Location / Service *</label><input type="text" id="fa-location" placeholder="e.g. Kabul Office - Generator"></div>
+    <div class="fg"><label>Priority</label><select id="fa-priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
+    <div class="fg ff"><label>Issue *</label><input type="text" id="fa-issue" placeholder="e.g. Generator not starting"></div>
+    <div class="fg"><label>Assigned Provider</label><input type="text" id="fa-provider" placeholder="e.g. ABC Technical Services"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-facilities')">Cancel</button><button class="b bn" onclick="saveFacilitiesRequest()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-visitor"><div class="md">
+<div class="mh"><h3>Log Visit / Meeting</h3><button class="mx" onclick="closeM('m-visitor')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Meeting / Visitor Reference *</label><input type="text" id="vi-ref" placeholder="e.g. Partner review - ACBAR"></div>
+    <div class="fg"><label>Host *</label><input type="text" id="vi-host" placeholder="e.g. Hamid Agha"></div>
+    <div class="fg"><label>Date *</label><input type="date" id="vi-date"></div>
+    <div class="fg"><label>Office Location *</label><input type="text" id="vi-location" placeholder="e.g. Kabul Office - Meeting Room 2"></div>
+    <div class="fg ff"><label>Required Arrangements</label><input type="text" id="vi-arrangements" placeholder="e.g. Projector, refreshments, visitor badge"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-visitor')">Cancel</button><button class="b bn" onclick="saveVisitorMeeting()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-receiptissue"><div class="md">
+<div class="mh"><h3>Log Receipt Issue</h3><button class="mx" onclick="closeM('m-receiptissue')">&times;</button></div>
+<div class="mbd">
+  <div id="ri-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr">
+    <div class="fg ff"><label>Return / Replacement Plan *</label><textarea rows="2" id="ri-return" placeholder="e.g. Supplier agreed to redeliver the remaining 5 units by 30 Oct"></textarea></div>
+    <div class="fg ff"><label>Stock &amp; Payment Effect *</label><textarea rows="2" id="ri-effect" placeholder="e.g. Stock count reduced by shortfall; invoice to be adjusted pending replacement"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-receiptissue')">Cancel</button><button class="b bn" onclick="saveReceiptIssue()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-bideval"><div class="md">
+<div class="mh"><h3>New Bid Evaluation</h3><button class="mx" onclick="closeM('m-bideval')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Item / Reference *</label><input type="text" id="be-item" placeholder="e.g. PR-024 - School Furniture"></div>
+    <div class="fg ff"><label>Bid References *</label><textarea rows="2" id="be-bids" placeholder="e.g. Supplier A: $4,200; Supplier B: $3,950; Supplier C: $4,500"></textarea></div>
+    <div class="fg ff"><label>Evaluation Criteria / Scores *</label><textarea rows="2" id="be-scores" placeholder="e.g. Price 40%, Quality 30%, Delivery 30% -- A: 82, B: 91, C: 75"></textarea></div>
+    <div class="fg ff"><label>Committee Decision *</label><input type="text" id="be-decision" placeholder="e.g. Awarded to Supplier B - highest weighted score"></div>
+    <div class="fg ff"><label>Conflict Declaration *</label><input type="text" id="be-conflict" placeholder="e.g. No committee member declared a conflict of interest" value="No committee member declared a conflict of interest"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-bideval')">Cancel</button><button class="b bn" onclick="saveBidEval()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-accesslink"><div class="md">
+<div class="mh"><h3>Record Approved Employment / Access Change</h3><button class="mx" onclick="closeM('m-accesslink')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Staff Identity *</label><input type="text" id="al-staff" placeholder="e.g. Farida Noori"></div>
+    <div class="fg"><label>Linked Account (optional)</label><select id="al-account"><option value="">No matching account yet</option></select></div>
+    <div class="fg ff"><label>Approved Role / Scope *</label><input type="text" id="al-role" placeholder="e.g. Senior Programs Officer, Programs Department"></div>
+    <div class="fg"><label>Effective From *</label><input type="date" id="al-from"></div>
+    <div class="fg"><label>Effective To (optional)</label><input type="date" id="al-to"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-accesslink')">Cancel</button><button class="b bn" onclick="saveAccessLink()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-budrev"><div class="md">
+<div class="mh"><h3>Request Budget Revision</h3><button class="mx" onclick="closeM('m-budrev')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Project *</label><select id="br-proj"></select></div>
+    <div class="fg ff"><label>Budget-Line Changes *</label><textarea rows="2" id="br-changes" placeholder="e.g. Training line $45,000 -> $53,400; Operations line $30,000 -> $21,600"></textarea></div>
+    <div class="fg ff"><label>Reason / Donor Consent *</label><textarea rows="2" id="br-reason" placeholder="Why, and reference to donor clearance if required"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-budrev')">Cancel</button><button class="b bn" onclick="saveBudgetRevision()">Submit for Approval</button></div>
+</div></div>
+
+<div class="mb" id="m-payroll"><div class="md">
+<div class="mh"><h3>Add Payroll Period</h3><button class="mx" onclick="closeM('m-payroll')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Approved Payroll Period *</label><input type="month" id="pp-period"></div>
+    <div class="fg"><label>Approved Total Cost (USD) *</label><input type="number" id="pp-cost" placeholder="e.g. 48500"></div>
+    <div class="fg ff"><label>Cost Allocations *</label><textarea rows="2" id="pp-allocations" placeholder="e.g. GPE-STG $18,000; GPE-AL $12,500; Core/Admin $18,000"></textarea></div>
+    <div class="fg ff"><label>Accounting Reference</label><input type="text" id="pp-accref" placeholder="e.g. QuickBooks journal ref JE-2026-10-003"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-payroll')">Cancel</button><button class="b bn" onclick="savePayrollPeriod()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-wpr"><div class="md">
+<div class="mh"><h3>Request Workplan Revision</h3><button class="mx" onclick="closeM('m-wpr')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Project *</label><select id="wpr-proj"></select></div>
+    <div class="fg"><label>Change Type</label><select id="wpr-type"><option>Timeline</option><option>Activity scope</option><option>Target</option><option>Location</option><option>Other</option></select></div>
+    <div class="fg ff"><label>Original Plan / Baseline *</label><textarea rows="2" id="wpr-original" placeholder="What the approved workplan currently says"></textarea></div>
+    <div class="fg ff"><label>Requested Change *</label><textarea rows="2" id="wpr-change" placeholder="What is being changed to"></textarea></div>
+    <div class="fg ff"><label>Impact / Reason *</label><textarea rows="2" id="wpr-impact" placeholder="Why, and the effect on targets/budget"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-wpr')">Cancel</button><button class="b bn" onclick="saveWorkplanRevision()">Submit for Approval</button></div>
+</div></div>
+
+<div class="mb" id="m-strategy"><div class="md">
+<div class="mh"><h3 id="strategy-modal-title">Add Strategic Objective</h3><button class="mx" onclick="closeM('m-strategy')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Strategic Objective *</label><textarea rows="2" id="sg-objective" placeholder="e.g. Expand education programming to two additional provinces"></textarea></div>
+    <div class="fg ff"><label>Linked Projects</label><select multiple id="sg-projects" style="height:76px"></select></div>
+    <div class="fg"><label>Board Decision</label><select id="sg-decision"><option>Pending</option><option>Approved</option><option>Deferred</option><option>Rejected</option></select></div>
+    <div class="fg"><label>Action Owner *</label><input type="text" id="sg-owner" placeholder="e.g. Deputy Director"></div>
+    <div class="fg"><label>Status</label><select id="sg-status"><option>Open</option><option>In Progress</option><option>Done</option></select></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-strategy')">Cancel</button><button class="b bn" onclick="saveStrategy()">Save</button></div>
+</div></div>
 
 <div class="mb" id="m-contract"><div class="md">
 <div class="mh"><h3>Add Staff Contract</h3><button class="mx" onclick="closeM('m-contract')">&times;</button></div>
