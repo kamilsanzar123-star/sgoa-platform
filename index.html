@@ -547,12 +547,13 @@ tbody tr:hover td{background:var(--g50);}
       <input type="month" id="vmr-month" onchange="renderVerifiedMonthlyResults()" style="font-size:12px;padding:5px 9px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
     </div>
     <div class="cdb">
-      <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
-        <div class="st nv"><div class="stl">Indicators Reporting</div><div class="stv" id="vmr-reporting">0</div></div>
+      <div class="stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+        <div class="st nv"><div class="stl">Verified</div><div class="stv" id="vmr-reporting">0</div></div>
+        <div class="st og"><div class="stl">Pending Verification</div><div class="stv" id="vmr-pending">0</div></div>
         <div class="st rd"><div class="stl">Missing Reports</div><div class="stv" id="vmr-missing">0</div></div>
         <div class="st og"><div class="stl">Off Track</div><div class="stv" id="vmr-offtrack">0</div></div>
       </div>
-      <div style="font-size:10.5px;color:var(--g500);margin-bottom:8px">Achieved = latest MEAL data entry within the selected month. Formal verification &amp; sign-off locking will tighten this once MEAL's monthly locking module ships — this view will switch to reading the locked value automatically.</div>
+      <div style="font-size:10.5px;color:var(--g500);margin-bottom:8px">Achieved = MEAL's verified, locked value for the month where one exists; otherwise the latest submitted entry, shown as Pending Verification until MEAL locks it.</div>
       <div class="tw"><table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Achieved (Month)</th><th>Remaining</th><th>Status</th></tr></thead><tbody id="vmr-body"></tbody></table></div>
     </div>
   </div>
@@ -665,6 +666,22 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Gender &amp; CWD Disaggregation</div>
     <select id="mg-proj" onchange="renderMealHome()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
       <option value="all">All Projects</option></select></div><div class="cdb" id="meal-gender"></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Monthly Verification &amp; Locking</div>
+    <input type="month" id="mv-month" onchange="renderMonthlyVerification();renderMonthlyReport();" style="font-size:12px;padding:5px 9px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+  </div>
+  <div class="cdb tw"><table><thead><tr><th>Indicator</th><th>Project</th><th>Submitted Result</th><th>Verification Decision</th><th>Correction History</th><th></th></tr></thead><tbody id="mv-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Monthly Report &amp; Charts</div><button class="b bo bs" onclick="exportMonthlyReport()">Download CSV</button></div>
+  <div class="cdb">
+    <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+      <div class="st nv"><div class="stl">Locked Month</div><div class="stv" id="mr-locked">—</div></div>
+      <div class="st gr"><div class="stl">Verified &amp; On Track</div><div class="stv" id="mr-achieved">0</div></div>
+      <div class="st rd"><div class="stl">Verified &amp; Off Track</div><div class="stv" id="mr-offtrack">0</div></div>
+      <div class="st og"><div class="stl">Outstanding (Unverified)</div><div class="stv" id="mr-outstanding">0</div></div>
+    </div>
+  </div></div>
+
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
 </div>
 
@@ -3375,7 +3392,7 @@ function render(pg){
       else if(pg==='leave-request'){renderMyLeaveRequests();renderMyLeaveBalance();}
       else if(pg==='users'){renderUsers();renderUserMgmt();renderLoginActivity();}
       else if(pg==='settings'){renderSettings();}
-      else if(pg==='meal'){renderMealHome();}
+      else if(pg==='meal'){renderMealHome();renderMonthlyVerification();renderMonthlyReport();}
       else if(pg==='meal-ind'){renderInd();}
       else if(pg==='meal-lf'){renderLF();}
       else if(pg==='meal-cfrm'){renderCFRM();}
@@ -3955,34 +3972,37 @@ function renderCompletedProjectsImpact(){
 }
 
 // ============ VERIFIED MONTHLY RESULTS (Executive) ============
-// "Verified" today means the latest MEAL data entry within the selected month -- MEAL's own
-// Monthly Verification & Locking module (tracked separately) will add a real sign-off/lock step;
-// once it exists, swap the lookup below to read the locked value instead of the latest update.
+// Reads MEAL's verification/locking state when it exists (getVerification, defined with the
+// Monthly Verification & Locking module) and falls back to the latest raw submission -- marked
+// Pending Verification -- when MEAL hasn't locked the month yet.
 function renderVerifiedMonthlyResults(){
   var body=$('vmr-body');if(!body)return;
   var monthEl=$('vmr-month');
   if(monthEl && !monthEl.value)monthEl.value=today().slice(0,7);
   var month=monthEl?monthEl.value:today().slice(0,7);
-  var reporting=0,missing=0,offtrack=0,rows=[];
+  var verified=0,pending=0,missing=0,offtrack=0,rows=[];
   DB.indicators.forEach(function(i){
-    var inMonth=(i.updates||[]).filter(function(u){return u.date&&u.date.slice(0,7)===month;});
-    var latest=inMonth.length?inMonth[inMonth.length-1]:null;
-    var achieved=latest?latest.actual:null;
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    var achieved=(v&&v.status==='Verified')?v.value:(sub?sub.actual:null);
     var remaining=achieved!=null?Math.max(0,(i.target||0)-achieved):null;
     var status;
     if(achieved==null){status='Missing Report';missing++;}
-    else{
-      reporting++;
+    else if(v&&v.status==='Verified'){
+      verified++;
       var pct=i.target?achieved/i.target:1;
-      if(pct<0.7){status='Off Track';offtrack++;}
-      else status='On Track';
+      status=pct<0.7?'Off Track':'On Track';
+      if(pct<0.7)offtrack++;
+    } else {
+      status='Pending Verification';pending++;
     }
     rows.push({name:i.name,proj:i.proj,target:i.target,achieved:achieved,remaining:remaining,status:status,unit:i.unit});
   });
-  if($('vmr-reporting'))$('vmr-reporting').textContent=reporting;
+  if($('vmr-reporting'))$('vmr-reporting').textContent=verified;
+  if($('vmr-pending'))$('vmr-pending').textContent=pending;
   if($('vmr-missing'))$('vmr-missing').textContent=missing;
   if($('vmr-offtrack'))$('vmr-offtrack').textContent=offtrack;
-  var sb={'Missing Report':'bR','Off Track':'bO','On Track':'bG'};
+  var sb={'Missing Report':'bR','Off Track':'bO','On Track':'bG','Pending Verification':'bY'};
   body.innerHTML=rows.length?rows.map(function(r){
     return '<tr><td>'+esc(r.name)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.target)+' '+esc(r.unit||'')+'</td>'+
       '<td>'+(r.achieved!=null?fmt(r.achieved)+' '+esc(r.unit||''):'<span style="color:var(--g400)">—</span>')+'</td>'+
@@ -5813,6 +5833,12 @@ function openIndicatorUpdateModal(id){
 function saveIndicatorUpdate(){
   if(!_indUpdateId)return;
   var i=DB.indicators.find(function(x){return x.id===_indUpdateId;});if(!i)return;
+  var updateDate=$('iu-date').value||today();
+  var month=updateDate.slice(0,7);
+  if(i.verifications && i.verifications[month] && i.verifications[month].status==='Verified'){
+    alert('MEAL has verified and locked '+month+' for this indicator. Contact MEAL to reopen the month before submitting a new value.');
+    return;
+  }
   var actual=parseInt($('iu-actual').value);
   if(isNaN(actual)){alert('Please enter the new actual value.');return;}
   var femaleStr=$('iu-female').value.trim(),maleStr=$('iu-male').value.trim();
@@ -5822,11 +5848,96 @@ function saveIndicatorUpdate(){
     return;
   }
   i.updates=i.updates||[];
-  i.updates.push({date:$('iu-date').value||today(),actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name});
+  i.updates.push({date:updateDate,actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name});
   i.actual=actual;
   if(female!==null)i.actualFemale=female;
   if(male!==null)i.actualMale=male;
   closeM('m-ind-update');renderInd();queueCloudSave();
+}
+
+// ============ MONTHLY VERIFICATION & LOCKING (MEAL) ============
+function indicatorMonthSubmission(i,month){
+  var inMonth=(i.updates||[]).filter(function(u){return u.date&&u.date.slice(0,7)===month;});
+  return inMonth.length?inMonth[inMonth.length-1]:null;
+}
+function getVerification(i,month){
+  if(!i.verifications)i.verifications={};
+  if(!i.verifications[month])i.verifications[month]={status:'Pending',corrections:[]};
+  return i.verifications[month];
+}
+function verifyIndicatorMonth(indId,month){
+  var i=DB.indicators.find(function(x){return x.id===indId;});if(!i)return;
+  var sub=indicatorMonthSubmission(i,month);
+  if(!sub){alert('No submitted result for this month yet.');return;}
+  var v=getVerification(i,month);
+  v.status='Verified';v.value=sub.actual;v.by=SES.name;v.on=today();
+  logAudit('indicator-verified',indId,month+' verified at '+sub.actual+' by '+SES.name);
+  renderMonthlyVerification();renderMonthlyReport();renderVerifiedMonthlyResults();
+  queueCloudSave();
+}
+function returnIndicatorMonth(indId,month){
+  var note=window.prompt("Reason for returning this month's result for correction:",'');
+  if(!note)return;
+  var i=DB.indicators.find(function(x){return x.id===indId;});if(!i)return;
+  var v=getVerification(i,month);
+  v.status='Returned';
+  v.corrections.push({by:SES.name,on:today(),note:note});
+  logAudit('indicator-returned',indId,month+' returned for correction by '+SES.name+': '+note);
+  renderMonthlyVerification();renderMonthlyReport();renderVerifiedMonthlyResults();
+  queueCloudSave();
+}
+function renderMonthlyVerification(){
+  var body=$('mv-body');if(!body)return;
+  var monthEl=$('mv-month');
+  if(monthEl && !monthEl.value)monthEl.value=today().slice(0,7);
+  var month=monthEl?monthEl.value:today().slice(0,7);
+  var sb={'Pending':'bO','Verified':'bG','Returned':'bR'};
+  var canAct=SES.role==='meal';
+  body.innerHTML=DB.indicators.length?DB.indicators.map(function(i){
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    var corrections=v&&v.corrections.length?v.corrections.map(function(c){return esc(c.on)+': '+esc(c.note);}).join('<br>'):'—';
+    var decision=!sub?'<span style="color:var(--g400)">No submission</span>':'<span class="bdg '+(sb[v.status]||'bY')+'">'+esc(v.status)+(v.status==='Verified'?' · '+dt(v.on):'')+'</span>';
+    var actions='';
+    if(canAct && sub && v.status!=='Verified'){
+      actions='<button class="b bn bs" onclick="verifyIndicatorMonth(\''+i.id+'\',\''+month+'\')">Verify &amp; Lock</button> <button class="b bo bs" onclick="returnIndicatorMonth(\''+i.id+'\',\''+month+'\')">Return</button>';
+    }
+    return '<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+(sub?fmt(sub.actual)+' '+esc(i.unit||''):'—')+'</td>'+
+      '<td>'+decision+'</td><td style="font-size:11px">'+corrections+'</td><td>'+actions+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No indicators yet.</td></tr>';
+}
+
+// ============ MONTHLY REPORT & CHARTS (MEAL) ============
+function renderMonthlyReport(){
+  var monthEl=$('mv-month');
+  var month=monthEl&&monthEl.value?monthEl.value:today().slice(0,7);
+  var achieved=0,offtrack=0,outstanding=0;
+  DB.indicators.forEach(function(i){
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    if(!sub||!v||v.status!=='Verified'){outstanding++;return;}
+    var pct=i.target?v.value/i.target:1;
+    if(pct<0.7)offtrack++;else achieved++;
+  });
+  if($('mr-locked'))$('mr-locked').textContent=month;
+  if($('mr-achieved'))$('mr-achieved').textContent=achieved;
+  if($('mr-offtrack'))$('mr-offtrack').textContent=offtrack;
+  if($('mr-outstanding'))$('mr-outstanding').textContent=outstanding;
+}
+function exportMonthlyReport(){
+  var monthEl=$('mv-month');
+  var month=monthEl&&monthEl.value?monthEl.value:today().slice(0,7);
+  var rows=[['Indicator','Project','Target','Submitted Result','Verification Status','Verified Value','Verified By','Verified On']];
+  DB.indicators.forEach(function(i){
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    rows.push([i.name,i.proj,i.target,sub?sub.actual:'',v?v.status:'No submission',v&&v.status==='Verified'?v.value:'',v&&v.status==='Verified'?v.by:'',v&&v.status==='Verified'?v.on:'']);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='MEAL-monthly-report-'+month+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function saveCFRM(){
