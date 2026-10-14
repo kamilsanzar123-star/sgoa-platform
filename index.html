@@ -826,6 +826,17 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">Expenditure Ledger</div><button class="b bn bs" onclick="openM('m-expenditure')">+ Record Expenditure</button></div>
   <div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>Category</th><th>Description</th><th>Paid To</th><th>Method</th><th>Amount</th><th>Action</th></tr></thead><tbody id="fin-ledger"></tbody></table>
   <div style="text-align:right;padding:10px 0;font-weight:800;color:var(--navy)">Total Recorded: <span id="fin-ledger-total">$0</span></div></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Invoice &amp; Payment Controls</div>
+    <span style="font-size:10.5px;color:var(--g500)"><span id="fin-inv-pending">0</span> pending · <span id="fin-inv-discrepancy">0</span> discrepancies</span></div>
+  <div class="cdb tw"><table><thead><tr><th>Invoice</th><th>PO / Receipt</th><th>Matching Result</th><th>Payment Approver</th><th>Payment Reference</th><th></th></tr></thead><tbody id="fin-inv-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Budget Revision Approval</div><button class="b bn bs" onclick="openBudgetRevisionModal()">+ Request Revision</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Project</th><th>Budget-Line Changes</th><th>Reason / Donor Consent</th><th>Status</th><th>Authorized Approval</th></tr></thead><tbody id="budrev-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Payroll &amp; Accounting Connection</div><button class="b bn bs" onclick="openPayrollPeriodModal()">+ Add Payroll Period</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Approved Payroll Period</th><th>Cost Allocations</th><th>Accounting Reference</th><th>Reconciliation Status</th><th></th></tr></thead><tbody id="payroll-body"></tbody></table></div></div>
+
   <div class="stats" id="finance-stats"></div>
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="finance-tasks"></div></div>
@@ -2393,6 +2404,8 @@ deletionLog:[],
 loginLog:[],
 strategy:[],
 workplanRevisions:[],
+budgetRevisions:[],
+payrollPeriods:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3402,7 +3415,7 @@ function render(pg){
       else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
       else if(pg==='meal-data'){renderDataHistory();}
-      else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();}
+      else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();renderFinanceInvoiceControls();renderBudgetRevisions();renderPayrollPeriods();}
       else if(pg==='finance-commitments'){renderCommitments();}
       else if(pg==='finance-advances'){renderAdvances();renderReconciliations();}
       else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();renderStaffLeaveBalances();}
@@ -6739,10 +6752,121 @@ function invoiceMatchStatus(inv){
 function approveInvoicePayment(id){
   var inv=DB.invoices.find(function(x){return x.id===id;});
   if(!inv)return;
+  // Independent control: the department that received the goods and matched the invoice
+  // (Supply Chain) is not the one who approves it for payment -- that's Finance's job, so a
+  // single department can never push its own invoice all the way through to payment alone.
+  var orgWide=['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  if(SES.role!=='finance' && !orgWide){alert('Only Finance can approve an invoice for payment.');return;}
   var m=invoiceMatchStatus(inv);
   if(m.label!=='Matched'){alert('This invoice cannot be approved for payment yet: '+m.label+'. Resolve the mismatch first.');return;}
   inv.status='Approved for Payment';
-  renderInvoices();queueCloudSave();
+  inv.paymentApprover=SES.name;inv.paymentApprovedOn=today();
+  logAudit('invoice-payment-approved',id,'Approved for payment by '+SES.name);
+  renderInvoices();renderFinanceInvoiceControls();queueCloudSave();
+}
+function recordInvoicePayment(id){
+  var inv=DB.invoices.find(function(x){return x.id===id;});
+  if(!inv||inv.status!=='Approved for Payment')return;
+  var ref=window.prompt('Payment reference (bank transfer ref / cheque number):','');
+  if(!ref||!ref.trim())return;
+  inv.status='Paid';inv.paymentRef=ref.trim();inv.paidOn=today();
+  logAudit('invoice-paid',id,'Payment recorded by '+SES.name+': '+ref.trim());
+  renderInvoices();renderFinanceInvoiceControls();queueCloudSave();
+}
+function renderFinanceInvoiceControls(){
+  var body=$('fin-inv-body');if(!body)return;
+  if($('fin-inv-pending'))$('fin-inv-pending').textContent=DB.invoices.filter(function(inv){return inv.status==='Pending';}).length;
+  if($('fin-inv-discrepancy'))$('fin-inv-discrepancy').textContent=DB.invoices.filter(function(inv){return invoiceMatchStatus(inv).label==='Discrepancy';}).length;
+  var canAct=SES.role==='finance'||['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  body.innerHTML=DB.invoices.length?DB.invoices.slice().reverse().map(function(inv){
+    var po=DB.po.find(function(p){return p.id===inv.poId;});
+    var m=invoiceMatchStatus(inv);
+    var grn=grnForPO(inv.poId);
+    var action='';
+    if(canAct && m.label==='Matched' && inv.status==='Pending')action='<button class="b bn bs" onclick="approveInvoicePayment(\''+inv.id+'\')">Approve for Payment</button>';
+    else if(canAct && inv.status==='Approved for Payment')action='<button class="b bo bs" onclick="recordInvoicePayment(\''+inv.id+'\')">Record Payment</button>';
+    return '<tr><td>'+esc(inv.invoiceNumber)+'</td><td>'+esc(inv.poNumber)+(grn?' / '+esc(grn.grnNumber):' / awaiting GRN')+'</td>'+
+      '<td><span class="bdg '+m.cls+'">'+m.label+'</span></td>'+
+      '<td>'+(inv.paymentApprover?esc(inv.paymentApprover)+' · '+dt(inv.paymentApprovedOn):'<span style="color:var(--g400)">—</span>')+'</td>'+
+      '<td>'+(inv.paymentRef?esc(inv.paymentRef)+' · '+dt(inv.paidOn):'<span style="color:var(--g400)">—</span>')+'</td>'+
+      '<td>'+action+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No supplier invoices recorded yet.</td></tr>';
+}
+
+// ============ BUDGET REVISION APPROVAL (Finance) ============
+function openBudgetRevisionModal(){
+  var sel=$('br-proj');
+  sel.innerHTML=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).map(function(k){return '<option value="'+esc(k)+'">'+esc(PROJ[k].name)+' ('+esc(k)+')</option>';}).join('');
+  $('br-changes').value='';$('br-reason').value='';
+  openM('m-budrev');
+}
+function saveBudgetRevision(){
+  var proj=$('br-proj').value;
+  if(!proj){alert('No active project to select.');return;}
+  var changes=$('br-changes').value.trim(),reason=$('br-reason').value.trim();
+  if(!changes||!reason){alert('Please complete the budget-line changes and reason/donor consent.');return;}
+  DB.budgetRevisions.unshift({id:nid('BREV'),proj:proj,changes:changes,reason:reason,status:'Pending',createdBy:SES.name,createdOn:today()});
+  logAudit('budget-revision-requested',proj,'Budget revision requested by '+SES.name);
+  closeM('m-budrev');
+  renderBudgetRevisions();
+  queueCloudSave();
+  alert('Budget revision submitted to the Executive Director for approval.');
+}
+function decideBudgetRevision(id,decision){
+  var r=DB.budgetRevisions.find(function(x){return x.id===id;});if(!r)return;
+  r.status=decision;r.decidedBy=SES.name;r.decidedOn=today();
+  logAudit('budget-revision-'+decision.toLowerCase(),r.proj,'Budget revision '+decision.toLowerCase()+' by '+SES.name);
+  renderBudgetRevisions();
+  queueCloudSave();
+}
+function renderBudgetRevisions(){
+  var body=$('budrev-body');if(!body)return;
+  var sb={'Pending':'bO','Approved':'bG','Rejected':'bR'};
+  var canDecide=SES.role==='executive';
+  body.innerHTML=DB.budgetRevisions.length?DB.budgetRevisions.map(function(r){
+    var projName=PROJ[r.proj]?PROJ[r.proj].name:r.proj;
+    return '<tr><td>'+esc(projName)+'</td><td style="font-size:11.5px">'+esc(r.changes)+'</td><td style="font-size:11.5px">'+esc(r.reason)+'</td>'+
+      '<td><span class="bdg '+(sb[r.status]||'bY')+'">'+esc(r.status)+'</span></td>'+
+      '<td>'+(canDecide&&r.status==='Pending'?'<button class="b bn bs" onclick="decideBudgetRevision(\''+r.id+'\',\'Approved\')">Approve</button> <button class="b bo bs" onclick="decideBudgetRevision(\''+r.id+'\',\'Rejected\')">Reject</button>':(r.decidedBy?esc(r.decidedBy)+' · '+dt(r.decidedOn):'<span style="color:var(--g400)">—</span>'))+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No budget revisions recorded yet.</td></tr>';
+}
+
+// ============ PAYROLL & ACCOUNTING CONNECTION (Finance) ============
+function openPayrollPeriodModal(){
+  $('pp-period').value=today().slice(0,7);$('pp-cost').value='';$('pp-allocations').value='';$('pp-accref').value='';
+  openM('m-payroll');
+}
+function savePayrollPeriod(){
+  var period=$('pp-period').value;
+  if(!period){alert('Please select the payroll period.');return;}
+  var cost=parseFloat($('pp-cost').value);
+  if(!cost||cost<=0){alert('Please enter a valid approved total cost.');return;}
+  var allocations=$('pp-allocations').value.trim();
+  if(!allocations){alert('Please describe the cost allocations.');return;}
+  if(DB.payrollPeriods.some(function(p){return p.period===period;})){alert('A payroll period for '+period+' already exists.');return;}
+  DB.payrollPeriods.unshift({id:nid('PAYP'),period:period,cost:cost,allocations:allocations,accountingRef:$('pp-accref').value.trim(),
+    reconciliationStatus:'Pending',createdBy:SES.name,createdOn:today()});
+  logAudit('payroll-period-added',period,'Payroll period added by '+SES.name);
+  closeM('m-payroll');
+  renderPayrollPeriods();
+  queueCloudSave();
+}
+function markPayrollReconciled(id){
+  var p=DB.payrollPeriods.find(function(x){return x.id===id;});if(!p)return;
+  p.reconciliationStatus='Reconciled';p.reconciledBy=SES.name;p.reconciledOn=today();
+  logAudit('payroll-reconciled',p.period,'Marked reconciled by '+SES.name);
+  renderPayrollPeriods();
+  queueCloudSave();
+}
+function renderPayrollPeriods(){
+  var body=$('payroll-body');if(!body)return;
+  var sb={'Pending':'bO','Reconciled':'bG'};
+  body.innerHTML=DB.payrollPeriods.length?DB.payrollPeriods.map(function(p){
+    return '<tr><td>'+esc(p.period)+' · '+money(p.cost,'USD')+'</td><td style="font-size:11.5px">'+esc(p.allocations)+'</td>'+
+      '<td>'+esc(p.accountingRef||'—')+'</td>'+
+      '<td><span class="bdg '+(sb[p.reconciliationStatus]||'bY')+'">'+esc(p.reconciliationStatus)+'</span></td>'+
+      '<td>'+(p.reconciliationStatus==='Pending'?'<button class="b bo bs" onclick="markPayrollReconciled(\''+p.id+'\')">Mark Reconciled</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--g400)">No payroll periods recorded yet.</td></tr>';
 }
 
 function renderGRNs(){
@@ -6776,8 +6900,9 @@ function renderInvoices(){
     DB.invoices.slice().reverse().forEach(function(inv){
       var po=DB.po.find(function(p){return p.id===inv.poId;});
       var m=invoiceMatchStatus(inv);
-      var actions=(m.label==='Matched'&&inv.status==='Pending')?'<button class="b bn bs" onclick="approveInvoicePayment(\''+inv.id+'\')">Approve for Payment</button>':
-        (inv.status==='Approved for Payment'?'<span class="bdg bG">Approved</span>':'<span style="color:var(--g400);font-size:11px">-</span>');
+      // Approval for payment is Finance's independent control (see renderFinanceInvoiceControls) --
+      // Supply Chain, which matched this invoice, only ever sees its status here, never an action.
+      var actions='<span class="bdg '+(inv.status==='Paid'?'bG':inv.status==='Approved for Payment'?'bB':'bY')+'">'+esc(inv.status)+'</span>';
       var r=el('tr');
       r.innerHTML='<td>'+esc(inv.invoiceNumber)+'</td><td>'+esc(inv.poNumber)+'</td><td>'+esc(inv.supplierName)+'</td>'+
         '<td>'+money(inv.amount,inv.currency)+'</td><td>'+(po?money(po.total,po.currency):'-')+'</td>'+
@@ -9796,6 +9921,31 @@ if(document.getElementById('afg-map')) initMap();
 })();
 </script>
 
+
+<div class="mb" id="m-budrev"><div class="md">
+<div class="mh"><h3>Request Budget Revision</h3><button class="mx" onclick="closeM('m-budrev')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Project *</label><select id="br-proj"></select></div>
+    <div class="fg ff"><label>Budget-Line Changes *</label><textarea rows="2" id="br-changes" placeholder="e.g. Training line $45,000 -> $53,400; Operations line $30,000 -> $21,600"></textarea></div>
+    <div class="fg ff"><label>Reason / Donor Consent *</label><textarea rows="2" id="br-reason" placeholder="Why, and reference to donor clearance if required"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-budrev')">Cancel</button><button class="b bn" onclick="saveBudgetRevision()">Submit for Approval</button></div>
+</div></div>
+
+<div class="mb" id="m-payroll"><div class="md">
+<div class="mh"><h3>Add Payroll Period</h3><button class="mx" onclick="closeM('m-payroll')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Approved Payroll Period *</label><input type="month" id="pp-period"></div>
+    <div class="fg"><label>Approved Total Cost (USD) *</label><input type="number" id="pp-cost" placeholder="e.g. 48500"></div>
+    <div class="fg ff"><label>Cost Allocations *</label><textarea rows="2" id="pp-allocations" placeholder="e.g. GPE-STG $18,000; GPE-AL $12,500; Core/Admin $18,000"></textarea></div>
+    <div class="fg ff"><label>Accounting Reference</label><input type="text" id="pp-accref" placeholder="e.g. QuickBooks journal ref JE-2026-10-003"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-payroll')">Cancel</button><button class="b bn" onclick="savePayrollPeriod()">Save</button></div>
+</div></div>
 
 <div class="mb" id="m-wpr"><div class="md">
 <div class="mh"><h3>Request Workplan Revision</h3><button class="mx" onclick="closeM('m-wpr')">&times;</button></div>
