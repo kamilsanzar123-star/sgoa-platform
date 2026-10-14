@@ -938,6 +938,9 @@ tbody tr:hover td{background:var(--g50);}
 
   <div class="cd"><div class="cdh"><div class="cdt">Project Implementation Progress</div></div><div class="cdb" id="prog-progress"></div></div>
 
+  <div class="cd"><div class="cdh"><div class="cdt">Workplan Revisions</div><button class="b bn bs" onclick="openWorkplanRevisionModal()">+ Request Revision</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Project</th><th>Change Type</th><th>Original Plan</th><th>Requested Change</th><th>Impact / Reason</th><th>Status</th><th></th></tr></thead><tbody id="wpr-body"></tbody></table></div></div>
+
   <div class="cd"><div class="cdh"><div class="cdt">Findings &amp; Verification</div></div><div class="cdb" id="programs-findings"></div></div>
 
   <div class="g2">
@@ -2372,6 +2375,7 @@ timesheets:[],
 deletionLog:[],
 loginLog:[],
 strategy:[],
+workplanRevisions:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3387,7 +3391,7 @@ function render(pg){
       else if(pg==='hr'){renderDept('hr','HR');renderHRChart();renderStaff();renderContracts();renderAttendance();renderLeaveQueue();renderStaffLeaveBalances();}
       else if(pg==='hr-recruitment'){renderVacancies();renderCandidatePipeline();}
       else if(pg==='hr-training'){renderTrainings();}
-      else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();}
+      else if(pg==='programs'){renderDept('programs','Programs');renderProgProgress();renderProgramsHomeCharts();renderActivitiesGrandChart();renderProgramsFindings();renderWorkplanRevisions();}
       else if(pg==='prog-activities'){renderActivities();}
       else if(pg==='prog-benef'){renderBenef();renderDocs('benef','Programs');}
       else if(pg==='prog-analysis'){renderAnalysis();}
@@ -3591,10 +3595,10 @@ function drawAll(){
   if($('k-act-s'))$('k-act-s').textContent=d.done+' done · '+d.prog+' in progress';
   if($('k-bud'))$('k-bud').textContent=d.budget?Math.round(d.spent/d.budget*100)+'%':'0%';
   if($('k-bud-s'))$('k-bud-s').textContent=money(Math.round(d.spent),dispCur)+' of '+money(Math.round(d.budget),dispCur);
-  if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).length:1;
+  if($('k-proj'))$('k-proj').textContent=pf==='all'?Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).length:1;
   if($('k-proj-sub')){
     if(pf==='all'){
-      var allKeys=Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';});
+      var allKeys=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';});
       var donors=new Set(allKeys.map(function(k){return PROJ[k].donor;}).filter(Boolean));
       var sectors=new Set(allKeys.map(function(k){return PROJ[k].sector;}).filter(Boolean));
       $('k-proj-sub').textContent=allKeys.length?(donors.size+' donor'+(donors.size!==1?'s':'')+' · '+sectors.size+' sector'+(sectors.size!==1?'s':'')):'No projects yet';
@@ -3686,7 +3690,7 @@ function renderExec(){
 
 function renderExecProjects(){
   var c=$('exec-projects');if(!c)return;c.innerHTML='';
-  Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).forEach(function(k){
+  Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).forEach(function(k){
     var p=PROJ[k];
     var row=el('div','pr');
     row.setAttribute('data-proj',k);
@@ -3780,7 +3784,7 @@ function renderExecDepts(){
 // ============ PROJECTS ============
 function renderProjectCards(){
   var c=$('project-cards');if(!c)return;c.innerHTML='';
-  Object.keys(PROJ).filter(function(k){return PROJ[k].status!=='Completed';}).forEach(function(k){
+  Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).forEach(function(k){
     var p=PROJ[k];
     var acts=DB.activities.filter(function(a){return a.proj===k;});
     var done=acts.filter(function(a){return a.status==='Complete';}).length;
@@ -3844,23 +3848,77 @@ function reopenProject(code){
 }
 function renderCompletedProjects(){
   var list=$('completed-projects-list');if(!list)return;
-  var codes=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed';});
+  var codes=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed'||PROJ[k].status==='Archived';});
   if(!codes.length){list.innerHTML='<div class="empty">No completed projects yet.</div>';return;}
   var canManage=SES.role==='meal'||SES.role==='executive';
   list.innerHTML=codes.map(function(k){
     var p=PROJ[k];
+    var archived=p.status==='Archived';
     return '<div class="cd" style="margin-bottom:10px;border-left:4px solid var(--g400)"><div class="cdb">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;flex-wrap:wrap">'+
       '<div><b>'+esc(p.name)+'</b> ('+esc(k)+')<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(p.loc||'-')+' · '+fmt(p.benef)+' beneficiaries · '+money(Math.round(p.budget/1000),p.currency)+'K budget · Completed '+dt(p.completedOn)+' by '+esc(p.completedBy||'-')+'</div></div>'+
-      '<span class="bdg bN">Completed</span></div>'+
+      '<span class="bdg '+(archived?'bB':'bN')+'">'+(archived?'Archived':'Completed')+'</span></div>'+
+      renderCloseoutChecklist(p,k)+
       '<div class="wfa" style="margin-top:9px"><button class="b bo bs" data-proj="'+k+'">View Full Details</button>'+
-      (canManage?'<button class="b bo bs" onclick="reopenProject(\''+k+'\')">Reopen</button>':'')+
+      (canManage&&!archived?'<button class="b bo bs" onclick="reopenProject(\''+k+'\')">Reopen</button>':'')+
       '</div></div></div>';
   }).join('');
 }
 
+// ============ PROJECT CLOSEOUT CHECKLIST (Programs) ============
+function getCloseout(p){
+  if(!p.closeout)p.closeout={mealCleared:false,financeCleared:false,donorReportSubmitted:false,archiveApproved:false};
+  return p.closeout;
+}
+function toggleCloseoutItem(code,key,role){
+  var p=PROJ[code];if(!p)return;
+  var c=getCloseout(p);
+  if(c.archiveApproved)return;
+  var orgWide=['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  if(!orgWide && SES.role!==role){alert('Only '+(DEPTNAME[role]||role)+' can set this item.');return;}
+  c[key]=!c[key];
+  c[key+'By']=c[key]?SES.name:null;
+  c[key+'On']=c[key]?today():null;
+  logAudit('closeout-'+key,code,(c[key]?'Marked cleared':'Unmarked')+' by '+SES.name);
+  renderCompletedProjects();
+  queueCloudSave();
+}
+function approveProjectArchive(code){
+  var p=PROJ[code];if(!p)return;
+  var c=getCloseout(p);
+  if(!c.mealCleared||!c.financeCleared||!c.donorReportSubmitted){alert('All three clearances (MEAL, Finance, Donor Report) must be complete before archiving.');return;}
+  if(!confirm('Archive "'+p.name+'"? This is the final closeout step and cannot be undone from here.'))return;
+  c.archiveApproved=true;c.archiveApprovedBy=SES.name;c.archiveApprovedOn=today();
+  p.status='Archived';
+  logAudit('project-archived',code,'Archived by '+SES.name);
+  renderCompletedProjects();renderProjectCards();refreshAll();
+  queueCloudSave();
+  alert('Project archived.');
+}
+function renderCloseoutChecklist(p,k){
+  var c=getCloseout(p);
+  var items=[{key:'mealCleared',label:'MEAL Clearance',role:'meal'},
+    {key:'financeCleared',label:'Finance Clearance',role:'finance'},
+    {key:'donorReportSubmitted',label:'Donor Report Submitted',role:'programs'}];
+  var orgWide=['executive','progdeputy','deputy'].indexOf(SES.role)!==-1;
+  var rows=items.map(function(it){
+    var done=c[it.key];
+    var canToggle=(orgWide||SES.role===it.role)&&!c.archiveApproved;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--g100);font-size:12px">'+
+      '<span>'+(done?'✅':'⬜')+' '+it.label+(done?' — '+esc(c[it.key+'By']||'')+' · '+dt(c[it.key+'On']):'')+'</span>'+
+      (canToggle?'<button class="b bo bs" onclick="toggleCloseoutItem(\''+k+'\',\''+it.key+'\',\''+it.role+'\')">'+(done?'Undo':'Clear')+'</button>':'')+
+      '</div>';
+  }).join('');
+  var allCleared=c.mealCleared&&c.financeCleared&&c.donorReportSubmitted;
+  var archiveRow='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px">'+
+    '<span>'+(c.archiveApproved?'✅ Archived — '+esc(c.archiveApprovedBy||'')+' · '+dt(c.archiveApprovedOn):(allCleared?'⬜ Ready to archive':'⬜ Archive (locked until all clearances above are complete)'))+'</span>'+
+    (SES.role==='executive'&&!c.archiveApproved&&allCleared?'<button class="b bn bs" onclick="approveProjectArchive(\''+k+'\')">Archive</button>':'')+
+    '</div>';
+  return '<div style="background:var(--g50);padding:10px;border-radius:7px;margin-top:9px"><div style="font-size:10.5px;font-weight:700;color:var(--navy);margin-bottom:4px">CLOSEOUT CHECKLIST</div>'+rows+archiveRow+'</div>';
+}
+
 function completedProjectsImpact(){
-  var completed=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed';});
+  var completed=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Completed'||PROJ[k].status==='Archived';});
   var totalBenef=0,provinces={};
   completed.forEach(function(k){
     var p=PROJ[k];
@@ -3979,6 +4037,46 @@ function renderStrategy(){
       '<td><span class="bdg '+(stb[s.status]||'bY')+'">'+esc(s.status)+'</span></td>'+
       '<td><button class="b bo bs" onclick="openStrategyModal(\''+s.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'strategy\',\''+s.id+'\')">Del</button></td></tr>';
   }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No strategic objectives recorded yet.</td></tr>';
+}
+
+// ============ WORKPLAN REVISIONS (Programs) ============
+function openWorkplanRevisionModal(){
+  var sel=$('wpr-proj');
+  sel.innerHTML=Object.keys(PROJ).filter(function(k){return PROJ[k].status==='Active';}).map(function(k){return '<option value="'+esc(k)+'">'+esc(PROJ[k].name)+' ('+esc(k)+')</option>';}).join('');
+  $('wpr-type').value='Timeline';$('wpr-original').value='';$('wpr-change').value='';$('wpr-impact').value='';
+  openM('m-wpr');
+}
+function saveWorkplanRevision(){
+  var proj=$('wpr-proj').value;
+  if(!proj){alert('No active project to select. Please select a project.');return;}
+  var original=$('wpr-original').value.trim(),change=$('wpr-change').value.trim(),impact=$('wpr-impact').value.trim();
+  if(!original||!change||!impact){alert('Please complete the original plan, requested change, and impact/reason.');return;}
+  DB.workplanRevisions.unshift({id:nid('WPR'),proj:proj,changeType:$('wpr-type').value,original:original,change:change,impact:impact,
+    status:'Pending',createdBy:SES.name,createdOn:today()});
+  logAudit('workplan-revision-requested',proj,'Revision requested by '+SES.name);
+  closeM('m-wpr');
+  renderWorkplanRevisions();
+  queueCloudSave();
+  alert('Revision submitted to the Executive Director for approval.');
+}
+function decideWorkplanRevision(id,decision){
+  var r=DB.workplanRevisions.find(function(x){return x.id===id;});if(!r)return;
+  r.status=decision;r.decidedBy=SES.name;r.decidedOn=today();
+  logAudit('workplan-revision-'+decision.toLowerCase(),r.proj,'Revision '+decision.toLowerCase()+' by '+SES.name);
+  renderWorkplanRevisions();
+  queueCloudSave();
+  alert('Revision '+decision.toLowerCase()+'.');
+}
+function renderWorkplanRevisions(){
+  var body=$('wpr-body');if(!body)return;
+  var sb={'Pending':'bO','Approved':'bG','Rejected':'bR'};
+  var canDecide=SES.role==='executive';
+  body.innerHTML=DB.workplanRevisions.length?DB.workplanRevisions.map(function(r){
+    var projName=PROJ[r.proj]?PROJ[r.proj].name:r.proj;
+    return '<tr><td>'+esc(projName)+'</td><td>'+esc(r.changeType)+'</td><td style="font-size:11.5px">'+esc(r.original)+'</td><td style="font-size:11.5px">'+esc(r.change)+'</td><td style="font-size:11.5px">'+esc(r.impact)+'</td>'+
+      '<td><span class="bdg '+(sb[r.status]||'bY')+'">'+esc(r.status)+'</span></td>'+
+      '<td>'+(canDecide&&r.status==='Pending'?'<button class="b bn bs" onclick="decideWorkplanRevision(\''+r.id+'\',\'Approved\')">Approve</button> <button class="b bo bs" onclick="decideWorkplanRevision(\''+r.id+'\',\'Rejected\')">Reject</button>':'')+'</td></tr>';
+  }).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--g400)">No workplan revisions recorded yet.</td></tr>';
 }
 
 var curProjectCode=null;
@@ -9587,6 +9685,20 @@ if(document.getElementById('afg-map')) initMap();
 })();
 </script>
 
+
+<div class="mb" id="m-wpr"><div class="md">
+<div class="mh"><h3>Request Workplan Revision</h3><button class="mx" onclick="closeM('m-wpr')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Project *</label><select id="wpr-proj"></select></div>
+    <div class="fg"><label>Change Type</label><select id="wpr-type"><option>Timeline</option><option>Activity scope</option><option>Target</option><option>Location</option><option>Other</option></select></div>
+    <div class="fg ff"><label>Original Plan / Baseline *</label><textarea rows="2" id="wpr-original" placeholder="What the approved workplan currently says"></textarea></div>
+    <div class="fg ff"><label>Requested Change *</label><textarea rows="2" id="wpr-change" placeholder="What is being changed to"></textarea></div>
+    <div class="fg ff"><label>Impact / Reason *</label><textarea rows="2" id="wpr-impact" placeholder="Why, and the effect on targets/budget"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-wpr')">Cancel</button><button class="b bn" onclick="saveWorkplanRevision()">Submit for Approval</button></div>
+</div></div>
 
 <div class="mb" id="m-strategy"><div class="md">
 <div class="mh"><h3 id="strategy-modal-title">Add Strategic Objective</h3><button class="mx" onclick="closeM('m-strategy')">&times;</button></div>
