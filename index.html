@@ -1093,6 +1093,14 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt clk" onclick="go('ops-fleet')">Fleet Quick View</div><button class="b bo bs" onclick="go('ops-fleet')">Full Fleet</button></div>
   <div class="stats" id="ops-fleet-mini-stats" style="padding:0 15px"></div>
   <div class="cdb tw"><table><thead><tr><th>Plate</th><th>Model</th><th>Assigned</th><th>Location</th><th>Status</th></tr></thead><tbody id="fleet-quick"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Custody, Transfers &amp; Returns</div><button class="b bn bs" onclick="openCustodyModal()">+ Log Custody / Transfer</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Asset / Staff</th><th>Handover Date</th><th>Return / Condition</th><th>Approved Transfer</th><th>Status</th><th>Action</th></tr></thead><tbody id="custody-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Maintenance Schedule</div><button class="b bn bs" onclick="openMaintenanceModal()">+ Schedule Maintenance</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Asset / Vehicle</th><th>Service Due</th><th>Provider / Cost</th><th>Completion Evidence</th><th>Status</th><th>Action</th></tr></thead><tbody id="maintenance-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Fuel &amp; Trip Logs</div><button class="b bn bs" onclick="openFuelLogModal()">+ Log Fuel / Trip</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Travel Authorization</th><th>Trip / Odometer</th><th>Fuel Quantity / Cost</th><th>Driver / Reconciliation</th><th>Action</th></tr></thead><tbody id="fuellog-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Disposal &amp; Insurance</div><button class="b bn bs" onclick="openDisposalModal()">+ Log Disposal / Insurance</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Asset / Policy</th><th>Disposal Reason / Approval</th><th>Sale / Write-off Evidence</th><th>Coverage Expiry</th><th>Status</th><th>Action</th></tr></thead><tbody id="disposal-body"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-operations"></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bn bs" onclick="openM('m-doc')">Upload</button></div>
   <div class="cdb"><div id="docs-operations"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload Operations documents</b></p></div></div></div>
@@ -2447,6 +2455,10 @@ visitorMeetings:[],
 sgConsents:[],
 sgTraining:[],
 sgAccessLog:[],
+custodyRecords:[],
+maintenanceSchedule:[],
+fuelTripLogs:[],
+disposalInsurance:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3478,7 +3490,7 @@ function render(pg){
       else if(pg==='admin'){renderDept('admin','Admin');renderCorrespondence();renderLeases();renderFacilitiesRequests();renderVisitorMeetings();}
       else if(pg==='admin-registry'){renderDocRegistry();}
       else if(pg==='safeguarding'){renderDept('safeguarding','Safeguarding');renderSGCases();renderSGConsents();renderSGTraining();renderSGAccessLog();logSGAccess();}
-      else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();}
+      else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();renderCustody();renderMaintenance();renderFuelLogs();renderDisposal();}
       else if(pg==='ops-assets'){renderAssets();}
       else if(pg==='ops-fleet'){renderFleet();}
       else if(pg==='timesheet'){setTimeout(renderMyTimesheet,100);}
@@ -5724,6 +5736,170 @@ function renderFleetQuick(){
       '<div class="st og"><div class="stl">Service Due</div><div class="stv">'+due+'</div></div>'+
       '<div class="st rd"><div class="stl">In Maintenance</div><div class="stv">'+mt+'</div></div>';
   }
+}
+
+// ============ OPERATIONS: CUSTODY, TRANSFERS & RETURNS ============
+function openCustodyModal(){
+  $('cu-asset').value='';$('cu-handover').value=today();$('cu-approved').value='';
+  openM('m-custody');
+}
+function saveCustody(){
+  var asset=$('cu-asset').value.trim();
+  if(!asset){alert('Please identify the asset / staff.');return;}
+  DB.custodyRecords.unshift({id:nid('CUS'),asset:asset,handover:$('cu-handover').value||today(),
+    approved:$('cu-approved').value.trim(),returnDate:null,returnCondition:null,status:'With Staff',
+    createdBy:SES.name,createdOn:today()});
+  logAudit('custody-logged',asset,'Custody/transfer logged by '+SES.name);
+  closeM('m-custody');
+  renderCustody();
+  queueCloudSave();
+}
+function returnCustody(id){
+  var c=DB.custodyRecords.find(function(x){return x.id===id;});if(!c)return;
+  var cond=window.prompt('Return condition (e.g. Good / Fair / Damaged):','Good');
+  if(cond===null)return;
+  c.returnDate=today();c.returnCondition=cond;c.status='Returned';
+  logAudit('custody-returned',c.asset,'Returned by '+SES.name+' — condition: '+cond);
+  renderCustody();
+  queueCloudSave();
+}
+function renderCustody(){
+  var body=$('custody-body');if(!body)return;
+  body.innerHTML=DB.custodyRecords.length?DB.custodyRecords.map(function(c){
+    return '<tr><td>'+esc(c.asset)+'</td><td>'+dt(c.handover)+'</td>'+
+      '<td style="font-size:11.5px">'+(c.returnDate?dt(c.returnDate)+' · '+esc(c.returnCondition):'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(c.approved||'—')+'</td>'+
+      '<td><span class="bdg '+(c.status==='Returned'?'bG':'bO')+'">'+c.status+'</span></td>'+
+      '<td>'+(c.status==='With Staff'?'<button class="b bo bs" onclick="returnCustody(\''+c.id+'\')">Mark Returned</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No custody records yet</td></tr>';
+}
+
+// ============ OPERATIONS: MAINTENANCE SCHEDULE ============
+function openMaintenanceModal(){
+  $('mt-item').value='';$('mt-due').value='';$('mt-provider').value='';$('mt-cost').value='';
+  openM('m-maintenance');
+}
+function saveMaintenance(){
+  var item=$('mt-item').value.trim(),due=$('mt-due').value;
+  if(!item||!due){alert('Please identify the asset/vehicle and the service due date.');return;}
+  DB.maintenanceSchedule.unshift({id:nid('MNT'),item:item,due:due,provider:$('mt-provider').value.trim(),
+    cost:parseFloat($('mt-cost').value)||0,evidence:null,status:'Scheduled',createdBy:SES.name,createdOn:today()});
+  logAudit('maintenance-scheduled',item,'Maintenance scheduled by '+SES.name);
+  closeM('m-maintenance');
+  renderMaintenance();
+  queueCloudSave();
+}
+function completeMaintenance(id){
+  var m=DB.maintenanceSchedule.find(function(x){return x.id===id;});if(!m)return;
+  var evidence=window.prompt('Completion evidence (e.g. invoice ref, signed service sheet):','');
+  if(evidence===null)return;
+  m.evidence=evidence;m.status='Completed';m.completedBy=SES.name;m.completedOn=today();
+  logAudit('maintenance-completed',m.item,'Completed by '+SES.name);
+  renderMaintenance();
+  queueCloudSave();
+}
+function renderMaintenance(){
+  var body=$('maintenance-body');if(!body)return;
+  body.innerHTML=DB.maintenanceSchedule.length?DB.maintenanceSchedule.map(function(m){
+    var dueCls=m.status==='Scheduled'&&overdue(m.due)?' style="color:var(--red);font-weight:600"':'';
+    return '<tr><td>'+esc(m.item)+'</td><td'+dueCls+'>'+dt(m.due)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(m.provider||'—')+(m.cost?' · '+money(m.cost):'')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(m.evidence||'—')+'</td>'+
+      '<td><span class="bdg '+(m.status==='Completed'?'bG':'bO')+'">'+m.status+'</span></td>'+
+      '<td>'+(m.status==='Scheduled'?'<button class="b bo bs" onclick="completeMaintenance(\''+m.id+'\')">Mark Completed</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No maintenance scheduled yet</td></tr>';
+}
+
+// ============ OPERATIONS: FUEL & TRIP LOGS ============
+function openFuelLogModal(){
+  $('fl-auth').value='';$('fl-date').value=today();$('fl-odo').value='';$('fl-qty').value='';$('fl-cost').value='';$('fl-driver').value='';
+  var sel=$('fl-vehicle');sel.innerHTML=DB.fleet.map(function(v){return '<option value="'+v.id+'">'+esc(v.plate)+' - '+esc(v.model)+'</option>';}).join('')||'<option value="">No vehicles registered</option>';
+  openM('m-fuellog');
+}
+function saveFuelLog(){
+  var auth=$('fl-auth').value.trim(),vehicleId=$('fl-vehicle').value;
+  if(!auth||!vehicleId){alert('Please provide the travel authorization and select a vehicle.');return;}
+  var v=DB.fleet.find(function(x){return x.id===vehicleId;});
+  DB.fuelTripLogs.unshift({id:nid('FUEL'),auth:auth,vehicleId:vehicleId,plate:v?v.plate:vehicleId,date:$('fl-date').value||today(),
+    odo:parseFloat($('fl-odo').value)||0,qty:parseFloat($('fl-qty').value)||0,cost:parseFloat($('fl-cost').value)||0,
+    driver:$('fl-driver').value.trim(),reconciled:false,createdBy:SES.name,createdOn:today()});
+  logAudit('fuel-trip-logged',auth,'Fuel/trip log recorded by '+SES.name);
+  closeM('m-fuellog');
+  renderFuelLogs();
+  queueCloudSave();
+}
+function reconcileFuelLog(id){
+  var f=DB.fuelTripLogs.find(function(x){return x.id===id;});if(!f)return;
+  f.reconciled=true;f.reconciledBy=SES.name;f.reconciledOn=today();
+  logAudit('fuel-trip-reconciled',f.auth,'Reconciled by '+SES.name);
+  renderFuelLogs();
+  queueCloudSave();
+}
+function renderFuelLogs(){
+  var body=$('fuellog-body');if(!body)return;
+  body.innerHTML=DB.fuelTripLogs.length?DB.fuelTripLogs.map(function(f){
+    return '<tr><td>'+esc(f.auth)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(f.plate)+' · '+dt(f.date)+' · '+f.odo+'km</td>'+
+      '<td style="font-size:11.5px">'+f.qty+'L · '+money(f.cost)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(f.driver||'—')+' · <span class="bdg '+(f.reconciled?'bG':'bO')+'">'+(f.reconciled?'Reconciled':'Pending')+'</span></td>'+
+      '<td>'+(f.reconciled?'—':'<button class="b bo bs" onclick="reconcileFuelLog(\''+f.id+'\')">Reconcile</button>')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No fuel/trip logs yet</td></tr>';
+}
+
+// ============ OPERATIONS: DISPOSAL & INSURANCE ============
+function toggleDisposalFields(){
+  var isDisposal=$('ds-type').value==='Disposal';
+  $('ds-reason-wrap').style.display=isDisposal?'':'none';
+  $('ds-approval-wrap').style.display=isDisposal?'':'none';
+  $('ds-evidence-wrap').style.display=isDisposal?'':'none';
+  $('ds-expiry-wrap').style.display=isDisposal?'none':'';
+}
+function openDisposalModal(){
+  $('ds-type').value='Disposal';$('ds-ref').value='';$('ds-reason').value='';$('ds-approval').value='';$('ds-evidence').value='';$('ds-expiry').value='';
+  toggleDisposalFields();
+  openM('m-disposal');
+}
+function saveDisposal(){
+  var type=$('ds-type').value,ref=$('ds-ref').value.trim();
+  if(!ref){alert('Please identify the asset / policy.');return;}
+  var rec={id:nid('DSP'),type:type,ref:ref,createdBy:SES.name,createdOn:today()};
+  if(type==='Disposal'){
+    rec.reason=$('ds-reason').value.trim();rec.approval=$('ds-approval').value.trim();
+    rec.evidence=$('ds-evidence').value.trim();rec.status=rec.evidence?'Disposed':'Pending';
+  } else {
+    rec.expiry=$('ds-expiry').value||null;rec.status='Active';
+  }
+  DB.disposalInsurance.unshift(rec);
+  logAudit('disposal-insurance-logged',ref,type+' record logged by '+SES.name);
+  closeM('m-disposal');
+  renderDisposal();
+  queueCloudSave();
+}
+function markDisposed(id){
+  var r=DB.disposalInsurance.find(function(x){return x.id===id;});if(!r)return;
+  var evidence=window.prompt('Sale / write-off evidence (e.g. sold for $150, receipt filed):','');
+  if(evidence===null)return;
+  r.evidence=evidence;r.status='Disposed';r.disposedBy=SES.name;r.disposedOn=today();
+  logAudit('asset-disposed',r.ref,'Disposed by '+SES.name);
+  renderDisposal();
+  queueCloudSave();
+}
+function renderDisposal(){
+  var body=$('disposal-body');if(!body)return;
+  body.innerHTML=DB.disposalInsurance.length?DB.disposalInsurance.map(function(r){
+    if(r.type==='Disposal'){
+      return '<tr><td>'+esc(r.ref)+' <span class="bdg bN" style="margin-left:4px">Disposal</span></td>'+
+        '<td style="font-size:11.5px">'+esc(r.reason||'—')+' · '+esc(r.approval||'—')+'</td>'+
+        '<td style="font-size:11.5px">'+esc(r.evidence||'—')+'</td><td>—</td>'+
+        '<td><span class="bdg '+(r.status==='Disposed'?'bG':'bO')+'">'+r.status+'</span></td>'+
+        '<td>'+(r.status==='Pending'?'<button class="b bo bs" onclick="markDisposed(\''+r.id+'\')">Mark Disposed</button>':'—')+'</td></tr>';
+    }
+    var daysLeft=r.expiry?Math.round((new Date(r.expiry)-new Date(today()))/86400000):null;
+    var expBadge=daysLeft===null?'<span class="bdg bN">No expiry set</span>':daysLeft<0?'<span class="bdg bR">Expired</span>':daysLeft<=30?'<span class="bdg bR">'+daysLeft+'d left</span>':daysLeft<=90?'<span class="bdg bO">'+daysLeft+'d left</span>':'<span class="bdg bG">'+daysLeft+'d left</span>';
+    return '<tr><td>'+esc(r.ref)+' <span class="bdg bN" style="margin-left:4px">Insurance</span></td>'+
+      '<td>—</td><td>—</td><td>'+(r.expiry?dt(r.expiry):'—')+' '+expBadge+'</td>'+
+      '<td><span class="bdg bN">'+r.status+'</span></td><td>—</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No disposal or insurance records yet</td></tr>';
 }
 
 function editVehicle(id){
@@ -10331,6 +10507,62 @@ if(document.getElementById('afg-map')) initMap();
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-sgtraining')">Cancel</button><button class="b bn" onclick="saveSGTraining()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-custody"><div class="md">
+<div class="mh"><h3>Log Custody / Transfer</h3><button class="mx" onclick="closeM('m-custody')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Asset / Staff *</label><input type="text" id="cu-asset" placeholder="e.g. A-014 Laptop -> Hamid Agha"></div>
+    <div class="fg"><label>Handover Date *</label><input type="date" id="cu-handover"></div>
+    <div class="fg ff"><label>Approved Transfer *</label><input type="text" id="cu-approved" placeholder="e.g. Approved by Eng Abdul Habiab, Operations Manager"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-custody')">Cancel</button><button class="b bn" onclick="saveCustody()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-maintenance"><div class="md">
+<div class="mh"><h3>Schedule Maintenance</h3><button class="mx" onclick="closeM('m-maintenance')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Asset / Vehicle *</label><input type="text" id="mt-item" placeholder="e.g. Toyota Hilux - Plate KBL-4471"></div>
+    <div class="fg"><label>Service Due *</label><input type="date" id="mt-due"></div>
+    <div class="fg"><label>Provider *</label><input type="text" id="mt-provider" placeholder="e.g. ABC Technical Services"></div>
+    <div class="fg"><label>Cost (USD)</label><input type="number" id="mt-cost" placeholder="e.g. 180"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-maintenance')">Cancel</button><button class="b bn" onclick="saveMaintenance()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-fuellog"><div class="md">
+<div class="mh"><h3>Log Fuel / Trip</h3><button class="mx" onclick="closeM('m-fuellog')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Travel Authorization *</label><input type="text" id="fl-auth" placeholder="e.g. TA-2026-088 - Kabul to Herat supervision visit"></div>
+    <div class="fg"><label>Vehicle *</label><select id="fl-vehicle"></select></div>
+    <div class="fg"><label>Trip Date *</label><input type="date" id="fl-date"></div>
+    <div class="fg"><label>Odometer (km) *</label><input type="number" id="fl-odo" placeholder="e.g. 48210"></div>
+    <div class="fg"><label>Fuel Quantity (L) *</label><input type="number" id="fl-qty" placeholder="e.g. 40"></div>
+    <div class="fg"><label>Fuel Cost (USD) *</label><input type="number" id="fl-cost" placeholder="e.g. 32"></div>
+    <div class="fg"><label>Driver *</label><input type="text" id="fl-driver" placeholder="e.g. Najib Rahimi"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-fuellog')">Cancel</button><button class="b bn" onclick="saveFuelLog()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-disposal"><div class="md">
+<div class="mh"><h3>Log Disposal / Insurance</h3><button class="mx" onclick="closeM('m-disposal')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Record Type *</label><select id="ds-type" onchange="toggleDisposalFields()"><option value="Disposal">Asset Disposal</option><option value="Insurance">Insurance Coverage</option></select></div>
+    <div class="fg ff"><label>Asset / Policy *</label><input type="text" id="ds-ref" placeholder="e.g. A-002 Generator / Policy AFG-INS-2026-11"></div>
+    <div class="fg ff" id="ds-reason-wrap"><label>Disposal Reason</label><input type="text" id="ds-reason" placeholder="e.g. Beyond economical repair"></div>
+    <div class="fg" id="ds-approval-wrap"><label>Approval</label><input type="text" id="ds-approval" placeholder="e.g. Approved by Executive Director"></div>
+    <div class="fg ff" id="ds-evidence-wrap"><label>Sale / Write-off Evidence</label><input type="text" id="ds-evidence" placeholder="e.g. Sold for $150, receipt filed"></div>
+    <div class="fg" id="ds-expiry-wrap"><label>Coverage Expiry</label><input type="date" id="ds-expiry"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-disposal')">Cancel</button><button class="b bn" onclick="saveDisposal()">Save</button></div>
 </div></div>
 
 <div class="mb" id="m-correspondence"><div class="md">
