@@ -1409,6 +1409,16 @@ tbody tr:hover td{background:var(--g50);}
     <div class="st gr"><div class="stl">Verified &amp; Closed</div><div class="stv" id="it-closed">0</div></div>
   </div>
   <div class="cd"><div class="cdh"><div class="cdt">Ticket Queue</div></div><div class="cdb" id="it-queue"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Accounts, Roles &amp; Access</div><button class="b bn bs" onclick="openITAccessModal()">+ Log Access Grant</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Auth-Linked Staff</th><th>Role / Project Scope</th><th>Approver / Effective Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="itaccess-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Onboarding &amp; Offboarding Access</div><button class="b bn bs" onclick="openITOnboardingModal()">+ New Checklist</button></div>
+  <div class="cdb" id="itonboard-body"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Incidents &amp; Change Control</div><button class="b bn bs" onclick="openITIncidentModal()">+ Log Incident / Change</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Incident / Change</th><th>Impact / Priority</th><th>Approval / Rollout</th><th>Verification / Rollback</th><th>Status</th><th>Action</th></tr></thead><tbody id="itincident-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Backup &amp; Recovery</div><button class="b bn bs" onclick="openITBackupModal()">+ Log Backup</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Backup Date / Scope</th><th>Restricted Storage</th><th>Restore Test / Result</th><th>Recovery Owner</th><th>Status</th><th>Action</th></tr></thead><tbody id="itbackup-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Access &amp; System Audit</div></div>
+  <div class="cdb tw"><table><thead><tr><th>Actor / Event</th><th>Record / Timestamp</th><th>Access Review</th><th>Follow-up Action</th></tr></thead><tbody id="itaudit-body"></tbody></table></div></div>
 </div>
 
 <div class="pg" id="p-it-tickets">
@@ -2459,6 +2469,11 @@ custodyRecords:[],
 maintenanceSchedule:[],
 fuelTripLogs:[],
 disposalInsurance:[],
+itAccessRecords:[],
+itOnboarding:[],
+itIncidents:[],
+itBackups:[],
+itAuditReviews:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3449,7 +3464,7 @@ function render(pg){
       }
       else if(pg==='raise-pr'){initRaisePR();renderMyPRs();}
       else if(pg==='pr-approvals'){renderPRApprovals();renderPRAgeing();}
-      else if(pg==='it'){renderITQueue();}
+      else if(pg==='it'){renderITQueue();renderITAccess();renderITOnboarding();renderITIncidents();renderITBackups();renderITAudit();}
       else if(pg==='it-tickets'){renderMyITTickets();}
       else if(pg==='access'){renderTARQueue();}
       else if(pg==='deputy'){renderApprovalRoleHome('deputy');}
@@ -8914,6 +8929,196 @@ function renderMyITTickets(){
   mine.forEach(function(t){box.appendChild(renderITTicketCard(t,false));});
 }
 
+// ============ IT: ACCOUNTS, ROLES & ACCESS ============
+function openITAccessModal(){
+  var sel=$('ia-staff');
+  sel.innerHTML=loginAccountsList().map(function(a){return '<option value="'+esc(a.username)+'">'+esc(a.name)+' ('+esc(a.role)+')</option>';}).join('');
+  $('ia-scope').value='';$('ia-approver').value=SES.name;$('ia-effective').value=today();
+  openM('m-itaccess');
+}
+function saveITAccess(){
+  var username=$('ia-staff').value,scope=$('ia-scope').value.trim();
+  if(!username||!scope){alert('Please select the staff member and describe the role/project scope.');return;}
+  var acct=loginAccountsList().find(function(a){return a.username===username;});
+  DB.itAccessRecords.unshift({id:nid('IAC'),username:username,staffName:acct?acct.name:username,scope:scope,
+    approver:$('ia-approver').value.trim(),effective:$('ia-effective').value||today(),status:'Active',
+    createdBy:SES.name,createdOn:today()});
+  logAudit('it-access-granted',username,'Access grant logged by '+SES.name+': '+scope);
+  closeM('m-itaccess');
+  renderITAccess();
+  queueCloudSave();
+}
+function revokeITAccess(id){
+  var r=DB.itAccessRecords.find(function(x){return x.id===id;});if(!r)return;
+  if(!window.confirm('Disable and revoke live sessions for '+r.staffName+'? This also deactivates their login account.'))return;
+  r.status='Revoked';r.revokedBy=SES.name;r.revokedOn=today();
+  var u=DB.users.find(function(x){return x.username===r.username;});
+  if(u)u.status='Inactive';
+  logAudit('it-access-revoked',r.username,'Access revoked by '+SES.name);
+  renderITAccess();
+  queueCloudSave();
+}
+function renderITAccess(){
+  var body=$('itaccess-body');if(!body)return;
+  body.innerHTML=DB.itAccessRecords.length?DB.itAccessRecords.map(function(r){
+    return '<tr><td>'+esc(r.staffName)+'</td><td style="font-size:11.5px">'+esc(r.scope)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(r.approver||'—')+' · '+dt(r.effective)+'</td>'+
+      '<td><span class="bdg '+(r.status==='Active'?'bG':'bR')+'">'+r.status+'</span></td>'+
+      '<td>'+(r.status==='Active'?'<button class="b bo bs" onclick="revokeITAccess(\''+r.id+'\')">Disable / Revoke</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5" class="empty">No access grants logged yet</td></tr>';
+}
+
+// ============ IT: ONBOARDING & OFFBOARDING ACCESS ============
+var IT_ONBOARD_CHECKLIST={
+  Onboarding:['Account created','System access granted','Asset issued','Building/badge access'],
+  Offboarding:['System access disabled','Assets returned/confirmed','Building/badge access revoked','Email/account archived']
+};
+function openITOnboardingModal(){
+  $('io-type').value='Onboarding';$('io-request').value='';$('io-assets').value='';
+  openM('m-itonboard');
+}
+function saveITOnboarding(){
+  var type=$('io-type').value,request=$('io-request').value.trim();
+  if(!request){alert('Please provide the HR request reference.');return;}
+  DB.itOnboarding.unshift({id:nid('ONB'),type:type,hrRequest:request,assetLinkage:$('io-assets').value.trim(),
+    checklist:IT_ONBOARD_CHECKLIST[type].map(function(label){return {label:label,done:false};}),
+    verified:false,createdBy:SES.name,createdOn:today()});
+  logAudit('it-onboarding-created',request,type+' checklist created by '+SES.name);
+  closeM('m-itonboard');
+  renderITOnboarding();
+  queueCloudSave();
+}
+function toggleITOnboardItem(id,idx){
+  var o=DB.itOnboarding.find(function(x){return x.id===id;});if(!o||o.verified)return;
+  o.checklist[idx].done=!o.checklist[idx].done;
+  renderITOnboarding();
+  queueCloudSave();
+}
+function verifyITOnboarding(id){
+  var o=DB.itOnboarding.find(function(x){return x.id===id;});if(!o)return;
+  if(!o.checklist.every(function(c){return c.done;})){alert('All checklist items must be completed before verifying.');return;}
+  o.verified=true;o.verifiedBy=SES.name;o.verifiedOn=today();
+  logAudit('it-onboarding-verified',o.hrRequest,'Verified complete by '+SES.name);
+  renderITOnboarding();
+  queueCloudSave();
+}
+function renderITOnboarding(){
+  var box=$('itonboard-body');if(!box)return;
+  if(!DB.itOnboarding.length){box.innerHTML='<div class="empty">No onboarding/offboarding checklists yet</div>';return;}
+  box.innerHTML=DB.itOnboarding.map(function(o){
+    var items=o.checklist.map(function(c,idx){
+      return '<div style="font-size:12px;margin-bottom:4px;cursor:'+(o.verified?'default':'pointer')+'" onclick="'+(o.verified?'':'toggleITOnboardItem(\''+o.id+'\','+idx+')')+'">'+(c.done?'<span style="color:var(--green)">&#10003;</span>':'<span style="color:var(--g400)">&#9633;</span>')+' '+esc(c.label)+'</div>';
+    }).join('');
+    return '<div class="cd" style="margin-bottom:10px"><div class="cdb">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b>'+esc(o.hrRequest)+'</b> <span class="bdg bN" style="margin-left:4px">'+o.type+'</span>'+
+      (o.assetLinkage?'<div style="font-size:11px;color:var(--g500);margin-top:3px">Assets: '+esc(o.assetLinkage)+'</div>':'')+'</div>'+
+      '<span class="bdg '+(o.verified?'bG':'bO')+'">'+(o.verified?'Verified Complete':'In Progress')+'</span></div>'+
+      '<div style="margin-top:9px">'+items+'</div>'+
+      (o.verified?'':'<div class="wfa"><button class="b bn bs" onclick="verifyITOnboarding(\''+o.id+'\')">Verify Completion</button></div>')+
+      '</div></div>';
+  }).join('');
+}
+
+// ============ IT: INCIDENTS & CHANGE CONTROL ============
+function openITIncidentModal(){
+  $('ii-type').value='Incident';$('ii-title').value='';$('ii-impact').value='';$('ii-priority').value='Medium';$('ii-rollout').value='';
+  openM('m-itincident');
+}
+function saveITIncident(){
+  var title=$('ii-title').value.trim();
+  if(!title){alert('Please describe the incident or change.');return;}
+  DB.itIncidents.unshift({id:nid('INC'),type:$('ii-type').value,title:title,impact:$('ii-impact').value.trim(),
+    priority:$('ii-priority').value,rollout:$('ii-rollout').value.trim(),verification:null,rollback:null,
+    status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('it-incident-logged',title,$('ii-type').value+' logged by '+SES.name);
+  closeM('m-itincident');
+  renderITIncidents();
+  queueCloudSave();
+}
+function resolveITIncident(id){
+  var i=DB.itIncidents.find(function(x){return x.id===id;});if(!i)return;
+  var verification=window.prompt('Verification result (and rollback plan if this was rolled back):','Verified working as expected');
+  if(verification===null)return;
+  i.verification=verification;i.status='Resolved';i.resolvedBy=SES.name;i.resolvedOn=today();
+  logAudit('it-incident-resolved',i.title,'Resolved by '+SES.name);
+  renderITIncidents();
+  queueCloudSave();
+}
+function renderITIncidents(){
+  var body=$('itincident-body');if(!body)return;
+  var pb={'Low':'bY','Medium':'bO','High':'bR','Critical':'bD'};
+  body.innerHTML=DB.itIncidents.length?DB.itIncidents.map(function(i){
+    return '<tr><td>'+esc(i.title)+' <span class="bdg bN" style="margin-left:4px">'+i.type+'</span></td>'+
+      '<td style="font-size:11.5px">'+esc(i.impact||'—')+' <span class="bdg '+(pb[i.priority]||'bN')+'" style="margin-left:4px">'+i.priority+'</span></td>'+
+      '<td style="font-size:11.5px">'+esc(i.rollout||'—')+'</td>'+
+      '<td style="font-size:11.5px">'+esc(i.verification||'—')+'</td>'+
+      '<td><span class="bdg '+(i.status==='Resolved'?'bG':'bO')+'">'+i.status+'</span></td>'+
+      '<td>'+(i.status==='Open'?'<button class="b bo bs" onclick="resolveITIncident(\''+i.id+'\')">Resolve</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No incidents or changes logged yet</td></tr>';
+}
+
+// ============ IT: BACKUP & RECOVERY ============
+function openITBackupModal(){
+  $('ib-date').value=today();$('ib-scope').value='';$('ib-storage').value='';$('ib-owner').value=SES.name;
+  openM('m-itbackup');
+}
+function saveITBackup(){
+  var scope=$('ib-scope').value.trim(),storage=$('ib-storage').value.trim();
+  if(!scope||!storage){alert('Please describe the backup scope and the restricted storage location.');return;}
+  DB.itBackups.unshift({id:nid('BKP'),date:$('ib-date').value||today(),scope:scope,storage:storage,
+    owner:$('ib-owner').value.trim(),restoreTestDate:null,restoreResult:null,status:'Backed Up',
+    createdBy:SES.name,createdOn:today()});
+  logAudit('it-backup-logged',scope,'Backup logged by '+SES.name);
+  closeM('m-itbackup');
+  renderITBackups();
+  queueCloudSave();
+}
+function logRestoreTest(id){
+  var b=DB.itBackups.find(function(x){return x.id===id;});if(!b)return;
+  var result=window.prompt('Restore test result:','Restore verified successfully');
+  if(result===null)return;
+  b.restoreTestDate=today();b.restoreResult=result;b.status='Restore Verified';
+  logAudit('it-restore-tested',b.scope,'Restore test logged by '+SES.name+': '+result);
+  renderITBackups();
+  queueCloudSave();
+}
+function renderITBackups(){
+  var body=$('itbackup-body');if(!body)return;
+  body.innerHTML=DB.itBackups.length?DB.itBackups.map(function(b){
+    return '<tr><td>'+dt(b.date)+'<div style="font-size:11px;color:var(--g500)">'+esc(b.scope)+'</div></td>'+
+      '<td style="font-size:11.5px">'+esc(b.storage)+'</td>'+
+      '<td style="font-size:11.5px">'+(b.restoreTestDate?dt(b.restoreTestDate)+' · '+esc(b.restoreResult):'—')+'</td>'+
+      '<td>'+esc(b.owner||'—')+'</td>'+
+      '<td><span class="bdg '+(b.status==='Restore Verified'?'bG':'bO')+'">'+b.status+'</span></td>'+
+      '<td>'+(b.status==='Backed Up'?'<button class="b bo bs" onclick="logRestoreTest(\''+b.id+'\')">Log Restore Test</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No backups logged yet</td></tr>';
+}
+
+// ============ IT: ACCESS & SYSTEM AUDIT ============
+// Surfaces the app's existing audit trail (logAudit() -> DB.deletionLog, despite the name,
+// is the generic cross-department action log used throughout this app) for IT's own review,
+// rather than building a second, parallel audit log that would drift from the real one.
+function flagAuditEntry(at){
+  var note=window.prompt('Access review note:','Reviewed - no action needed');
+  if(note===null)return;
+  var followUp=window.prompt('Follow-up action (leave blank if none):','');
+  if(followUp===null)return;
+  DB.itAuditReviews.unshift({at:at,note:note,followUp:followUp,by:SES.name,on:today()});
+  renderITAudit();
+  queueCloudSave();
+}
+function renderITAudit(){
+  var body=$('itaudit-body');if(!body)return;
+  var entries=DB.deletionLog.slice(0,30);
+  body.innerHTML=entries.length?entries.map(function(e){
+    var review=DB.itAuditReviews.find(function(r){return r.at===e.at;});
+    return '<tr><td style="font-size:11.5px">'+esc(e.by)+' — '+esc(e.type)+'</td>'+
+      '<td style="font-size:11px">'+esc(e.recordId||'—')+'<div style="color:var(--g400)">'+new Date(e.at).toLocaleString('en-GB')+'</div></td>'+
+      '<td style="font-size:11.5px">'+(review?esc(review.note):'<button class="b bo bs" onclick="flagAuditEntry(\''+e.at+'\')">Flag for Review</button>')+'</td>'+
+      '<td style="font-size:11.5px">'+(review?esc(review.followUp||'None'):'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" class="empty">No audit events recorded yet</td></tr>';
+}
+
 function renderITQueue(){
   var box=$('it-queue');if(!box)return;
   box.innerHTML='';
@@ -10563,6 +10768,58 @@ if(document.getElementById('afg-map')) initMap();
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-disposal')">Cancel</button><button class="b bn" onclick="saveDisposal()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-itaccess"><div class="md">
+<div class="mh"><h3>Log Access Grant</h3><button class="mx" onclick="closeM('m-itaccess')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Auth-Linked Staff *</label><select id="ia-staff"></select></div>
+    <div class="fg ff"><label>Role / Project Scope *</label><input type="text" id="ia-scope" placeholder="e.g. Finance - full ledger access, GPE-STG project scope"></div>
+    <div class="fg"><label>Approver *</label><input type="text" id="ia-approver" placeholder="e.g. Toryalia Rahimi"></div>
+    <div class="fg"><label>Effective Date *</label><input type="date" id="ia-effective"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-itaccess')">Cancel</button><button class="b bn" onclick="saveITAccess()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-itonboard"><div class="md">
+<div class="mh"><h3>New Onboarding / Offboarding Checklist</h3><button class="mx" onclick="closeM('m-itonboard')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Type *</label><select id="io-type"><option value="Onboarding">Onboarding</option><option value="Offboarding">Offboarding</option></select></div>
+    <div class="fg ff"><label>HR Request *</label><input type="text" id="io-request" placeholder="e.g. HR-2026-041 - New Field Monitor, MEAL Department"></div>
+    <div class="fg ff"><label>Asset Linkage</label><input type="text" id="io-assets" placeholder="e.g. Laptop A-021, SIM card, office badge"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-itonboard')">Cancel</button><button class="b bn" onclick="saveITOnboarding()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-itincident"><div class="md">
+<div class="mh"><h3>Log Incident / Change</h3><button class="mx" onclick="closeM('m-itincident')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Type *</label><select id="ii-type"><option value="Incident">Incident</option><option value="Change">Change</option></select></div>
+    <div class="fg ff"><label>Incident / Change *</label><input type="text" id="ii-title" placeholder="e.g. Shared drive outage / Migrate email to new provider"></div>
+    <div class="fg"><label>Impact</label><input type="text" id="ii-impact" placeholder="e.g. All Finance staff unable to access ledger files"></div>
+    <div class="fg"><label>Priority</label><select id="ii-priority"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></div>
+    <div class="fg ff"><label>Approval / Rollout Plan</label><textarea rows="2" id="ii-rollout" placeholder="e.g. Approved by IT lead, rollout scheduled for off-hours Friday"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-itincident')">Cancel</button><button class="b bn" onclick="saveITIncident()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-itbackup"><div class="md">
+<div class="mh"><h3>Log Backup</h3><button class="mx" onclick="closeM('m-itbackup')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Backup Date *</label><input type="date" id="ib-date"></div>
+    <div class="fg ff"><label>Scope *</label><input type="text" id="ib-scope" placeholder="e.g. Full sgoa_store database export, all DB.users and DB.assets"></div>
+    <div class="fg ff"><label>Restricted Storage *</label><input type="text" id="ib-storage" placeholder="e.g. Encrypted offsite drive, access limited to IT lead"></div>
+    <div class="fg"><label>Recovery Owner *</label><input type="text" id="ib-owner" placeholder="e.g. Toryalia Rahimi"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-itbackup')">Cancel</button><button class="b bn" onclick="saveITBackup()">Save</button></div>
 </div></div>
 
 <div class="mb" id="m-correspondence"><div class="md">
