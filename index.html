@@ -541,6 +541,26 @@ tbody tr:hover td{background:var(--g50);}
       </div>
     </div>
   </div>
+
+  <div class="cd">
+    <div class="cdh"><div class="cdt">Verified Monthly Results</div>
+      <input type="month" id="vmr-month" onchange="renderVerifiedMonthlyResults()" style="font-size:12px;padding:5px 9px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+    </div>
+    <div class="cdb">
+      <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+        <div class="st nv"><div class="stl">Indicators Reporting</div><div class="stv" id="vmr-reporting">0</div></div>
+        <div class="st rd"><div class="stl">Missing Reports</div><div class="stv" id="vmr-missing">0</div></div>
+        <div class="st og"><div class="stl">Off Track</div><div class="stv" id="vmr-offtrack">0</div></div>
+      </div>
+      <div style="font-size:10.5px;color:var(--g500);margin-bottom:8px">Achieved = latest MEAL data entry within the selected month. Formal verification &amp; sign-off locking will tighten this once MEAL's monthly locking module ships — this view will switch to reading the locked value automatically.</div>
+      <div class="tw"><table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Achieved (Month)</th><th>Remaining</th><th>Status</th></tr></thead><tbody id="vmr-body"></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="cd">
+    <div class="cdh"><div class="cdt">Strategy &amp; Board Actions</div><button class="b bn bs" onclick="openStrategyModal()">+ Add Objective</button></div>
+    <div class="cdb tw"><table><thead><tr><th>Strategic Objective</th><th>Linked Projects</th><th>Board Decision</th><th>Action Owner</th><th>Status</th><th></th></tr></thead><tbody id="strategy-body"></tbody></table></div>
+  </div>
 </div>
 
 <!-- ========= PROJECTS LIST ========= -->
@@ -2351,6 +2371,7 @@ expenditures:[],
 timesheets:[],
 deletionLog:[],
 loginLog:[],
+strategy:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3659,6 +3680,8 @@ function renderExec(){
   renderExecDeadlines();
   renderExecDepts();
   renderCompletedProjectsImpact();
+  renderVerifiedMonthlyResults();
+  renderStrategy();
 }
 
 function renderExecProjects(){
@@ -3871,6 +3894,91 @@ function renderCompletedProjectsImpact(){
     tbody.innerHTML=d.provinces.length?d.provinces.map(function(p){return '<tr><td>'+esc(p.name)+'</td><td>'+p.projects+'</td><td>'+fmt(p.benef)+'</td></tr>';}).join('')
       :'<tr><td colspan="3" style="text-align:center;color:var(--g400)">No completed projects yet.</td></tr>';
   }
+}
+
+// ============ VERIFIED MONTHLY RESULTS (Executive) ============
+// "Verified" today means the latest MEAL data entry within the selected month -- MEAL's own
+// Monthly Verification & Locking module (tracked separately) will add a real sign-off/lock step;
+// once it exists, swap the lookup below to read the locked value instead of the latest update.
+function renderVerifiedMonthlyResults(){
+  var body=$('vmr-body');if(!body)return;
+  var monthEl=$('vmr-month');
+  if(monthEl && !monthEl.value)monthEl.value=today().slice(0,7);
+  var month=monthEl?monthEl.value:today().slice(0,7);
+  var reporting=0,missing=0,offtrack=0,rows=[];
+  DB.indicators.forEach(function(i){
+    var inMonth=(i.updates||[]).filter(function(u){return u.date&&u.date.slice(0,7)===month;});
+    var latest=inMonth.length?inMonth[inMonth.length-1]:null;
+    var achieved=latest?latest.actual:null;
+    var remaining=achieved!=null?Math.max(0,(i.target||0)-achieved):null;
+    var status;
+    if(achieved==null){status='Missing Report';missing++;}
+    else{
+      reporting++;
+      var pct=i.target?achieved/i.target:1;
+      if(pct<0.7){status='Off Track';offtrack++;}
+      else status='On Track';
+    }
+    rows.push({name:i.name,proj:i.proj,target:i.target,achieved:achieved,remaining:remaining,status:status,unit:i.unit});
+  });
+  if($('vmr-reporting'))$('vmr-reporting').textContent=reporting;
+  if($('vmr-missing'))$('vmr-missing').textContent=missing;
+  if($('vmr-offtrack'))$('vmr-offtrack').textContent=offtrack;
+  var sb={'Missing Report':'bR','Off Track':'bO','On Track':'bG'};
+  body.innerHTML=rows.length?rows.map(function(r){
+    return '<tr><td>'+esc(r.name)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.target)+' '+esc(r.unit||'')+'</td>'+
+      '<td>'+(r.achieved!=null?fmt(r.achieved)+' '+esc(r.unit||''):'<span style="color:var(--g400)">—</span>')+'</td>'+
+      '<td>'+(r.remaining!=null?fmt(r.remaining):'—')+'</td>'+
+      '<td><span class="bdg '+(sb[r.status]||'bY')+'">'+r.status+'</span></td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No indicators yet.</td></tr>';
+}
+
+// ============ STRATEGY & BOARD ACTIONS (Executive) ============
+var _editingStrategyId=null;
+function openStrategyModal(id){
+  _editingStrategyId=id||null;
+  var s=id?DB.strategy.find(function(x){return x.id===id;}):null;
+  $('strategy-modal-title').textContent=s?'Edit Strategic Objective':'Add Strategic Objective';
+  $('sg-objective').value=s?s.objective:'';
+  $('sg-owner').value=s?s.owner:'';
+  $('sg-decision').value=s?s.decision:'Pending';
+  $('sg-status').value=s?s.status:'Open';
+  var sel=$('sg-projects');
+  sel.innerHTML=Object.keys(PROJ).map(function(k){return '<option value="'+esc(k)+'">'+esc(PROJ[k].name)+' ('+esc(k)+')</option>';}).join('');
+  if(s)Array.from(sel.options).forEach(function(o){if(s.projects.indexOf(o.value)!==-1)o.selected=true;});
+  openM('m-strategy');
+}
+function saveStrategy(){
+  var objective=$('sg-objective').value.trim();
+  if(!objective){alert('Please enter the strategic objective.');return;}
+  var owner=$('sg-owner').value.trim();
+  if(!owner){alert('Please enter an action owner.');return;}
+  var projects=Array.from($('sg-projects').selectedOptions).map(function(o){return o.value;});
+  var decision=$('sg-decision').value,status=$('sg-status').value;
+  if(_editingStrategyId){
+    var s=DB.strategy.find(function(x){return x.id===_editingStrategyId;});
+    if(s){s.objective=objective;s.owner=owner;s.projects=projects;s.decision=decision;s.status=status;}
+    logAudit('strategy-edit',_editingStrategyId,'Strategic objective updated');
+  } else {
+    DB.strategy.unshift({id:nid('STRAT'),objective:objective,owner:owner,projects:projects,decision:decision,status:status,
+      createdBy:SES.name,createdOn:today()});
+    logAudit('strategy-add',objective,'Strategic objective added');
+  }
+  closeM('m-strategy');
+  renderStrategy();
+  queueCloudSave();
+}
+function renderStrategy(){
+  var body=$('strategy-body');if(!body)return;
+  var sb={'Approved':'bG','Pending':'bO','Deferred':'bY','Rejected':'bR'};
+  var stb={'Open':'bO','In Progress':'bB','Done':'bG'};
+  body.innerHTML=DB.strategy.length?DB.strategy.map(function(s){
+    var projNames=s.projects.map(function(k){return PROJ[k]?PROJ[k].name:k;}).join(', ')||'—';
+    return '<tr><td>'+esc(s.objective)+'</td><td style="font-size:11.5px">'+esc(projNames)+'</td>'+
+      '<td><span class="bdg '+(sb[s.decision]||'bY')+'">'+esc(s.decision)+'</span></td><td>'+esc(s.owner)+'</td>'+
+      '<td><span class="bdg '+(stb[s.status]||'bY')+'">'+esc(s.status)+'</span></td>'+
+      '<td><button class="b bo bs" onclick="openStrategyModal(\''+s.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'strategy\',\''+s.id+'\')">Del</button></td></tr>';
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No strategic objectives recorded yet.</td></tr>';
 }
 
 var curProjectCode=null;
@@ -8997,6 +9105,10 @@ function confirmDelete(){
     idx=DB.pr.findIndex(function(x){return x.id===id;});
     if(idx>-1){DB.pr.splice(idx,1);}
     closeM('m-delete-confirm');renderMyPRs();renderPRApprovals();refreshAll();
+  } else if(type==='strategy'){
+    idx=DB.strategy.findIndex(function(x){return x.id===id;});
+    if(idx>-1){DB.strategy.splice(idx,1);}
+    closeM('m-delete-confirm');renderStrategy();
   }
   DB.deletionLog.unshift({type:type,recordId:id,reason:reason,by:SES.name,at:new Date().toISOString()});
   queueCloudSave();
@@ -9475,6 +9587,20 @@ if(document.getElementById('afg-map')) initMap();
 })();
 </script>
 
+
+<div class="mb" id="m-strategy"><div class="md">
+<div class="mh"><h3 id="strategy-modal-title">Add Strategic Objective</h3><button class="mx" onclick="closeM('m-strategy')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Strategic Objective *</label><textarea rows="2" id="sg-objective" placeholder="e.g. Expand education programming to two additional provinces"></textarea></div>
+    <div class="fg ff"><label>Linked Projects</label><select multiple id="sg-projects" style="height:76px"></select></div>
+    <div class="fg"><label>Board Decision</label><select id="sg-decision"><option>Pending</option><option>Approved</option><option>Deferred</option><option>Rejected</option></select></div>
+    <div class="fg"><label>Action Owner *</label><input type="text" id="sg-owner" placeholder="e.g. Deputy Director"></div>
+    <div class="fg"><label>Status</label><select id="sg-status"><option>Open</option><option>In Progress</option><option>Done</option></select></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-strategy')">Cancel</button><button class="b bn" onclick="saveStrategy()">Save</button></div>
+</div></div>
 
 <div class="mb" id="m-contract"><div class="md">
 <div class="mh"><h3>Add Staff Contract</h3><button class="mx" onclick="closeM('m-contract')">&times;</button></div>
