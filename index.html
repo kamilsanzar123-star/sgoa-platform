@@ -1059,6 +1059,16 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt"><span class="dot"></span>Active Investigations</div><button class="b bd bs" onclick="openM('m-incident')">Report Incident</button></div>
   <div class="cdb" id="sg-cases"></div></div>
   <div class="stats" id="safeguarding-stats"></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Consent &amp; Safe Communication</div><button class="b bn bs" onclick="openSGConsentModal()">+ Record Consent</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Consent Record</th><th>Safe Contact Channel</th><th>Communication Restrictions</th><th>Referral Permission</th></tr></thead><tbody id="sgconsent-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Training &amp; Prevention</div><button class="b bn bs" onclick="openSGTrainingModal()">+ Log Training</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Training Audience</th><th>Completion / Evidence</th><th>Focal Point</th><th>Refresher Date</th></tr></thead><tbody id="sgtraining-body"></tbody></table></div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Restricted Access &amp; Access History</div>
+    <span style="font-size:10.5px;color:var(--g500)">Full case detail is restricted to Safeguarding; other roles see a permitted summary only</span></div>
+  <div class="cdb tw"><table><thead><tr><th>Case</th><th>Viewed By</th><th>Role</th><th>When</th></tr></thead><tbody id="sgaccess-body"></tbody></table></div></div>
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Department Tasks</div><button class="b bn bs" onclick="openM('m-task')">+ Add Task</button></div><div class="cdb" id="safeguarding-tasks"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Alerts &amp; Notices</div></div><div class="cdb" id="safeguarding-alerts"></div></div>
@@ -2434,6 +2444,9 @@ correspondence:[],
 leases:[],
 facilitiesRequests:[],
 visitorMeetings:[],
+sgConsents:[],
+sgTraining:[],
+sgAccessLog:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3464,7 +3477,7 @@ function render(pg){
       else if(pg==='supply-warehouse'){renderStockItems();renderStockLedger();}
       else if(pg==='admin'){renderDept('admin','Admin');renderCorrespondence();renderLeases();renderFacilitiesRequests();renderVisitorMeetings();}
       else if(pg==='admin-registry'){renderDocRegistry();}
-      else if(pg==='safeguarding'){renderDept('safeguarding','Safeguarding');renderSGCases();}
+      else if(pg==='safeguarding'){renderDept('safeguarding','Safeguarding');renderSGCases();renderSGConsents();renderSGTraining();renderSGAccessLog();logSGAccess();}
       else if(pg==='operations'){renderDept('operations','Operations');renderFleetQuick();}
       else if(pg==='ops-assets'){renderAssets();}
       else if(pg==='ops-fleet'){renderFleet();}
@@ -5525,20 +5538,35 @@ var sgStageBdg={'Intake':'bO','Under Investigation':'bB','Closed':'bG'};
 function renderSGCases(){
   var c=$('sg-cases');if(!c)return;c.innerHTML='';
   if(!DB.sgCases.length){c.innerHTML='<div class="empty">No active investigations</div>';return;}
+  // The Safeguarding page is already locked out of ACCESS entirely for every other role, so
+  // "only assigned staff see case details" has to mean something inside the Safeguarding team
+  // itself: the department head and the specific assigned investigator get full detail; any
+  // other Safeguarding account (a second case worker, say) gets the permitted summary for a
+  // case that isn't theirs.
+  var isHead=tsIsHeadAccount();
   DB.sgCases.forEach(function(x){
+    var fullAccess=isHead||x.investigator===SES.name;
     var card=el('div','cd');card.style.marginBottom='10px';
     var body='<div class="cdb"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">';
-    body+='<div><b>'+x.id+'</b> \u2014 '+esc(x.title)+(x.confidential?' <span class="bdg bR" style="margin-left:4px">CONFIDENTIAL</span>':'')+
-      '<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(x.type)+' \u00b7 '+(x.proj?esc(x.proj):'-')+' \u00b7 '+esc(x.loc)+' \u00b7 Reported '+dt(x.date)+' \u00b7 Investigator: '+esc(x.investigator)+'</div></div>';
+    if(fullAccess){
+      body+='<div><b>'+x.id+'</b> \u2014 '+esc(x.title)+(x.confidential?' <span class="bdg bR" style="margin-left:4px">CONFIDENTIAL</span>':'')+
+        (x.legalHold?' <span class="bdg bD" style="margin-left:4px">LEGAL HOLD</span>':'')+
+        '<div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(x.type)+' \u00b7 '+(x.proj?esc(x.proj):'-')+' \u00b7 '+esc(x.loc)+' \u00b7 Reported '+dt(x.date)+' \u00b7 Investigator: '+esc(x.investigator)+'</div></div>';
+    } else {
+      body+='<div><b>'+x.id+'</b> \u2014 '+esc(x.type)+' case'+(x.confidential?' <span class="bdg bR" style="margin-left:4px">CONFIDENTIAL</span>':'')+
+        '<div style="font-size:11px;color:var(--g500);margin-top:3px">Reported '+dt(x.date)+' \u00b7 Permitted summary only \u2014 assigned to another investigator</div></div>';
+    }
     body+='<span class="bdg '+sgStageBdg[x.stage]+'">'+esc(x.stage)+'</span></div>';
-    if(x.notes&&x.notes.length){
+    if(fullAccess && x.notes&&x.notes.length){
       body+='<div style="margin-top:9px">';
       x.notes.forEach(function(n){
         body+='<div style="font-size:11.5px;color:var(--g600);background:var(--g50);padding:7px 9px;border-radius:6px;margin-bottom:5px">'+esc(n.n)+'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+esc(n.by)+' \u00b7 '+n.dt+'</div></div>';
       });
       body+='</div>';
+    } else if(!fullAccess && x.notes&&x.notes.length){
+      body+='<div style="margin-top:9px;font-size:11px;color:var(--g400)">'+x.notes.length+' investigation note(s) on file \u2014 visible to the assigned investigator and the Safeguarding Head only</div>';
     }
-    if(x.stage!=='Closed' && SES.role==='safeguarding'){
+    if(x.stage!=='Closed' && fullAccess){
       body+='<div class="wfa">';
       body+='<textarea data-sgnote="'+x.id+'" rows="2" placeholder="Add investigation note..." style="width:100%;padding:7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit;font-size:12px;margin-bottom:6px"></textarea>';
       body+='<button class="b bo bs" data-sgaddnote="'+x.id+'">Add Note</button>';
@@ -5546,10 +5574,83 @@ function renderSGCases(){
       if(x.stage==='Under Investigation')body+='<button class="b bn bs" data-sgclose="'+x.id+'">Close Case</button>';
       body+='</div>';
     }
+    if(fullAccess){
+      body+='<div class="wfa" style="margin-top:6px"><button class="b bo bs" onclick="toggleSGLegalHold(\''+x.id+'\')">'+(x.legalHold?'Release Legal Hold':'Place Legal Hold')+'</button></div>';
+    }
     body+='</div>';
     card.innerHTML=body;
     c.appendChild(card);
   });
+}
+function toggleSGLegalHold(id){
+  var x=DB.sgCases.find(function(c){return c.id===id;});if(!x)return;
+  x.legalHold=!x.legalHold;
+  logAudit('sg-legal-hold',id,(x.legalHold?'Legal hold placed':'Legal hold released')+' by '+SES.name);
+  renderSGCases();
+  queueCloudSave();
+}
+// Logged once per navigation to the Safeguarding page (not on every re-render), so the
+// Safeguarding Head can audit who on the team has been looking at which case.
+function logSGAccess(){
+  DB.sgCases.forEach(function(x){
+    DB.sgAccessLog.unshift({caseId:x.id,by:SES.name,role:SES.role,at:new Date().toISOString()});
+  });
+  if(DB.sgAccessLog.length>200)DB.sgAccessLog.length=200;
+  renderSGAccessLog();
+}
+function renderSGAccessLog(){
+  var body=$('sgaccess-body');if(!body)return;
+  if(!tsIsHeadAccount()){body.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--g400)">Access history is visible to the Safeguarding Head only.</td></tr>';return;}
+  body.innerHTML=DB.sgAccessLog.length?DB.sgAccessLog.slice(0,30).map(function(a){
+    return '<tr><td>'+esc(a.caseId)+'</td><td>'+esc(a.by)+'</td><td>'+esc(DEPTNAME[a.role]||a.role)+'</td><td style="font-size:11px">'+new Date(a.at).toLocaleString('en-GB')+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--g400)">No access recorded yet.</td></tr>';
+}
+
+// ============ CONSENT & SAFE COMMUNICATION (Safeguarding) ============
+function openSGConsentModal(){
+  $('sgc-record').value='';$('sgc-channel').value='';$('sgc-restrictions').value='';$('sgc-referral').value='';
+  openM('m-sgconsent');
+}
+function saveSGConsent(){
+  var record=$('sgc-record').value.trim(),channel=$('sgc-channel').value.trim(),referral=$('sgc-referral').value.trim();
+  if(!record||!channel||!referral){alert('Please complete the consent record, safe contact channel, and referral permission.');return;}
+  DB.sgConsents.unshift({id:nid('SGC'),record:record,channel:channel,restrictions:$('sgc-restrictions').value.trim(),
+    referral:referral,createdBy:SES.name,createdOn:today()});
+  logAudit('sg-consent-recorded',record,'Consent record added by '+SES.name);
+  closeM('m-sgconsent');
+  renderSGConsents();
+  queueCloudSave();
+}
+function renderSGConsents(){
+  var body=$('sgconsent-body');if(!body)return;
+  if(SES.role!=='safeguarding'){body.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--g400)">Visible to Safeguarding only.</td></tr>';return;}
+  body.innerHTML=DB.sgConsents.length?DB.sgConsents.map(function(c){
+    return '<tr><td>'+esc(c.record)+'</td><td>'+esc(c.channel)+'</td><td style="font-size:11.5px">'+esc(c.restrictions||'\u2014')+'</td><td style="font-size:11.5px">'+esc(c.referral)+'</td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--g400)">No consent records yet.</td></tr>';
+}
+
+// ============ TRAINING & PREVENTION (Safeguarding) ============
+function openSGTrainingModal(){
+  $('sgt-audience').value='';$('sgt-focal').value='';$('sgt-evidence').value='';$('sgt-refresher').value='';
+  openM('m-sgtraining');
+}
+function saveSGTraining(){
+  var audience=$('sgt-audience').value.trim(),focal=$('sgt-focal').value.trim(),evidence=$('sgt-evidence').value.trim(),refresher=$('sgt-refresher').value;
+  if(!audience||!focal||!evidence||!refresher){alert('Please complete every field.');return;}
+  DB.sgTraining.unshift({id:nid('SGT'),audience:audience,focal:focal,evidence:evidence,refresher:refresher,
+    createdBy:SES.name,createdOn:today()});
+  logAudit('sg-training-logged',audience,'Training/prevention record added by '+SES.name);
+  closeM('m-sgtraining');
+  renderSGTraining();
+  queueCloudSave();
+}
+function renderSGTraining(){
+  var body=$('sgtraining-body');if(!body)return;
+  body.innerHTML=DB.sgTraining.length?DB.sgTraining.map(function(t){
+    var overdue=t.refresher<today();
+    return '<tr><td>'+esc(t.audience)+'</td><td style="font-size:11.5px">'+esc(t.evidence)+'</td><td>'+esc(t.focal)+'</td>'+
+      '<td><span class="bdg '+(overdue?'bR':'bG')+'">'+dt(t.refresher)+(overdue?' \u2014 overdue':'')+'</span></td></tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--g400)">No training records yet.</td></tr>';
 }
 
 // ============ OPERATIONS ============
@@ -10205,6 +10306,32 @@ if(document.getElementById('afg-map')) initMap();
 })();
 </script>
 
+
+<div class="mb" id="m-sgconsent"><div class="md">
+<div class="mh"><h3>Record Consent &amp; Safe Communication</h3><button class="mx" onclick="closeM('m-sgconsent')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Consent Record *</label><input type="text" id="sgc-record" placeholder="e.g. CON-014 - survivor consent for referral follow-up"></div>
+    <div class="fg"><label>Safe Contact Channel *</label><input type="text" id="sgc-channel" placeholder="e.g. Assigned focal point only"></div>
+    <div class="fg"><label>Communication Restrictions</label><input type="text" id="sgc-restrictions" placeholder="e.g. No unapproved outreach"></div>
+    <div class="fg ff"><label>Referral Permission *</label><input type="text" id="sgc-referral" placeholder="e.g. Referral follow-up permitted; no third-party disclosure"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-sgconsent')">Cancel</button><button class="b bn" onclick="saveSGConsent()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-sgtraining"><div class="md">
+<div class="mh"><h3>Log Training &amp; Prevention</h3><button class="mx" onclick="closeM('m-sgtraining')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Training Audience *</label><input type="text" id="sgt-audience" placeholder="e.g. All staff / Partner focal points"></div>
+    <div class="fg"><label>Focal Point *</label><input type="text" id="sgt-focal" placeholder="e.g. Arzo Hotak"></div>
+    <div class="fg ff"><label>Completion / Evidence *</label><input type="text" id="sgt-evidence" placeholder="e.g. 88% completed, attendance sheets on file"></div>
+    <div class="fg"><label>Refresher Date *</label><input type="date" id="sgt-refresher"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-sgtraining')">Cancel</button><button class="b bn" onclick="saveSGTraining()">Save</button></div>
+</div></div>
 
 <div class="mb" id="m-correspondence"><div class="md">
 <div class="mh"><h3>Log Letter</h3><button class="mx" onclick="closeM('m-correspondence')">&times;</button></div>
