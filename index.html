@@ -1522,6 +1522,12 @@ tbody tr:hover td{background:var(--g50);}
   </div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Department Snapshot</div></div>
     <div class="cdb tw"><table><thead><tr><th>Department</th><th>Staff</th><th>Open Tasks</th><th>Pending PRs</th></tr></thead><tbody id="progdeputy-dept-snapshot"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Monthly Results Review</div><button class="b bn bs" onclick="openResultsReviewModal()">+ New Review</button></div>
+  <div class="cdb" id="resultsreview-body"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Donor &amp; Partner Review</div><button class="b bn bs" onclick="openDonorReviewModal()">+ Add Review</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Donor / Partner</th><th>Report Deadline</th><th>Verified Results / Financials</th><th>Approval / Submission</th><th>Status</th><th>Action</th></tr></thead><tbody id="donorreview-body"></tbody></table></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Program Quality &amp; Learning</div><button class="b bn bs" onclick="openQualityLearningModal()">+ Log Learning</button></div>
+  <div class="cdb tw"><table><thead><tr><th>Evaluation / Lesson</th><th>Recommended Action</th><th>Responsible Manager</th><th>Adoption Evidence</th><th>Status</th><th>Action</th></tr></thead><tbody id="qualitylearning-body"></tbody></table></div></div>
   <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div></div><div class="cdb tw" id="staffdir-progdeputy"></div></div>
 </div>
 
@@ -2493,6 +2499,9 @@ emergencyContacts:[],
 crossDeptActions:[],
 delegations:[],
 mgmtReviews:[],
+resultsReviews:[],
+donorReviews:[],
+qualityLearning:[],
 org:{name:'Sustainable Goals Organization for Afghanistan',acronym:'SGOA',country:'Afghanistan',hq:'Kabul',email:'info@sgoa.org.af'}
 };
 
@@ -3487,7 +3496,7 @@ function render(pg){
       else if(pg==='it-tickets'){renderMyITTickets();}
       else if(pg==='access'){renderTARQueue();renderRouteAssessments();renderCheckins();renderEmergencyContacts();renderTravelCloseouts();}
       else if(pg==='deputy'){renderApprovalRoleHome('deputy');renderCrossDeptActions();renderDelegations();renderMgmtReviews();}
-      else if(pg==='progdeputy'){renderApprovalRoleHome('progdeputy');}
+      else if(pg==='progdeputy'){renderApprovalRoleHome('progdeputy');renderResultsReviews();renderDonorReviews();renderQualityLearning();}
       else if(pg==='tar-request'){initTARForm();renderMyTARs();}
       else if(pg==='leave-request'){renderMyLeaveRequests();renderMyLeaveBalance();}
       else if(pg==='users'){renderUsers();renderUserMgmt();renderLoginActivity();}
@@ -8920,6 +8929,124 @@ function renderMgmtReviews(){
   }).join('');
 }
 
+// ============ PROGRAM DEPUTY DIRECTOR: MONTHLY RESULTS REVIEW ============
+// Reuses MEAL's own verification layer (getVerification/indicatorMonthSubmission) rather than
+// a second, independently-tracked performance number -- the PDD's review has to agree with
+// what MEAL actually verified for the month, not a parallel count that could drift from it.
+function loadResultsReviewMonth(){
+  var month=$('rr-month').value;
+  var perfBox=$('rr-performance'),missBox=$('rr-missing');
+  if(!month){perfBox.textContent='Pick a month to load indicator data.';missBox.textContent='—';return;}
+  var verified=[],missing=[];
+  DB.indicators.forEach(function(i){
+    var sub=indicatorMonthSubmission(i,month);
+    if(!sub){missing.push(i.name);return;}
+    var v=getVerification(i,month);
+    verified.push(esc(i.name)+': '+(v.status==='Verified'?v.value:sub.actual)+' / '+i.target+(v.status==='Verified'?' (Verified)':' (Pending Verification)'));
+  });
+  perfBox.innerHTML=verified.length?verified.join('<br>'):'No indicator submissions found for this month.';
+  missBox.innerHTML=missing.length?missing.map(esc).join(', '):'None — every indicator has a submission for this month.';
+}
+function openResultsReviewModal(){
+  $('rr-month').value=today().slice(0,7);$('rr-corrective').value='';
+  loadResultsReviewMonth();
+  openM('m-resultsreview');
+}
+function saveResultsReview(){
+  var month=$('rr-month').value;
+  if(!month){alert('Please set the approved month.');return;}
+  DB.resultsReviews.unshift({id:nid('RR'),month:month,performance:$('rr-performance').innerHTML,
+    missing:$('rr-missing').innerHTML,corrective:$('rr-corrective').value.trim(),
+    createdBy:SES.name,createdOn:today()});
+  logAudit('results-review-created',month,'Monthly results review created by '+SES.name);
+  closeM('m-resultsreview');
+  renderResultsReviews();
+  queueCloudSave();
+}
+function renderResultsReviews(){
+  var box=$('resultsreview-body');if(!box)return;
+  if(!DB.resultsReviews.length){box.innerHTML='<div class="empty">No monthly results reviews yet</div>';return;}
+  box.innerHTML=DB.resultsReviews.map(function(r){
+    return '<div class="cd" style="margin-bottom:10px"><div class="cdb">'+
+      '<b>'+esc(r.month)+'</b>'+
+      '<div style="font-size:12px;color:var(--g600);margin-top:7px"><b>Indicator performance:</b><br>'+r.performance+'</div>'+
+      '<div style="font-size:12px;color:var(--g600);margin-top:7px"><b>Missing submissions:</b> '+r.missing+'</div>'+
+      (r.corrective?'<div style="font-size:12px;color:var(--g600);margin-top:7px"><b>Corrective action plan:</b> '+esc(r.corrective)+'</div>':'')+
+      '</div></div>';
+  }).join('');
+}
+
+// ============ PROGRAM DEPUTY DIRECTOR: DONOR & PARTNER REVIEW ============
+function openDonorReviewModal(){
+  $('dr-donor').value='';$('dr-deadline').value='';$('dr-verified').value='';
+  openM('m-donorreview');
+}
+function saveDonorReview(){
+  var donor=$('dr-donor').value.trim(),deadline=$('dr-deadline').value,verified=$('dr-verified').value.trim();
+  if(!donor||!deadline||!verified){alert('Please complete the donor/partner, deadline, and verified results/financials.');return;}
+  DB.donorReviews.unshift({id:nid('DRV'),donor:donor,deadline:deadline,verified:verified,
+    approval:null,status:'Pending',createdBy:SES.name,createdOn:today()});
+  logAudit('donor-review-logged',donor,'Donor/partner review logged by '+SES.name);
+  closeM('m-donorreview');
+  renderDonorReviews();
+  queueCloudSave();
+}
+function submitDonorReview(id){
+  var r=DB.donorReviews.find(function(x){return x.id===id;});if(!r)return;
+  var approval=window.prompt('Approval / submission note:','Approved by Program Deputy Director, submitted to donor');
+  if(approval===null)return;
+  r.approval=approval;r.status='Submitted';r.submittedBy=SES.name;r.submittedOn=today();
+  logAudit('donor-review-submitted',r.donor,'Submitted by '+SES.name);
+  renderDonorReviews();
+  queueCloudSave();
+}
+function renderDonorReviews(){
+  var body=$('donorreview-body');if(!body)return;
+  body.innerHTML=DB.donorReviews.length?DB.donorReviews.map(function(r){
+    var overdueNow=r.status==='Pending'&&overdue(r.deadline);
+    return '<tr><td>'+esc(r.donor)+'</td>'+
+      '<td'+(overdueNow?' style="color:var(--red);font-weight:600"':'')+'>'+dt(r.deadline)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(r.verified)+'</td>'+
+      '<td style="font-size:11.5px">'+esc(r.approval||'—')+'</td>'+
+      '<td><span class="bdg '+(r.status==='Submitted'?'bG':'bO')+'">'+r.status+'</span></td>'+
+      '<td>'+(r.status==='Pending'?'<button class="b bo bs" onclick="submitDonorReview(\''+r.id+'\')">Submit</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No donor/partner reviews logged yet</td></tr>';
+}
+
+// ============ PROGRAM DEPUTY DIRECTOR: PROGRAM QUALITY & LEARNING ============
+function openQualityLearningModal(){
+  $('ql-lesson').value='';$('ql-action').value='';$('ql-manager').value='';
+  openM('m-qualitylearning');
+}
+function saveQualityLearning(){
+  var lesson=$('ql-lesson').value.trim(),action=$('ql-action').value.trim(),manager=$('ql-manager').value.trim();
+  if(!lesson||!action||!manager){alert('Please complete the evaluation/lesson, recommended action, and responsible manager.');return;}
+  DB.qualityLearning.unshift({id:nid('QL'),lesson:lesson,action:action,manager:manager,
+    adoptionEvidence:null,status:'Open',createdBy:SES.name,createdOn:today()});
+  logAudit('quality-learning-logged',lesson,'Program quality/learning item logged by '+SES.name);
+  closeM('m-qualitylearning');
+  renderQualityLearning();
+  queueCloudSave();
+}
+function adoptQualityLearning(id){
+  var q=DB.qualityLearning.find(function(x){return x.id===id;});if(!q)return;
+  var evidence=window.prompt('Adoption evidence (how is this now reflected in practice):','');
+  if(evidence===null)return;
+  q.adoptionEvidence=evidence;q.status='Adopted';q.adoptedBy=SES.name;q.adoptedOn=today();
+  logAudit('quality-learning-adopted',q.lesson,'Adopted, confirmed by '+SES.name);
+  renderQualityLearning();
+  queueCloudSave();
+}
+function renderQualityLearning(){
+  var body=$('qualitylearning-body');if(!body)return;
+  body.innerHTML=DB.qualityLearning.length?DB.qualityLearning.map(function(q){
+    return '<tr><td style="font-size:11.5px">'+esc(q.lesson)+'</td><td style="font-size:11.5px">'+esc(q.action)+'</td>'+
+      '<td>'+esc(q.manager)+'</td><td style="font-size:11.5px">'+esc(q.adoptionEvidence||'—')+'</td>'+
+      '<td><span class="bdg '+(q.status==='Adopted'?'bG':'bO')+'">'+q.status+'</span></td>'+
+      '<td>'+(q.status==='Open'?'<button class="b bo bs" onclick="adoptQualityLearning(\''+q.id+'\')">Mark Adopted</button>':'—')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6" class="empty">No program quality/learning items logged yet</td></tr>';
+}
+
 // The Deputy Director / Program Deputy Director dashboards used to be nothing but stat tiles
 // and tables -- no visual read on the org's actual program performance, which is exactly what
 // these two roles are meant to oversee. Reuses the same Budget-vs-Spent and Activities-Status
@@ -11061,6 +11188,49 @@ if(document.getElementById('afg-map')) initMap();
   </div>
 </div>
 <div class="mf"><button class="b bo" onclick="closeM('m-tarcloseout')">Cancel</button><button class="b bn" onclick="saveTarCloseout()">Complete Closeout</button></div>
+</div></div>
+
+<div class="mb" id="m-resultsreview"><div class="md">
+<div class="mh"><h3>New Monthly Results Review</h3><button class="mx" onclick="closeM('m-resultsreview')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Approved Month *</label><input type="month" id="rr-month" onchange="loadResultsReviewMonth()"></div>
+  </div>
+  <div style="background:var(--g50);padding:10px;border-radius:7px;font-size:12px;margin:10px 0">
+    <b>Indicator Performance</b><div id="rr-performance" style="margin-top:5px;color:var(--g600)">Pick a month to load indicator data.</div>
+  </div>
+  <div style="background:var(--g50);padding:10px;border-radius:7px;font-size:12px;margin-bottom:10px">
+    <b>Missing Submissions</b><div id="rr-missing" style="margin-top:5px;color:var(--g600)">—</div>
+  </div>
+  <div class="fr">
+    <div class="fg ff"><label>Corrective Action Plan</label><textarea rows="2" id="rr-corrective" placeholder="e.g. MEAL to follow up with field teams on 2 missing indicator submissions by end of week"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-resultsreview')">Cancel</button><button class="b bn" onclick="saveResultsReview()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-donorreview"><div class="md">
+<div class="mh"><h3>Add Donor &amp; Partner Review</h3><button class="mx" onclick="closeM('m-donorreview')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg"><label>Donor / Partner *</label><input type="text" id="dr-donor" placeholder="e.g. Global Partnership for Education"></div>
+    <div class="fg"><label>Report Deadline *</label><input type="date" id="dr-deadline"></div>
+    <div class="fg ff"><label>Verified Results / Financials *</label><textarea rows="2" id="dr-verified" placeholder="e.g. Q3 indicator results verified by MEAL; financials reconciled by Finance"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-donorreview')">Cancel</button><button class="b bn" onclick="saveDonorReview()">Save</button></div>
+</div></div>
+
+<div class="mb" id="m-qualitylearning"><div class="md">
+<div class="mh"><h3>Log Program Quality &amp; Learning</h3><button class="mx" onclick="closeM('m-qualitylearning')">&times;</button></div>
+<div class="mbd">
+  <div class="fr">
+    <div class="fg ff"><label>Evaluation / Lesson *</label><textarea rows="2" id="ql-lesson" placeholder="e.g. Midterm evaluation found distribution delays in remote districts during winter months"></textarea></div>
+    <div class="fg ff"><label>Recommended Action *</label><textarea rows="2" id="ql-action" placeholder="e.g. Pre-position supplies before winter road closures in future projects"></textarea></div>
+    <div class="fg"><label>Responsible Manager *</label><input type="text" id="ql-manager" placeholder="e.g. Hamid Agha, Programs Manager"></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-qualitylearning')">Cancel</button><button class="b bn" onclick="saveQualityLearning()">Save</button></div>
 </div></div>
 
 <div class="mb" id="m-crossdeptaction"><div class="md">
