@@ -2049,6 +2049,7 @@ tbody tr:hover td{background:var(--g50);}
 <div class="fg"><label>Project Code</label><input type="text" id="pj-code" placeholder="e.g. GPE-STG"></div>
 <div class="fg"><label>Donor</label><input type="text" id="pj-donor"></div>
 <div class="fg"><label>Sector</label><select id="pj-sector"><option>Education</option><option>Health</option><option>Livelihoods</option><option>WASH</option><option>Protection</option><option>Food Security</option></select></div>
+<div class="fg"><label>Project Manager *</label><input type="text" id="pj-mgr" placeholder="e.g. Hamid Agha"></div>
 <div class="fg"><label>Currency</label><select id="pj-currency" onchange="togglePjFxField()"><option value="USD">USD &mdash; US Dollar</option><option value="AFN">AFN &mdash; Afghani</option><option value="EUR">EUR &mdash; Euro</option><option value="GBP">GBP &mdash; British Pound</option><option value="PKR">PKR &mdash; Pakistani Rupee</option></select></div>
 <div class="fg"><label>Program Budget</label><input type="number" id="pj-budget-program" min="0" placeholder="0"></div>
 <div class="fg"><label>Operations Budget</label><input type="number" id="pj-budget-operations" min="0" placeholder="0"></div>
@@ -3443,6 +3444,7 @@ function collectProjectProvinces(){
 }
 function initProjectLFFields(){
   ['pj-goals-wrap','pj-outcomes-wrap','pj-outputs-wrap','pj-provinces-wrap'].forEach(function(id){var w=$(id);if(w)w.innerHTML='';});
+  if($('pj-mgr'))$('pj-mgr').value='';
   addGoalRow();
   addOutcomeBlock();
   addOutputBlock();
@@ -5046,7 +5048,7 @@ function renderHRChart(){
   var t=el('div');t.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid var(--g100);display:flex;justify-content:space-around;text-align:center';
   t.innerHTML='<div><div style="font-size:18px;font-weight:700;color:var(--navy)">'+DB.staff.length+'</div><div style="font-size:10px;color:var(--g500)">Total Staff</div></div>'+
     '<div><div style="font-size:18px;font-weight:700;color:var(--purple)">'+f+'</div><div style="font-size:10px;color:var(--g500)">Female</div></div>'+
-    '<div><div style="font-size:18px;font-weight:700;color:var(--green)">'+Math.round(f/DB.staff.length*100)+'%</div><div style="font-size:10px;color:var(--g500)">Female Ratio</div></div>';
+    '<div><div style="font-size:18px;font-weight:700;color:var(--green)">'+(DB.staff.length?Math.round(f/DB.staff.length*100):0)+'%</div><div style="font-size:10px;color:var(--g500)">Female Ratio</div></div>';
   c.appendChild(t);
 }
 
@@ -6572,6 +6574,8 @@ function saveProject(){
   var code=$('pj-code').value.trim()||n.value.trim().slice(0,10);
   var codeTaken = !!PROJ[code] || DB.pendingProjects.some(function(x){return x.code===code && x.status!=='rejected';});
   if(codeTaken){alert('Project code "'+code+'" is already in use by another project. Please choose a different code — reusing one will overwrite the existing project\'s data.');return;}
+  var mgr=$('pj-mgr').value.trim();
+  if(!mgr){alert('Please name the Project Manager who will own this project day-to-day.');return;}
   var budgetProgram=parseInt($('pj-budget-program').value)||0;
   var budgetOperations=parseInt($('pj-budget-operations').value)||0;
   if(budgetProgram+budgetOperations<=0){alert('Please enter a Program Budget and/or Operations Budget totalling more than 0.');return;}
@@ -6592,7 +6596,7 @@ function saveProject(){
     benefDirect:benefDirect,benefIndirect:benefIndirect,benef:benefDirect+benefIndirect,
     currency:currency,fxToUSD:fxToUSD,
     prog:0,start:$('pj-start').value,end:$('pj-end').value,loc:collectProjectProvinces(),
-    mgr:SES.name,meal:'Kamil Sanzar',status:'pending',color:'var(--teal)',
+    mgr:mgr,meal:SES.name,status:'pending',color:'var(--teal)',
     goal:goals.join(' | '),impact:$('pj-impact').value.trim(),
     indicators:outcomes.concat(outputs).map(function(o){return (o.text?o.text+': ':'')+o.indicators.join(', ');}).join('\n'),
     logframe:{goals:goals,outcomes:outcomes,outputs:outputs},
@@ -6623,7 +6627,7 @@ function maybeActivateProject(code){
   refreshAll();
   if(window.SGOAMap)SGOAMap.refresh();
   queueCloudSave();
-  alert('Project fully approved by MEAL, Finance, and the Executive Director. It is now live for all departments.');
+  alert('Project approved by the Executive Director. It is now live for all departments.');
 }
 
 // ============ AUDIT LOG ============
@@ -7064,7 +7068,7 @@ function saveGRN(){
     notes:$('grn-notes').value.trim(),createdBy:SES.name});
   if(po.status==='Issued'){po.status='Received';po.receivedAt=today();}
   closeM('m-grn');
-  renderGRNs();renderPOs();renderInvoices();queueCloudSave();
+  renderGRNs();renderPOs();renderInvoices();renderReceiptIssues();queueCloudSave();
 }
 
 function refreshInvoicePODropdown(){
@@ -9586,6 +9590,8 @@ function approveTAR(id){
   logAudit('tar-approval',id,'TAR request approved.'+assignedVehicleText);
   notify(t.requestedBy,'wf','Your TAR request to '+t.dest+' has been approved.'+assignedVehicleText,'tar-request');
   renderTARQueue();
+  renderCheckins();
+  renderTravelCloseouts();
   queueCloudSave();
   alert('TAR approved.'+assignedVehicleText+' '+t.dept+' has been notified.');
 }
