@@ -1589,7 +1589,7 @@ tbody tr:hover td{background:var(--g50);}
 <!-- USERS -->
 <div class="pg" id="p-users">
   <div class="ph"><div><h1>User Management</h1><p>Create and manage platform access, roles, and project links</p></div>
-  <div class="pha"><button class="b bn bs" onclick="openM('m-add-user')">+ Add New User</button></div></div>
+  <div class="pha"><button class="b bo bs" onclick="provisionAllStaffLogins()">Provision Staff Logins (Supabase Auth)</button><button class="b bn bs" onclick="openM('m-add-user')">+ Add New User</button></div></div>
   <div class="stats" style="grid-template-columns:repeat(3,1fr)">
     <div class="st nv"><div class="stl">Total Users</div><div class="stv" id="um-total">11</div></div>
     <div class="st gr"><div class="stl">Active</div><div class="stv" id="um-active">11</div></div>
@@ -2538,6 +2538,52 @@ var SECTOR_THEME={
 var PROJ={};
 
 
+// ============ PASSWORD HASHING ============
+// Passwords used to be stored and compared as plain text inside the same JSON blob this app
+// saves to Supabase -- anyone who could read that row (the anon key is necessarily visible in
+// this file's source) could read every password directly. Hashing with a per-account random
+// salt via the browser's native Web Crypto API (no CDN dependency) means a database read only
+// ever exposes a salted SHA-256 digest, not the real password. This is still a client-side
+// app with no trusted server to keep the comparison secret, so it is a real improvement over
+// plain text, not equivalent to proper server-side auth -- see the CRED object below, whose
+// bootstrap passwords are necessarily readable in this file's source regardless.
+function genSalt(){
+  var bytes=new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+async function sha256Hex(text){
+  var data=new TextEncoder().encode(text);
+  var digest=await crypto.subtle.digest('SHA-256',data);
+  return Array.from(new Uint8Array(digest)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+async function hashPassword(password,salt){
+  return sha256Hex(salt+':'+password);
+}
+// Sets a hashed password on a user record, replacing any legacy plain-text .password field.
+async function setUserPassword(userRecord,plainPassword){
+  var salt=genSalt();
+  userRecord.passwordSalt=salt;
+  userRecord.passwordHash=await hashPassword(plainPassword,salt);
+  delete userRecord.password;
+}
+// Verifies a plain-text password against a user record. Records created before this change
+// still carry a plain .password field -- those are checked directly and, on a successful
+// match, transparently upgraded to a salted hash so the plain text doesn't linger in storage
+// (there is no server here to run a one-off migration job, so migrating on next login is the
+// only practical path).
+async function verifyUserPassword(userRecord,plainPassword){
+  if(userRecord.passwordHash){
+    return (await hashPassword(plainPassword,userRecord.passwordSalt))===userRecord.passwordHash;
+  }
+  if(userRecord.password!==undefined){
+    var ok=userRecord.password===plainPassword;
+    if(ok)await setUserPassword(userRecord,plainPassword);
+    return ok;
+  }
+  return false;
+}
+
 // ============ CLOUD PERSISTENCE (SUPABASE) ============
 var SUPA_URL = "https://inznquztqyglxyoppdxs.supabase.co";
 var SUPA_KEY = "sb_publishable_27UrNSbWZDXo8j7rez9FPg_ZIC4p5YG";
@@ -2554,6 +2600,73 @@ var cloudStatus = 'idle';
 var cloudRowVersion = null; // updated_at of the row as last read by this tab — used to detect concurrent edits
 var syncBlocked = false;    // true once a load failure means we must never autosave/overwrite
 var cloudDirty = false;     // true once this tab has a local change not yet confirmed saved
+
+// ============ SUPABASE AUTH GATE ============
+// Starts OFF on purpose. Flipping this to true before the Supabase-side setup is done (the
+// RLS policy enabled, and every current staff account provisioned via "Provision Staff
+// Logins" in User Management) would lock every single person out of this app the moment
+// this file is deployed -- nobody would have a matching Supabase Auth account yet. Follow
+// the setup steps in this session's report, then change this one line to true.
+var ENFORCE_SUPABASE_AUTH = false;
+// Before this, every read/write of the single shared data row used only the public anon key —
+// there was no way for the database to distinguish "a real logged-in staff member" from
+// "anyone who copied this key out of the page source." A Supabase Auth session fixes exactly
+// that gap, once the project's RLS policy requires auth.role()='authenticated' on the table
+// (see the SQL this session's report hands the admin to run). This does NOT replace this
+// app's own department/role gating (ACCESS, SES.role, etc.) and it does NOT make one
+// department's data invisible to another logged-in staff member at the database level --
+// the whole app still reads/writes one shared JSON row, so that still depends entirely on
+// this app's own client-side checks, same as before. What it stops is anyone who is not a
+// provisioned staff member from reaching the row at all.
+//
+// Supabase Auth needs an email-shaped identifier, not an arbitrary username, so each
+// account's existing username maps to a synthetic address under a domain that is never
+// actually sent mail -- "Confirm email" must be turned OFF in the Supabase Auth settings for
+// sign-in to work, since nothing will ever click a confirmation link sent to these.
+function usernameToAuthEmail(username){
+  return username.replace(/[^a-zA-Z0-9.]/g,'_')+'@staff.sgoa.internal';
+}
+async function supaAuthSignIn(username,password){
+  if(!cloudSyncEnabled)return {ok:true,skipped:true}; // no cloud connection -- nothing to gate
+  var res=await supa.auth.signInWithPassword({email:usernameToAuthEmail(username),password:password});
+  return {ok:!res.error,error:res.error};
+}
+// Updates the CURRENTLY signed-in user's own Supabase Auth password -- the anon key can only
+// ever do this for whichever account is presently authenticated, which is exactly right for
+// self-service password changes (My Settings / the password-change modal) and exactly wrong
+// for an admin resetting someone else's password, which needs a different path (see
+// saveEditUser(), which can only re-provision via signUp, not update an existing login).
+async function syncAuthPasswordForCurrentUser(newPassword){
+  if(!ENFORCE_SUPABASE_AUTH || !cloudSyncEnabled)return;
+  try{await supa.auth.updateUser({password:newPassword});}catch(e){console.warn('Supabase Auth password sync failed',e);}
+}
+// Used both for provisioning a brand-new staff login and for the one-time migration of
+// existing accounts (see provisionAllStaffLogins()). Safe to call again for an account that
+// already exists -- Supabase returns a "already registered" error, which is treated as
+// success here since the goal (a working Auth account) is already met.
+async function supaAuthSignUp(username,password){
+  if(!cloudSyncEnabled)return {ok:true,skipped:true};
+  var res=await supa.auth.signUp({email:usernameToAuthEmail(username),password:password});
+  if(res.error && !/already registered/i.test(res.error.message))return {ok:false,error:res.error};
+  return {ok:true};
+}
+// One-time admin action: creates a matching Supabase Auth account for every existing staff
+// login, using the password they already have, so nobody has to be issued a new one. Run
+// this once after enabling the RLS policy, then see this session's report for what to do
+// about public sign-up afterward.
+async function provisionAllStaffLogins(){
+  if(!cloudSyncEnabled){alert('Cloud connection is not active -- nothing to provision.');return;}
+  if(!window.confirm('This creates a Supabase Auth login for every current staff account, matching their existing password. Run this once, after you have enabled the RLS policy from this session\'s report. Continue?'))return;
+  var results=[];
+  for(var i=0;i<DB.users.length;i++){
+    var u=DB.users[i];
+    var pw=window.prompt('Supabase Auth has no way to read a stored password hash back out -- enter the CURRENT password for '+u.name+' (username: '+u.username+') to provision their login, or leave blank to skip:','');
+    if(!pw)continue;
+    var r=await supaAuthSignUp(u.username,pw);
+    results.push(u.username+': '+(r.ok?'OK':'FAILED - '+(r.error&&r.error.message)));
+  }
+  alert('Provisioning complete:\n\n'+results.join('\n'));
+}
 
 function updateCloudStatusUI(){
   var el2 = document.getElementById('cloud-status');
@@ -2679,20 +2792,22 @@ document.addEventListener('visibilitychange', function(){ if(document.visibility
 // saved data — without this, a password change for any of them is silently lost on reload
 // (see the go-live audit, SEC-13/REL). Make sure each has a real, persisted DB.users record,
 // which login and password-change now treat as the source of truth.
-function migrateCredAccounts(){
+async function migrateCredAccounts(){
   var added=false;
-  Object.keys(CRED).forEach(function(key){
+  for(var key in CRED){
     var c=CRED[key];
     var exists=DB.users.some(function(u){return u.username===c.u;});
     if(!exists){
-      DB.users.push({
-        id:'U'+key, name:c.n, username:c.u, password:c.p, position:c.r,
+      var rec={
+        id:'U'+key, name:c.n, username:c.u, position:c.r,
         roleTemplate:key, dept:DEPTNAME[key]||'', email:'', phone:'',
         status:'Active', prefs:{}, projects:[]
-      });
+      };
+      await setUserPassword(rec,c.p);
+      DB.users.push(rec);
       added=true;
     }
-  });
+  }
   return added;
 }
 
@@ -2948,19 +3063,28 @@ function overdue(d){
   return d<today();
 }
 
-function doLogin(){
+async function doLogin(){
   var u=$('lu').value.trim(),p=$('lp').value.trim(),e=$('lerr');
+  function fail(msg){e.style.display='block';e.textContent=msg||'Incorrect username or password.';setTimeout(function(){e.style.display='none';},3000);}
+  if(ENFORCE_SUPABASE_AUTH){
+    var authRes=await supaAuthSignIn(u,p);
+    if(!authRes.ok){fail();return;}
+  }
   // DB.users is the source of truth once an account has been migrated into it (see
   // migrateCredAccounts) — checking it first means a changed password actually takes
   // effect, instead of the original CRED password working forever regardless of changes.
   var acct=DB.users.find(function(x){return x.username===u;});
   var effRole,effName,effLabel,effPosition;
   if(acct){
-    if(acct.password!==p || acct.status!=='Active'){e.style.display='block';e.textContent='Incorrect username or password.';setTimeout(function(){e.style.display='none';},3000);return;}
+    if(!(await verifyUserPassword(acct,p)) || acct.status!=='Active'){e.style.display='block';e.textContent='Incorrect username or password.';setTimeout(function(){e.style.display='none';},3000);return;}
     effRole=acct.roleTemplate;effName=acct.name;
     effLabel=acct.position||ROLE_TEMPLATE_LABEL[acct.roleTemplate]||acct.roleTemplate;
     effPosition=acct.position||effLabel;
   } else {
+    // Dead in normal operation -- migrateCredAccounts() copies every CRED account into
+    // DB.users (hashed) before login is ever reached. Kept only as a defensive fallback if
+    // that migration hasn't run yet; CRED's own passwords stay plain text here because
+    // they're already readable in this file's source regardless of how this check is written.
     var matchKey=null;
     for(var key in CRED){ if(CRED[key].u===u){ matchKey=key; break; } }
     var c=matchKey?CRED[matchKey]:null;
@@ -3269,7 +3393,7 @@ function saveMyProfile(){
   var m=document.getElementById('ms-profile-msg');
   m.textContent='✅ Saved!'; setTimeout(function(){m.textContent='';},2500);
 }
-function saveMyPassword(){
+async function saveMyPassword(){
   var cur=document.getElementById('ms-cur').value.trim();
   var nw=document.getElementById('ms-new').value.trim();
   var cf=document.getElementById('ms-cfm').value.trim();
@@ -3277,10 +3401,11 @@ function saveMyPassword(){
   function show(t,c){msg.textContent=t;msg.style.color=c;setTimeout(function(){msg.textContent='';},3500);}
   var u=DB.users.find(function(x){return x.name===SES.name;});
   if(!u){show('Account error — please contact IT.','var(--red)');return;}
-  if(u.password!==cur){show('Current password incorrect.','var(--red)');return;}
+  if(!(await verifyUserPassword(u,cur))){show('Current password incorrect.','var(--red)');return;}
   if(nw.length<6){show('Min 6 characters.','var(--red)');return;}
   if(nw!==cf){show('Passwords do not match.','var(--red)');return;}
-  u.password=nw;
+  await setUserPassword(u,nw);
+  await syncAuthPasswordForCurrentUser(nw);
   queueCloudSave();
   show('✅ Password updated!','var(--green)');
 }
@@ -3309,7 +3434,7 @@ function openPwdModal(){
 function closePwdModal(){
   document.getElementById('pwd-modal').classList.remove('on');
 }
-function doChangePassword(){
+async function doChangePassword(){
   var cur=document.getElementById('pwd-current').value.trim();
   var nw=document.getElementById('pwd-new').value.trim();
   var cf=document.getElementById('pwd-confirm').value.trim();
@@ -3317,15 +3442,17 @@ function doChangePassword(){
   function showMsg(t,type){msg.textContent=t;msg.className='pwd-msg '+type;msg.style.display='block';setTimeout(function(){msg.style.display='none';},3500);}
   var dbUser=DB.users.find(function(u){return u.name===SES.name;});
   if(!dbUser){showMsg('Account error — please contact IT.','err');return;}
-  if(dbUser.password!==cur){showMsg('Current password is incorrect.','err');return;}
+  if(!(await verifyUserPassword(dbUser,cur))){showMsg('Current password is incorrect.','err');return;}
   if(nw.length<6){showMsg('New password must be at least 6 characters.','err');return;}
   if(nw!==cf){showMsg('New passwords do not match.','err');return;}
-  dbUser.password=nw;
+  await setUserPassword(dbUser,nw);
+  await syncAuthPasswordForCurrentUser(nw);
   queueCloudSave();
   showMsg('✅ Password updated successfully!','ok');
   setTimeout(closePwdModal,2000);
 }
-function doLogout(){
+async function doLogout(){
+  if(ENFORCE_SUPABASE_AUTH && cloudSyncEnabled){try{await supa.auth.signOut();}catch(e){}}
   SES={role:null,name:'',init:''};
   pageHistory=[];currentPageId=null;
   $('login').classList.remove('hide');
@@ -8265,26 +8392,30 @@ DB.users=[];
 
 var ROLE_TEMPLATE_LABEL={executive:'Executive Director',meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations',progdeputy:'Program Deputy Director',deputy:'Deputy Director',it:'IT Support Officer',access:'Access & Movement Officer'};
 
-function saveNewUser(){
+async function saveNewUser(){
   var name=$('nu-name'),user=$('nu-username'),pass=$('nu-password');
   if(!name.value.trim()||!user.value.trim()||!pass.value.trim()){alert('Please fill in name, username, and password.');return;}
   var dup=DB.users.some(function(u){return u.username===user.value.trim();}) || Object.keys(CRED).some(function(k){return CRED[k].u===user.value.trim();});
   if(dup){alert('This username already exists. Please choose another.');return;}
   var projSel=$('nu-projects');
   var projects=Array.from(projSel.selectedOptions).map(function(o){return o.value;});
-  DB.users.push({
-    id:nid('U'),name:name.value.trim(),username:user.value.trim(),password:pass.value.trim(),
+  var rec={
+    id:nid('U'),name:name.value.trim(),username:user.value.trim(),
     roleTemplate:$('nu-role').value,position:$('nu-position').value.trim(),
     loc:$('nu-loc').value.trim()||'Kabul',
     projects:projects.length?projects:['All'],status:$('nu-status').value,
     createdBy:SES.name,created:today()
-  });
+  };
+  await setUserPassword(rec,pass.value.trim());
+  var authResult=ENFORCE_SUPABASE_AUTH?await supaAuthSignUp(rec.username,pass.value.trim()):{ok:true};
+  DB.users.push(rec);
   closeM('m-add-user');
   name.value='';user.value='';pass.value='';$('nu-position').value='';$('nu-loc').value='';
   renderUserMgmt();
   renderAllStaffDirectories();
   queueCloudSave();
-  alert('User created successfully. They can now log in with the credentials provided.');
+  alert(authResult.ok?'User created successfully. They can now log in with the credentials provided.':
+    'User created, but their Supabase Auth login could not be provisioned automatically ('+(authResult.error&&authResult.error.message)+'). They will not be able to log in until this is fixed -- check whether public sign-up is disabled in Supabase Auth settings.');
 }
 
 // ============ DEPARTMENT-SCOPED STAFF ACCOUNT CREATION ============
@@ -8301,34 +8432,41 @@ function openDeptAddUser(){
   $('du-note').textContent='This account will have full '+DEPTNAME[deptKey]+' section access — the same dashboard and permissions as the '+DEPTNAME[deptKey]+' department head. There is currently no way to give a staff account narrower access than that; contact the platform administrator if finer-grained restrictions are needed.';
   openM('m-dept-add-user');
 }
-function saveDeptUser(){
+async function saveDeptUser(){
   if(!_deptAddUserKey)return;
   var name=$('du-name'),user=$('du-username'),pass=$('du-password');
   if(!name.value.trim()||!user.value.trim()||!pass.value.trim()){alert('Please fill in name, username, and password.');return;}
   var dup=DB.users.some(function(u){return u.username===user.value.trim();}) || Object.keys(CRED).some(function(k){return CRED[k].u===user.value.trim();});
   if(dup){alert('This username already exists. Please choose another.');return;}
-  DB.users.push({
-    id:nid('U'),name:name.value.trim(),username:user.value.trim(),password:pass.value.trim(),
+  var rec={
+    id:nid('U'),name:name.value.trim(),username:user.value.trim(),
     roleTemplate:_deptAddUserKey,position:$('du-position').value.trim()||(DEPTNAME[_deptAddUserKey]+' Officer'),
     loc:$('du-loc').value.trim()||'Kabul',projects:['All'],status:$('du-status').value,
     createdBy:SES.name,created:today()
-  });
+  };
+  await setUserPassword(rec,pass.value.trim());
+  var authResult=ENFORCE_SUPABASE_AUTH?await supaAuthSignUp(rec.username,pass.value.trim()):{ok:true};
+  DB.users.push(rec);
   closeM('m-dept-add-user');
   renderAllStaffDirectories();
   renderUserMgmt();
   queueCloudSave();
-  alert('Staff account created. They can now log in with the credentials provided.');
+  alert(authResult.ok?'Staff account created. They can now log in with the credentials provided.':
+    'Account created, but their Supabase Auth login could not be provisioned automatically ('+(authResult.error&&authResult.error.message)+'). They will not be able to log in until this is fixed -- check whether public sign-up is disabled in Supabase Auth settings.');
 }
 
 function editUser(id){
   var u=DB.users.find(function(x){return x.id===id;});if(!u)return;
   $('eu-id').value=u.id;$('eu-name').value=u.name;$('eu-username').value=u.username||'';
-  $('eu-password').value=u.password;$('eu-status').value=u.status;
+  // Passwords are hashed now, so the real value can't be shown or pre-filled here (there is
+  // nothing to reverse) -- leaving this blank and only changing the password when the admin
+  // actually types a new one is the correct behavior, not a regression.
+  $('eu-password').value='';$('eu-status').value=u.status;
   $('eu-role').value=u.roleTemplate||'meal';$('eu-position').value=u.position||'';
   openM('m-edit-user');
 }
 
-function saveEditUser(){
+async function saveEditUser(){
   var id=$('eu-id').value;
   var u=DB.users.find(function(x){return x.id===id;});
   if(!u){closeM('m-edit-user');return;}
@@ -8338,10 +8476,17 @@ function saveEditUser(){
     Object.keys(CRED).some(function(k){return CRED[k].u===newUsername;});
   if(taken){alert('That username is already in use by another account. Please choose a different one.');return;}
   var oldUsername=u.username;
-  u.name=$('eu-name').value.trim();u.username=newUsername;u.password=$('eu-password').value.trim();u.status=$('eu-status').value;
+  var newPassword=$('eu-password').value.trim();
+  u.name=$('eu-name').value.trim();u.username=newUsername;u.status=$('eu-status').value;
   u.roleTemplate=$('eu-role').value;u.position=$('eu-position').value.trim();
+  if(newPassword)await setUserPassword(u,newPassword);
   if(oldUsername!==newUsername)logAudit('user-username-change',id,'Username changed from "'+oldUsername+'" to "'+newUsername+'" for '+u.name);
   closeM('m-edit-user');renderUserMgmt();queueCloudSave();
+  // An admin resetting someone ELSE's password can only ever change the password this app
+  // checks -- the anon key has no admin API to reset another account's Supabase Auth
+  // password (only a logged-in user can change their OWN, via My Settings). Say so plainly
+  // rather than let the admin believe the person can log in with the new password right away.
+  if(newPassword && ENFORCE_SUPABASE_AUTH)alert('Password updated here, but their Supabase Auth login still has their OLD password -- that can only be changed by the account owner themselves (My Settings) or by you directly in the Supabase dashboard.');
 }
 
 function renderUserMgmt(){
@@ -10606,7 +10751,7 @@ async function initAppOnLoad(){
     if(result==='empty'){
       // Genuinely first time ever connecting (not a failed read) — push the current
       // (empty) state as the baseline, after seeding the 13 built-in accounts into it.
-      migrateCredAccounts();
+      await migrateCredAccounts();
       await saveToCloud();
     } else if(result==='error'){
       // A failed read must never be treated as "nothing saved yet" — doing so is what
@@ -10615,7 +10760,7 @@ async function initAppOnLoad(){
       cloudStatus = 'blocked'; updateCloudStatusUI();
       alert('Could not load saved data from the server. To prevent data loss, nothing will be saved in this session. Please check your connection and reload the page before entering any data.');
     } else {
-      if(migrateCredAccounts()) queueCloudSave();
+      if(await migrateCredAccounts()) queueCloudSave();
     }
   }
   // Also needed on the public complaints page (no login involved), so real project
@@ -10832,7 +10977,7 @@ document.addEventListener('keydown',function(e){
   <div class="fr">
     <div class="fg ff"><label>Full Name</label><input type="text" id="eu-name"></div>
     <div class="fg"><label>Username</label><input type="text" id="eu-username"></div>
-    <div class="fg"><label>Password</label><div style="display:flex;gap:6px"><input type="password" id="eu-password" style="flex:1"><button type="button" class="b bo bs" onclick="var f=$('eu-password');f.type=f.type==='password'?'text':'password';">Show</button></div></div>
+    <div class="fg"><label>New Password <span style="font-weight:400;color:var(--g500)">(leave blank to keep current password)</span></label><div style="display:flex;gap:6px"><input type="password" id="eu-password" placeholder="Leave blank to keep current password" style="flex:1"><button type="button" class="b bo bs" onclick="var f=$('eu-password');f.type=f.type==='password'?'text':'password';">Show</button></div></div>
     <div class="fg ff">
       <label>Role Template (defines what this user can do)</label>
       <select id="eu-role">
