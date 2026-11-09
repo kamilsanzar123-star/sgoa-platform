@@ -1,138 +1,190 @@
-# Enabling real server-side access control (Supabase Auth + RLS)
+# SGOA Platform — live backend architecture (Supabase Auth + RBAC + RPC sync)
 
-This is the setup needed to finish fixing the #1 gap from the platform review:
-right now, the single data row (`sgoa_store`) and the file storage bucket
-(`sgoa-files`) are readable and writable by anyone holding the public anon
-key — which is visible to anyone who views the page source. There is no way
-for the database to tell a real logged-in staff member apart from anyone
-else who copied that key.
+This replaces the old "ENFORCE_SUPABASE_AUTH flag" document. That approach (a single
+shared data row gated by a simple authenticated-only RLS policy) is gone. The app now
+runs on a real per-account identity, real roles/permissions, and a real sync protocol.
+**This has already been tested working against the live project** — this document
+describes what `index.html` now expects to exist on the backend, and how to operate it
+day to day. It is not a from-scratch setup guide, since the Edge Functions, tables and
+RPC functions already exist; it is a reference for IT/the administrator going forward.
 
-The code side is already done and pushed, but it is **switched off by
-default** (`ENFORCE_SUPABASE_AUTH = false` near the top of `index.html`,
-in the "SUPABASE AUTH GATE" section) on purpose — flipping it on before
-finishing the steps below would lock every single person out of the app
-immediately, since nobody has a matching Supabase Auth account yet.
+## 1. Logging in
 
-## What changes once this is on
+`doLogin()` does **not** call `supa.auth.signInWithPassword()` directly. It POSTs the
+username and password to an Edge Function:
 
-- Logging in will require a real Supabase Auth session, not just a locally
-  stored password. The app still keeps its own username/password system for
-  everything else (roles, department access, the approval chains) — this
-  only adds a second, server-enforced gate in front of the one shared data
-  row and the file storage bucket.
-- Anyone who is not a provisioned staff member (i.e. has no Supabase Auth
-  account) can no longer read or write that row or upload/download files,
-  even with the anon key.
-- **This does not make one department's data invisible to another logged-in
-  staff member.** The whole app still reads and writes one shared JSON
-  blob — Finance, Safeguarding, HR, everyone's data lives in the same row.
-  Stopping one staff member from reading another department's confidential
-  records at the database level would require splitting that single blob
-  into real per-entity tables with per-row RLS policies, which is a much
-  larger rearchitecture, not part of this change. What this *does* fix is
-  keeping the general public out entirely.
-
-## Steps, in order
-
-### 1. In the Supabase dashboard → Authentication → Settings
-- Turn **off** "Confirm email" (these accounts use a synthetic address
-  under `@staff.sgoa.internal` — nothing will ever be delivered there, so
-  a confirmation step would permanently lock everyone out).
-- Leave "Enable email signups" **ON** for now — the migration step below
-  needs it. You can turn it off afterward (see step 4).
-
-### 2. Run the SQL below in the Supabase SQL Editor
-This turns on Row Level Security and requires a real authenticated session
-for any access to the shared data row and the file bucket.
-
-```sql
--- Require a real Supabase Auth session to touch the app's one data row.
-alter table sgoa_store enable row level security;
-
-create policy "authenticated access only"
-on sgoa_store
-for all
-to authenticated
-using (true)
-with check (true);
-
--- Same requirement for the file storage bucket used for document uploads.
-create policy "authenticated file access only"
-on storage.objects
-for all
-to authenticated
-using (bucket_id = 'sgoa-files')
-with check (bucket_id = 'sgoa-files');
+```
+POST {SUPA_URL}/functions/v1/sgoa-erp-login
+headers: content-type: application/json, apikey: {SUPA_KEY}
+body: { "username": "...", "password": "..." }
 ```
 
-Do this **before** flipping `ENFORCE_SUPABASE_AUTH` to `true` — the app will
-still work exactly as it does today in the meantime, since the anon key still
-has unrestricted access until this policy is in place and the flag is on.
+That function is expected to return a Supabase session object (the same shape
+`supa.auth.setSession()` accepts — access/refresh tokens), which the app then installs
+with `supa.auth.setSession(session)`. If the function returns a non-2xx response with
+`{ "error": "..." }`, that message is shown on the login screen as-is.
 
-### 3. Provision a Supabase Auth account for every current staff login
-In the app, as the Executive Director: **User Management → "Provision Staff
-Logins (Supabase Auth)"**. It will ask, one at a time, for each account's
-*current* password (the one they actually log in with today) — it cannot
-read this back out of storage, since passwords are hashed, so you need to
-know it or leave that account blank to skip it.
+On every page load, `sgoaLiveInit()` tries to restore an existing session via
+`supa.auth.getSession()` / `supa.auth.getUser()` before falling back to the login screen.
 
-- For the 13 built-in department-head accounts, those are the passwords
-  already defined in this file's own `CRED` object — you already have them.
-- For anyone who changed their password since their account was created, or
-  whose original password you don't have a record of, skip them here and
-  instead reset their password once via **User Management → Edit User**
-  (sets a password you choose), tell them the temporary password, and have
-  them change it themselves afterward via **My Settings** — that flow syncs
-  both systems automatically for whoever is doing it to their own account.
+## 2. Identity, roles and permissions
 
-### 4. Decide how new staff accounts get provisioned going forward
-Creating a new account through **User Management → "+ Add New User"** (or a
-department head's "+ Add Staff Account") already tries to provision a
-matching Supabase Auth login automatically. Whether that keeps working
-depends on one choice:
+Once signed in, `loadAuthenticatedIdentity(user)` reads three tables by the authenticated
+user's id:
 
-- **Leave "Enable email signups" on** — new accounts keep provisioning
-  automatically through the app, same as today. The trade-off: anyone who
-  has the anon key can also self-register a Supabase Auth account the same
-  way, which doesn't by itself grant them anything in this app (they'd still
-  need a role/profile created through User Management to do anything), but
-  it does mean an outsider could authenticate against the database row and
-  poke at the JSON blob, limited to what calling the app's own JS functions
-  against it would reveal — a far smaller hole than today's fully open
-  access, but not a fully closed one.
-- **Turn "Enable email signups" off** (recommended once initial migration is
-  done) — the automatic provisioning in "+ Add New User" will then fail with
-  a clear warning in the app, and you provision each new hire's Supabase
-  Auth login yourself from the Supabase dashboard (Authentication → Users →
-  Add user) using the same `username@staff.sgoa.internal` email pattern,
-  before or after creating their app profile in User Management.
+- **`profiles`** — one row per staff member, keyed by Supabase Auth user id. Must have
+  `status = 'active'` or login is refused. Fields the app reads: `full_name` (or `name`),
+  `username`, `work_email`, `phone`, `department_id`.
+- **`user_roles`** — links a profile to one or more **`roles`** rows, each optionally
+  bounded by `valid_from`/`valid_until`. If someone holds more than one active role, the
+  app picks the highest-priority one from this fixed list: `executive_director`,
+  `deputy_director`, `program_deputy_director`, `it_admin`, `meal_head`, `finance_head`,
+  `hr_head`, `program_manager` (anything else falls through in whatever order the query
+  returned it).
+- **`role_permissions`** → **`permissions`** — every permission code attached to any of
+  that person's active roles. A permission code of `*` or `all` grants everything.
 
-Either is defensible; the second is tighter. This is a real policy decision
-for SGOA to make, not something the code should decide silently.
+A role whose `code` is literally `department_head` is special-cased: the app looks up
+that profile's `departments.code` and maps it to a department key (`procurement`→`supply`,
+`administration`→`admin`, `supply_chain`→`supply`, anything else passed through as-is).
+Every other role code is mapped to an internal page-group key via the `ROLE_KEYS` table
+near the top of `index.html` — if a new role code is added on the backend with no entry
+there, that account will fail to log in with "Your role needs a department mapping."
 
-### 5. Flip the switch
-Once steps 1–3 are done (and you've picked a position on step 4), change
-this one line near the top of `index.html`:
+**No active role or no permissions at all = login refused.** There is no fallback role.
 
-```js
-var ENFORCE_SUPABASE_AUTH = false;   // change to true
+## 3. Page and feature gating
+
+`permissionAllowsPage(pg, perms)` is checked both on navigation (`go()`) and is the only
+thing standing between a signed-in account and a page — the old `ACCESS` arrays still
+exist but are now a secondary, coarser check. Two pages (`my-work`, `my-settings`) are
+always reachable by anyone signed in, regardless of permissions. Five pages are
+"shared self-service" — reachable by *either* the page's normal department permission
+*or* a separate self-service permission, so any staff member can submit their own
+request even without their department's management permission:
+
+| Page | Self-service permission |
+|---|---|
+| `raise-pr` | `procurement.pr.create` |
+| `leave-request` | `hr.leave.request` |
+| `tar-request` | `access.requests.create` |
+| `it-tickets` | `it.tickets.create` |
+| `timesheet` | `timesheets.submit` |
+
+Every other page is gated by the specific permission code(s) listed in the `map` object
+inside `permissionAllowsPage` — that map is the single source of truth for what each
+permission code actually unlocks in this app.
+
+## 4. Data sync (replaces the old shared `sgoa_store` row)
+
+There is no more single JSON blob. Data loads and saves go through two RPC functions:
+
+- **`sgoa_erp_load()`** — takes no arguments beyond the authenticated session; returns
+  `{ DB: {...}, PROJ: {...}, hashes: {...} }`. `DB`/`PROJ` are scoped to whatever
+  collections this account's role has permission to see — a collection this account has
+  no hash for is one it was never granted. `hashes` is a per-collection version stamp used
+  for conflict detection (see below).
+- **`sgoa_erp_save({ changes })`** — `changes` is an array of
+  `{ collection, base_hash, value }`, one entry per collection that actually changed
+  locally since the last load/save (compared against `sgoaBaseline`, with computed
+  fields like `PROJ.spent` stripped out first so they don't trigger false diffs). Returns
+  the same `{ DB, PROJ, hashes }` shape the load RPC does. If `base_hash` is stale (someone
+  else saved that collection first), the call is expected to fail with error code `40001`
+  — the app surfaces this as "Someone else saved changes" and stops autosaving until the
+  page is reloaded, rather than silently overwriting their change.
+
+`queueCloudSave()` debounces local edits (700ms) before calling `saveToCloud()`, which
+does the diffing and the actual RPC call. A collection with local data that was never
+granted a hash at all (meaning this account loaded it with permission it doesn't
+actually have) is refused outright rather than saved — that would mean saving data this
+account was never allowed to see.
+
+## 5. Notifications
+
+Marking a notification read is server-synced, not purely local: `openNotif()` and
+`markAllNotifsRead()` both call `supa.rpc('sgoa_mark_notices', { ids: [...] })` before
+updating the local read flag, so another of this person's own open tabs/sessions sees
+the same read state.
+
+## 6. File attachments — private, not public
+
+Uploads go to a bucket named `sgoa-files`, at a path of
+`{authUserId}/{folder}/{uuid}-{filename}`, and require the `documents.upload`
+permission. **There is no public URL anymore.** The record stores a marker
+(`sgoa-private://sgoa-files/{path}`), and opening a file calls `sgoaOpenFile(docId)`,
+which exchanges that marker for a short-lived (60-second) signed URL via
+`supa.storage.from('sgoa-files').createSignedUrl(path, 60)` at the moment someone with
+access actually clicks it. The bucket itself must be **private**, not public, in its own
+Supabase settings — a public bucket would make the signed-URL step pointless.
+
+## 7. The public complaints form (no login at all)
+
+This is a separate, deliberately isolated path — it cannot use `sgoa_erp_save` at all,
+since there is no authenticated session on that page. It POSTs to its own Edge Function:
+
+```
+POST {SUPA_URL}/functions/v1/sgoa-public-concern
+body: { name, contact, location, project, type, description, honeypot, requestId }
 ```
 
-Test logging in with one account on the deploy preview before merging to
-confirm it works end-to-end, then merge.
+`requestId` (a `crypto.randomUUID()` generated once per report attempt, reused on any
+retry of the *same* report) is the idempotency key — a flaky connection or a double
+click must not create two tickets for one real submission. A successful response is
+`{ received: true, receipt: "..." }`; the receipt is shown to the visitor as their
+reference number.
 
-## What is still NOT fixed by this
+## 8. Password changes — self-service only now
 
-- **Passwords in this app's own storage are hashed (SHA-256 + per-account
-  salt), not stored in plain text** — that part of the original review was
-  already fixed separately and does not depend on any of the above.
-- **File uploads still use permanent public URLs** (`getPublicUrl`), not
-  signed/expiring ones. The RLS policy above controls who can *upload to or
-  list* the bucket, but a public URL for an already-uploaded file, once
-  known, stays fetchable regardless of RLS. If any uploaded documents are
-  genuinely confidential, that needs addressing separately (switching to
-  `createSignedUrl` with an expiry, which also requires making the bucket
-  itself private rather than public in the bucket's own settings).
-- **No real backup/disaster-recovery policy** — confirm what Supabase's own
-  backup settings are for this project; nothing in the app itself backs up
-  the database.
+`saveMyPassword()` / `doChangePassword()` both go through `supa.auth.updateUser()`
+directly. **There is no admin-reset path from inside the app anymore.** If someone is
+locked out, an administrator has to reset their password directly in the Supabase
+dashboard (Authentication → Users → that user → reset password) — there is nothing in
+User Management that can do this for them now, by design: the anon key has no privilege
+to change another account's Auth password.
+
+## 9. Provisioning a new staff account
+
+**User Management → "+ Add New User" (and a department head's "+ Add Staff Account")
+can no longer create a working login.** Both forms now just explain that real accounts
+must be created through the trusted administrator workflow, because creating one needs
+all of the following, which the anon key cannot do on its own:
+
+1. A Supabase Auth user (Authentication → Users → Add user, in the dashboard).
+2. A matching `profiles` row for that Auth user's id, with `status = 'active'`, their
+   `full_name`, `username`, `work_email`, `phone`, and `department_id`.
+3. A `user_roles` row linking that profile to the correct `roles` row (so it resolves
+   through `ROLE_KEYS`/the `department_head` special case above).
+4. Whatever `role_permissions` that role already carries — nothing extra to do here
+   unless a brand-new role is being introduced.
+
+Until that admin-side tooling exists, each new hire's account has to be created by
+whoever has dashboard/service-role access, not by the app itself.
+
+## 10. Record deletion — disabled
+
+Every "Delete" action in the app (`confirmDelete()`) now shows a message that record
+removal is disabled, instead of deleting anything. There is no `sgoa_erp_save`-equivalent
+RPC for destroying a row yet, and permanently discarding real organizational data needs
+an approved process, not a client-side splice that could silently race against someone
+else's unsaved edit. If genuine deletion is needed later, it needs its own RPC (with its
+own authorization/audit story) before this can be re-enabled.
+
+## 11. The legacy `CRED` object
+
+`CRED` (the original 13 hardcoded department-head username/password pairs) is **no
+longer used for authentication at all** — real login only ever goes through the Edge
+Function above. It is kept only as a harmless fallback for a couple of display/labeling
+spots (the Staff Login Activity list, and username-uniqueness error messages) so an old
+CRED username doesn't silently collide with a real one. It carries no security weight
+either way now and can be removed in a future cleanup without affecting login.
+
+## What this document does *not* cover
+
+I have not seen and cannot verify the actual SQL behind `sgoa_erp_load`, `sgoa_erp_save`,
+`sgoa_mark_notices`, the two Edge Functions, or the RLS policies on `profiles` /
+`user_roles` / `role_permissions` / `departments` / `sgoa-files` — only the *client-side
+contract* `index.html` now depends on, listed above. The backend itself was already
+built and confirmed working by direct testing against the live project, not by me in
+this sandbox (no outbound network access here reaches supabase.co). Anyone maintaining
+the Supabase side should treat sections 1–10 above as the interface that must keep
+working, not as instructions to (re)create it from scratch.
