@@ -1589,7 +1589,7 @@ tbody tr:hover td{background:var(--g50);}
 <!-- USERS -->
 <div class="pg" id="p-users">
   <div class="ph"><div><h1>User Management</h1><p>Create and manage platform access, roles, and project links</p></div>
-  <div class="pha"><button class="b bo bs" onclick="provisionAllStaffLogins()">Provision Staff Logins (Supabase Auth)</button><button class="b bn bs" onclick="openM('m-add-user')">+ Add New User</button></div></div>
+  <div class="pha"><button class="b bn bs" onclick="openM('m-add-user')">+ Add New User</button></div></div>
   <div class="stats" style="grid-template-columns:repeat(3,1fr)">
     <div class="st nv"><div class="stl">Total Users</div><div class="stv" id="um-total">11</div></div>
     <div class="st gr"><div class="stl">Active</div><div class="stv" id="um-active">11</div></div>
@@ -2429,6 +2429,34 @@ Object.keys(SIDEBAR).forEach(function(r){
   if(acctGroup) acctGroup.i.unshift({p:'my-work',n:'📋 My Work'});
 });
 
+// ============ STAFF ROLE (any account with no department-head permissions) ============
+// A real Supabase role that isn't one of the named department heads/officers above still
+// needs somewhere to land -- a plain staff account that can submit its own PRs/leave/travel/
+// IT requests and timesheet, without any department dashboard.
+HOME.staff='my-work';
+DEPTNAME.staff='Staff';
+ACCESS.staff=['my-work','my-settings','raise-pr','tar-request','leave-request','it-tickets','timesheet','denied'];
+SIDEBAR.staff=[{l:'MY WORK',i:[{p:'my-work',n:'My work & notifications'},{p:'raise-pr',n:'Purchase requests'},{p:'timesheet',n:'Timesheet & leave'},{p:'my-settings',n:'My settings'}]}];
+// Backfill: every role above (including the new one just added) gets the same six
+// self-service pages even if its own ACCESS/SIDEBAR literal never explicitly listed one --
+// catches exactly the kind of one-role omission that's easy to miss hand-editing 13 arrays
+// (the 'it' and 'access' roles above, for instance, were missing 'raise-pr'/'tar-request').
+(function(){
+  var common=[['my-work','My work & notifications'],['raise-pr','Purchase requests'],['tar-request','Travel requests'],
+    ['leave-request','Leave requests'],['it-tickets','IT requests'],['timesheet','My timesheet'],['my-settings','My settings']];
+  Object.keys(ACCESS).forEach(function(key){
+    var have={};ACCESS[key].forEach(function(p){have[p]=true;});
+    common.forEach(function(c){ if(!have[c[0]])ACCESS[key].push(c[0]); });
+    var existing={};
+    (SIDEBAR[key]||[]).forEach(function(g){ g.i.forEach(function(i){ existing[i.p]=true; }); });
+    var missing=common.filter(function(c){ return !existing[c[0]]; });
+    if(missing.length){
+      if(!SIDEBAR[key])SIDEBAR[key]=[];
+      SIDEBAR[key].push({l:'SHARED STAFF TOOLS',i:missing.map(function(c){ return {p:c[0],n:c[1]}; })});
+    }
+  });
+})();
+
 var SES={role:null,name:'',init:''};
 
 function seedExistingRoadmaps(){
@@ -2538,53 +2566,9 @@ var SECTOR_THEME={
 var PROJ={};
 
 
-// ============ PASSWORD HASHING ============
-// Passwords used to be stored and compared as plain text inside the same JSON blob this app
-// saves to Supabase -- anyone who could read that row (the anon key is necessarily visible in
-// this file's source) could read every password directly. Hashing with a per-account random
-// salt via the browser's native Web Crypto API (no CDN dependency) means a database read only
-// ever exposes a salted SHA-256 digest, not the real password. This is still a client-side
-// app with no trusted server to keep the comparison secret, so it is a real improvement over
-// plain text, not equivalent to proper server-side auth -- see the CRED object below, whose
-// bootstrap passwords are necessarily readable in this file's source regardless.
-function genSalt(){
-  var bytes=new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-}
-async function sha256Hex(text){
-  var data=new TextEncoder().encode(text);
-  var digest=await crypto.subtle.digest('SHA-256',data);
-  return Array.from(new Uint8Array(digest)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-}
-async function hashPassword(password,salt){
-  return sha256Hex(salt+':'+password);
-}
-// Sets a hashed password on a user record, replacing any legacy plain-text .password field.
-async function setUserPassword(userRecord,plainPassword){
-  var salt=genSalt();
-  userRecord.passwordSalt=salt;
-  userRecord.passwordHash=await hashPassword(plainPassword,salt);
-  delete userRecord.password;
-}
-// Verifies a plain-text password against a user record. Records created before this change
-// still carry a plain .password field -- those are checked directly and, on a successful
-// match, transparently upgraded to a salted hash so the plain text doesn't linger in storage
-// (there is no server here to run a one-off migration job, so migrating on next login is the
-// only practical path).
-async function verifyUserPassword(userRecord,plainPassword){
-  if(userRecord.passwordHash){
-    return (await hashPassword(plainPassword,userRecord.passwordSalt))===userRecord.passwordHash;
-  }
-  if(userRecord.password!==undefined){
-    var ok=userRecord.password===plainPassword;
-    if(ok)await setUserPassword(userRecord,plainPassword);
-    return ok;
-  }
-  return false;
-}
-
 // ============ CLOUD PERSISTENCE (SUPABASE) ============
+// Passwords are no longer stored or checked by this app at all -- Supabase Auth owns them
+// entirely now (see the SUPABASE AUTH section below). There is nothing left here to hash.
 var SUPA_URL = "https://inznquztqyglxyoppdxs.supabase.co";
 var SUPA_KEY = "sb_publishable_27UrNSbWZDXo8j7rez9FPg_ZIC4p5YG";
 var supa = null;
@@ -2601,71 +2585,58 @@ var cloudRowVersion = null; // updated_at of the row as last read by this tab �
 var syncBlocked = false;    // true once a load failure means we must never autosave/overwrite
 var cloudDirty = false;     // true once this tab has a local change not yet confirmed saved
 
-// ============ SUPABASE AUTH GATE ============
-// Starts OFF on purpose. Flipping this to true before the Supabase-side setup is done (the
-// RLS policy enabled, and every current staff account provisioned via "Provision Staff
-// Logins" in User Management) would lock every single person out of this app the moment
-// this file is deployed -- nobody would have a matching Supabase Auth account yet. Follow
-// the setup steps in this session's report, then change this one line to true.
-var ENFORCE_SUPABASE_AUTH = false;
-// Before this, every read/write of the single shared data row used only the public anon key —
-// there was no way for the database to distinguish "a real logged-in staff member" from
-// "anyone who copied this key out of the page source." A Supabase Auth session fixes exactly
-// that gap, once the project's RLS policy requires auth.role()='authenticated' on the table
-// (see the SQL this session's report hands the admin to run). This does NOT replace this
-// app's own department/role gating (ACCESS, SES.role, etc.) and it does NOT make one
-// department's data invisible to another logged-in staff member at the database level --
-// the whole app still reads/writes one shared JSON row, so that still depends entirely on
-// this app's own client-side checks, same as before. What it stops is anyone who is not a
-// provisioned staff member from reaching the row at all.
-//
-// Supabase Auth needs an email-shaped identifier, not an arbitrary username, so each
-// account's existing username maps to a synthetic address under a domain that is never
-// actually sent mail -- "Confirm email" must be turned OFF in the Supabase Auth settings for
-// sign-in to work, since nothing will ever click a confirmation link sent to these.
-function usernameToAuthEmail(username){
-  return username.replace(/[^a-zA-Z0-9.]/g,'_')+'@staff.sgoa.internal';
+// ============ SUPABASE AUTH ============
+// Real server-side identity and per-page/per-collection permission enforcement, replacing
+// the single-shared-anon-key model entirely. Confirmed working against the live project.
+var ROLE_KEYS={executive:"executive",executive_director:"executive",meal:"meal",meal_head:"meal",meal_officer:"meal",finance:"finance",finance_head:"finance",finance_officer:"finance",hr:"hr",hr_head:"hr",hr_officer:"hr",programs:"programs",program_manager:"programs",project_manager:"programs",supply:"supply",supply_head:"supply",procurement_officer:"supply",admin:"admin",admin_head:"admin",admin_officer:"admin",safeguarding:"safeguarding",safeguarding_focal_point:"safeguarding",operations:"operations",operations_head:"operations",operations_officer:"operations",progdeputy:"progdeputy",program_deputy_director:"progdeputy",deputy:"deputy",deputy_director:"deputy",it:"it",it_admin:"it",access:"access",access_officer:"access",staff:"staff"};
+function authError(m){var e=$('lerr');if(e){e.textContent=m;e.style.display='block';}}
+function normalizeRoleKey(v){var k=String(v||'').toLowerCase().trim().replace(/[ -]+/g,'_');return ROLE_KEYS[k]||null;}
+function rows(d){return Array.isArray(d)?d:(d?[d]:[]);}
+function permissionAllowsPage(pg,perms){
+ if(pg==='denied')return true;
+ // Everyone's own work/notifications and own settings are always reachable, regardless of
+ // which department permissions they happen to hold -- these are not department pages.
+ if(pg==='my-work'||pg==='my-settings')return true;
+ // These five pages are self-service for ANY staff member (raise a PR, request leave/travel,
+ // log an IT ticket, submit a timesheet) as well as for whichever department manages them --
+ // the two are different permissions for the same page, so check both before falling through
+ // to the single-permission department map below.
+ var shared={'leave-request':'hr.leave.request','tar-request':'access.requests.create','it-tickets':'it.tickets.create','timesheet':'timesheets.submit','raise-pr':'procurement.pr.create'};
+ if(shared[pg] && (perms.indexOf(shared[pg])>-1 || perms.indexOf('*')>-1))return true;
+ var map={'exec':['organization.view'],'all-tasks':['tasks.view'],'all-challenges':['audit.view'],'meal':['meal.view'],'meal-ind':['meal.indicators.manage'],'meal-cfrm':['cfrm.view','cfrm.manage','cfrm.assign','cfrm.close'],'meal-visits':['meal.visits.manage'],'meal-lf':['meal.view'],'meal-find':['meal.findings.manage'],'meal-risk':['meal.risks.manage'],'meal-dqa':['meal.dqa.manage','meal.evaluations.manage'],'meal-docs':['documents.view','documents.manage','documents.upload'],'meal-data':['meal.results.create','meal.results.verify','meal.data.export'],'finance':['finance.view'],'finance-commitments':['finance.commitments.manage'],'finance-advances':['finance.advances.manage','finance.reconciliation.manage'],'hr':['hr.view'],'hr-recruitment':['hr.recruitment.manage'],'hr-training':['hr.training.manage'],'programs':['programs.view'],'prog-activities':['programs.activities.manage'],'prog-benef':['programs.beneficiaries.view','programs.beneficiaries.manage'],'prog-analysis':['programs.view'],'prog-partners':['programs.partners.manage'],'prog-grants':['programs.grants.manage'],'supply':['procurement.view'],'supply-proc':['procurement.manage'],'supply-dist':['distribution.manage'],'supply-suppliers':['procurement.suppliers.manage'],'supply-po':['procurement.po.manage'],'supply-grn':['procurement.grn.manage'],'supply-warehouse':['warehouse.view','warehouse.manage'],'admin':['admin.view'],'admin-registry':['documents.view'],'safeguarding':['safeguarding.case.view','safeguarding.case.manage'],'operations':['operations.view'],'ops-assets':['assets.manage'],'ops-fleet':['fleet.manage'],'roadmap':['projects.view'],'projects':['projects.view'],'project-detail':['projects.view'],'raise-pr':['procurement.pr.create'],'pr-approvals':['procurement.pr.approve'],'it':['it.view'],'it-tickets':['it.tickets.manage'],'access':['access.view'],'deputy':['departments.view'],'progdeputy':['programs.view'],'users':['users.view'],'settings':['organization.manage'],'my-settings':['organization.view'],'my-work':['tasks.view'],'workflow':['workflow.view'],'timesheet':['timesheets.view','timesheets.submit'],'timesheet-approve':['timesheets.approve'],'leave-request':['hr.leave.manage'],'tar-request':['travel_authorizations.view']};
+ var names=map[pg]||[pg.replace(/-/g,'_')];
+ return perms.some(function(p){return p==='*'||p==='all'||names.some(function(n){return p===n;});});
 }
-async function supaAuthSignIn(username,password){
-  if(!cloudSyncEnabled)return {ok:true,skipped:true}; // no cloud connection -- nothing to gate
-  var res=await supa.auth.signInWithPassword({email:usernameToAuthEmail(username),password:password});
-  return {ok:!res.error,error:res.error};
+async function loadAuthenticatedIdentity(user){
+ var p=await supa.from('profiles').select('*').eq('id',user.id).single();if(p.error||!p.data||p.data.status!=='active')throw Error('An active SGOA staff profile is required.');
+ var r=await supa.from('user_roles').select('role_id,valid_from,valid_until,roles(id,code,name)').eq('user_id',user.id);if(r.error)throw Error('Assigned roles could not be loaded.');
+ var todayStr=today();
+ var active=(r.data||[]).filter(function(x){return x.roles&&(!x.valid_from||x.valid_from<=todayStr)&&(!x.valid_until||x.valid_until>=todayStr);});if(!active.length)throw Error('No active role is assigned.');
+ var priorities=['executive_director','deputy_director','program_deputy_director','it_admin','meal_head','finance_head','hr_head','program_manager'];
+ active.sort(function(a,b){var ai=priorities.indexOf(a.roles.code);var bi=priorities.indexOf(b.roles.code);return (ai<0?99:ai)-(bi<0?99:bi);});
+ var chosen=active[0].roles;var key=normalizeRoleKey(chosen.code);
+ if(chosen.code==='department_head'){
+  var d=await supa.from('departments').select('code').eq('id',p.data.department_id).single();
+  var code=String((d.data&&d.data.code)||'').toLowerCase();
+  key=({procurement:'supply',administration:'admin',supply_chain:'supply'})[code]||normalizeRoleKey(code);
+ }
+ if(!key)throw Error('Your role needs a department mapping. Contact IT.');
+ var permissions=await supa.from('role_permissions').select('permissions(code)').in('role_id',active.map(function(x){return x.role_id;}));if(permissions.error)throw Error('Permissions could not be loaded.');
+ var seen={};var codes=[];
+ (permissions.data||[]).forEach(function(x){var c=x.permissions&&x.permissions.code;if(c&&!seen[c]){seen[c]=true;codes.push(c);}});
+ if(!codes.length)throw Error('No permissions are assigned.');
+ return{profile:p.data,role:key,roleName:chosen.name,permissions:codes};
 }
-// Updates the CURRENTLY signed-in user's own Supabase Auth password -- the anon key can only
-// ever do this for whichever account is presently authenticated, which is exactly right for
-// self-service password changes (My Settings / the password-change modal) and exactly wrong
-// for an admin resetting someone else's password, which needs a different path (see
-// saveEditUser(), which can only re-provision via signUp, not update an existing login).
-async function syncAuthPasswordForCurrentUser(newPassword){
-  if(!ENFORCE_SUPABASE_AUTH || !cloudSyncEnabled)return;
-  try{await supa.auth.updateUser({password:newPassword});}catch(e){console.warn('Supabase Auth password sync failed',e);}
-}
-// Used both for provisioning a brand-new staff login and for the one-time migration of
-// existing accounts (see provisionAllStaffLogins()). Safe to call again for an account that
-// already exists -- Supabase returns a "already registered" error, which is treated as
-// success here since the goal (a working Auth account) is already met.
-async function supaAuthSignUp(username,password){
-  if(!cloudSyncEnabled)return {ok:true,skipped:true};
-  var res=await supa.auth.signUp({email:usernameToAuthEmail(username),password:password});
-  if(res.error && !/already registered/i.test(res.error.message))return {ok:false,error:res.error};
-  return {ok:true};
-}
-// One-time admin action: creates a matching Supabase Auth account for every existing staff
-// login, using the password they already have, so nobody has to be issued a new one. Run
-// this once after enabling the RLS policy, then see this session's report for what to do
-// about public sign-up afterward.
-async function provisionAllStaffLogins(){
-  if(!cloudSyncEnabled){alert('Cloud connection is not active -- nothing to provision.');return;}
-  if(!window.confirm('This creates a Supabase Auth login for every current staff account, matching their existing password. Run this once, after you have enabled the RLS policy from this session\'s report. Continue?'))return;
-  var results=[];
-  for(var i=0;i<DB.users.length;i++){
-    var u=DB.users[i];
-    var pw=window.prompt('Supabase Auth has no way to read a stored password hash back out -- enter the CURRENT password for '+u.name+' (username: '+u.username+') to provision their login, or leave blank to skip:','');
-    if(!pw)continue;
-    var r=await supaAuthSignUp(u.username,pw);
-    results.push(u.username+': '+(r.ok?'OK':'FAILED - '+(r.error&&r.error.message)));
-  }
-  alert('Provisioning complete:\n\n'+results.join('\n'));
+async function applyAuthenticatedIdentity(user,show){
+ var x=await loadAuthenticatedIdentity(user),p=x.profile,n=p.full_name||p.name||(user.user_metadata&&user.user_metadata.full_name)||user.email||'SGOA User';
+ SES={role:x.role,name:n,init:n.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2),username:p.username||$('lu').value.trim(),position:x.roleName,authUserId:user.id,permissions:x.permissions,profile:p};
+ if(show){
+  $('uav').textContent=SES.init;$('unm').textContent=n;$('url').textContent=x.roleName;
+  buildSide(x.role);pageHistory=[];currentPageId=null;
+  $('login').classList.add('hide');$('app').classList.add('on');
+  refreshAllProjectDropdowns();renderAllStaffDirectories();checkDeadlineAlerts();applyOrgLogo();renderNotifBell();
+  go(HOME[x.role]||'denied');
+ }
 }
 
 function updateCloudStatusUI(){
@@ -2685,72 +2656,96 @@ function updateCloudStatusUI(){
   el2.style.color = m.c;
 }
 
-async function saveToCloud(){
-  if(!cloudSyncEnabled || syncBlocked)return;
-  // The debounce timer that scheduled this call has now fired — it is no longer "pending",
-  // regardless of what happens below. Leaving this set forever after a normal save used to
-  // permanently block this tab's periodic cloud refresh from ever running again.
-  cloudSaveTimer=null;
-  cloudStatus='saving'; updateCloudStatusUI();
+async function loadFromCloud(){
+  // Returns 'ok' (loaded real data via the sgoa_erp_load RPC), 'busy' (a local edit raced
+  // this load -- caller should just let the in-flight save finish), or 'error' (the RPC
+  // failed, or this tab isn't authenticated) -- callers must never treat 'error' as "nothing
+  // saved yet", or a dropped connection ends up overwriting real data with a blank slate.
+  if(!supa || !SES.authUserId)return 'error';
+  var epoch=sgoaEpoch, seq=sgoaEditSeq;
+  cloudStatus='loading'; updateCloudStatusUI();
   try{
-    // Stale-write guard: if someone else's tab saved since we last read this row, refuse to
-    // silently clobber their work — stop and tell the user to reload instead.
-    if(cloudRowVersion){
-      var check = await supa.from('sgoa_store').select('updated_at').eq('key','app_state').maybeSingle();
-      if(!check.error && check.data && check.data.updated_at && check.data.updated_at !== cloudRowVersion){
-        cloudStatus='conflict'; updateCloudStatusUI();
-        return;
-      }
-    }
-    var payload = { DB: DB, PROJ: PROJ };
-    var nowIso = new Date().toISOString();
-    var { error } = await supa.from('sgoa_store').upsert({
-      key: 'app_state',
-      data: payload,
-      updated_at: nowIso
-    });
-    if(error){ cloudStatus='error'; console.error('Cloud save error:', error); }
-    else { cloudStatus='saved'; cloudRowVersion=nowIso; cloudDirty=false; }
+    var r = await supa.rpc('sgoa_erp_load');
+    if(r.error)throw r.error;
+    if(epoch!==sgoaEpoch)return 'error';
+    if(seq!==sgoaEditSeq || cloudDirty)return 'busy';
+    sgoaInstall(r.data);
+    cloudStatus='saved'; cloudDirty=false; updateCloudStatusUI();
+    return 'ok';
   }catch(e){
-    cloudStatus='error'; console.error('Cloud save exception:', e);
+    cloudStatus='blocked'; syncBlocked=true; updateCloudStatusUI();
+    console.error('ERP load unavailable:', (e&&e.code)||'connection');
+    return 'error';
   }
-  updateCloudStatusUI();
 }
 
 function queueCloudSave(){
-  if(!cloudSyncEnabled || syncBlocked)return;
-  cloudDirty=true;
+  if(!SES.authUserId || syncBlocked || cloudStatus==='conflict')return;
+  // A newly-created leave/TAR/IT-ticket row needs the actual Supabase user id attached
+  // (not just the display name) so row-level security can let its own owner see it again
+  // after the next load -- attach it here, once, right before the save that will persist it.
+  ['leaveRequests','tars','itTickets'].forEach(function(collection){
+    var oldRows; try{ oldRows=JSON.parse(sgoaBaseline[collection]||'[]'); }catch(e){ oldRows=[]; }
+    var idField = collection==='itTickets' ? 'raisedById' : 'requestedById';
+    var nameField = collection==='itTickets' ? 'raisedBy' : 'requestedBy';
+    (DB[collection]||[]).forEach(function(row){
+      var isNew = !oldRows.some(function(r){ return r.id===row.id; });
+      if(isNew && row[nameField]===SES.name && !row[idField])row[idField]=SES.authUserId;
+    });
+  });
+  cloudDirty=true; sgoaEditSeq++;
   if(cloudSaveTimer)clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(saveToCloud, 1500);
+  cloudSaveTimer = setTimeout(saveToCloud, 700);
 }
 
-async function loadFromCloud(){
-  // Returns 'ok' (loaded real data), 'empty' (row genuinely doesn't exist yet), or 'error'
-  // (network/server failure) — callers must never treat 'error' the same as 'empty', or a
-  // dropped connection ends up overwriting real data with a blank slate.
-  if(!cloudSyncEnabled)return 'error';
-  cloudStatus='loading'; updateCloudStatusUI();
+async function saveToCloud(){
+  if(!SES.authUserId || syncBlocked || !cloudDirty || cloudStatus==='saving' || cloudStatus==='conflict')return;
+  if(cloudSaveTimer)clearTimeout(cloudSaveTimer);
+  cloudSaveTimer=null;
+  var seq=sgoaEditSeq, epoch=sgoaEpoch;
+  // Safety check first: a collection this account's role was never granted a hash for (no
+  // permission to load it) must never be silently saved anyway -- that would mean writing
+  // data this account was never allowed to even see. If one got edited regardless (should be
+  // impossible through the UI, but defend against it), stop and say so instead of saving.
+  var blocked=false, blockedKey=null;
+  Object.keys(DB).forEach(function(key){
+    if(blocked || sgoaNoSave.has(key) || (key in sgoaHashes) || key.indexOf('_')===0)return;
+    if(JSON.stringify(DB[key])!==JSON.stringify(sgoaEmpty[key]||[])){ blocked=true; blockedKey=key; }
+  });
+  if(blocked){
+    cloudDirty=false; cloudStatus='error'; updateCloudStatusUI();
+    alert('Changes to '+blockedKey+' were NOT saved: this account has not loaded permission to use that section.');
+    return false;
+  }
+  var changes=[], snapshot={};
+  Object.keys(sgoaHashes).forEach(function(key){
+    if(sgoaNoSave.has(key))return;
+    var value = key==='PROJ' ? PROJ : DB[key];
+    if(value===undefined)return;
+    var norm = sgoaNorm(key,value);
+    snapshot[key]=norm;
+    if(norm!==sgoaBaseline[key])changes.push({collection:key, base_hash:sgoaHashes[key], value:JSON.parse(JSON.stringify(value))});
+  });
+  if(!changes.length){ cloudDirty=false; cloudStatus='saved'; updateCloudStatusUI(); return true; }
+  cloudStatus='saving'; updateCloudStatusUI();
   try{
-    var { data, error } = await supa.from('sgoa_store').select('data,updated_at').eq('key','app_state').maybeSingle();
-    if(error){ console.error('Cloud load error:', error); cloudStatus='error'; updateCloudStatusUI(); return 'error'; }
-    if(data && data.data){
-      if(data.data.DB){
-        Object.keys(data.data.DB).forEach(function(k){ DB[k] = data.data.DB[k]; });
-      }
-      if(data.data.PROJ){
-        Object.keys(PROJ).forEach(function(k){ delete PROJ[k]; });
-        Object.keys(data.data.PROJ).forEach(function(k){ PROJ[k] = data.data.PROJ[k]; });
-      }
-      cloudRowVersion = data.updated_at || null;
-      cloudStatus='saved'; updateCloudStatusUI();
-      return 'ok';
-    }
-    cloudStatus='idle'; updateCloudStatusUI();
-    return 'empty';
+    var r = await supa.rpc('sgoa_erp_save',{changes:changes});
+    if(r.error)throw r.error;
+    if(epoch!==sgoaEpoch)return;
+    sgoaHashes=r.data.hashes;
+    changes.forEach(function(p){ sgoaBaseline[p.collection]=snapshot[p.collection]; });
+    cloudDirty = (sgoaEditSeq!==seq);
+    if(!cloudDirty)sgoaInstall(r.data);
+    cloudStatus='saved'; updateCloudStatusUI();
+    if(cloudDirty)cloudSaveTimer=setTimeout(saveToCloud,700);
+    return true;
   }catch(e){
-    console.error('Cloud load exception:', e);
-    cloudStatus='error'; updateCloudStatusUI();
-    return 'error';
+    if(epoch!==sgoaEpoch)return;
+    // No hidden retry or silent overwrite -- the edit stays exactly as typed on screen so
+    // nothing is lost, and the person is told plainly that it has NOT reached the server yet.
+    cloudDirty=false; cloudStatus=(e&&e.code==='40001') ? 'conflict' : 'error'; updateCloudStatusUI();
+    alert('Changes were NOT saved. '+((e&&e.message)||'Check your connection and permissions.')+' Your edits remain on this screen.');
+    return false;
   }
 }
 
@@ -2788,28 +2783,9 @@ function pollCloudRefresh(){
 setInterval(pollCloudRefresh, 20000);
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible')pollCloudRefresh(); });
 
-// The 13 built-in department-head accounts (CRED) live only in this file's source, not in
-// saved data — without this, a password change for any of them is silently lost on reload
-// (see the go-live audit, SEC-13/REL). Make sure each has a real, persisted DB.users record,
-// which login and password-change now treat as the source of truth.
-async function migrateCredAccounts(){
-  var added=false;
-  for(var key in CRED){
-    var c=CRED[key];
-    var exists=DB.users.some(function(u){return u.username===c.u;});
-    if(!exists){
-      var rec={
-        id:'U'+key, name:c.n, username:c.u, position:c.r,
-        roleTemplate:key, dept:DEPTNAME[key]||'', email:'', phone:'',
-        status:'Active', prefs:{}, projects:[]
-      };
-      await setUserPassword(rec,c.p);
-      DB.users.push(rec);
-      added=true;
-    }
-  }
-  return added;
-}
+// Real accounts now live in Supabase (profiles/user_roles), provisioned by an administrator
+// through the Supabase dashboard or the sgoa-erp-login backend -- not seeded from CRED into
+// DB.users on load, the way the old client-only identity model worked.
 
 
 // ============ PROJECT ROADMAP TEMPLATE ============
@@ -3064,49 +3040,27 @@ function overdue(d){
 }
 
 async function doLogin(){
-  var u=$('lu').value.trim(),p=$('lp').value.trim(),e=$('lerr');
-  function fail(msg){e.style.display='block';e.textContent=msg||'Incorrect username or password.';setTimeout(function(){e.style.display='none';},3000);}
-  if(ENFORCE_SUPABASE_AUTH){
-    var authRes=await supaAuthSignIn(u,p);
-    if(!authRes.ok){fail();return;}
+  var username=$('lu').value.trim(),password=$('lp').value;
+  if(!username||!password){authError('Enter your username and password.');return;}
+  var button=document.querySelector('#login .lbtn');button.disabled=true;sgoaSigningIn=true;
+  try{
+    var response=await fetch(SUPA_URL+'/functions/v1/sgoa-erp-login',{method:'POST',headers:{'content-type':'application/json',apikey:SUPA_KEY},body:JSON.stringify({username:username,password:password})});
+    $('lp').value='';
+    var session=await response.json();
+    if(!response.ok)throw Error(session.error||'Unable to sign in');
+    var r=await supa.auth.setSession(session);
+    if(r.error)throw r.error;
+    await applyAuthenticatedIdentity(r.data.user,false);
+    syncBlocked=false;
+    if((await loadFromCloud())!=='ok')throw Error('The live ERP backend is not activated or could not be loaded. No sample data has been substituted.');
+    await applyAuthenticatedIdentity(r.data.user,true);
+  }catch(e){
+    if(supa)await supa.auth.signOut({scope:'local'});
+    SES={role:null,name:'',init:'',permissions:[]};
+    authError(e.message||'Unable to sign in');
+  }finally{
+    sgoaSigningIn=false;button.disabled=false;button.textContent='SIGN IN';
   }
-  // DB.users is the source of truth once an account has been migrated into it (see
-  // migrateCredAccounts) — checking it first means a changed password actually takes
-  // effect, instead of the original CRED password working forever regardless of changes.
-  var acct=DB.users.find(function(x){return x.username===u;});
-  var effRole,effName,effLabel,effPosition;
-  if(acct){
-    if(!(await verifyUserPassword(acct,p)) || acct.status!=='Active'){e.style.display='block';e.textContent='Incorrect username or password.';setTimeout(function(){e.style.display='none';},3000);return;}
-    effRole=acct.roleTemplate;effName=acct.name;
-    effLabel=acct.position||ROLE_TEMPLATE_LABEL[acct.roleTemplate]||acct.roleTemplate;
-    effPosition=acct.position||effLabel;
-  } else {
-    // Dead in normal operation -- migrateCredAccounts() copies every CRED account into
-    // DB.users (hashed) before login is ever reached. Kept only as a defensive fallback if
-    // that migration hasn't run yet; CRED's own passwords stay plain text here because
-    // they're already readable in this file's source regardless of how this check is written.
-    var matchKey=null;
-    for(var key in CRED){ if(CRED[key].u===u){ matchKey=key; break; } }
-    var c=matchKey?CRED[matchKey]:null;
-    if(!c||p!==c.p){e.style.display='block';e.textContent='Incorrect username or password.';setTimeout(function(){e.style.display='none';},3000);return;}
-    effRole=matchKey;effName=c.n;effLabel=c.r;effPosition=c.r;
-  }
-  SES.role=effRole;SES.name=effName;SES.init=effName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
-  SES.position=effPosition;SES.username=u;
-  DB.loginLog.push({user:u,name:effName,role:effLabel,ts:new Date().toISOString()});
-  queueCloudSave();
-  $('uav').textContent=SES.init;$('unm').textContent=effName;$('url').textContent=effLabel;
-  buildSide(effRole);
-  if(!DB._roadmapSeeded){seedExistingRoadmaps();DB._roadmapSeeded=true;}
-  pageHistory=[];currentPageId=null;
-  $('login').classList.add('hide');
-  $('app').classList.add('on');
-  refreshAllProjectDropdowns();
-  renderAllStaffDirectories();
-  checkDeadlineAlerts();
-  applyOrgLogo();
-  renderNotifBell();
-  go(HOME[effRole]||'exec');
 }
 // MY WORK PAGE -- one place for everything tied to the logged-in person, filtered from the
 // same DB arrays every department page already reads, instead of hunting across pages.
@@ -3180,9 +3134,11 @@ function renderMyWork(){
 // MY SETTINGS PAGE
 function renderMySettings(){
   var u=DB.users.find(function(x){return x.name===SES.name;});
-  // profile fields
-  document.getElementById('ms-email').value=(u&&u.email)||'';
-  document.getElementById('ms-phone').value=(u&&u.phone)||'';
+  // profile fields -- the work email comes from the Supabase profile (set by an
+  // administrator) and is read-only here; only the phone number is self-editable.
+  document.getElementById('ms-email').value=(SES.profile&&SES.profile.work_email)||'';
+  document.getElementById('ms-email').readOnly=true;
+  document.getElementById('ms-phone').value=(SES.profile&&SES.profile.phone)||'';
   // prefs
   var prefs=(u&&u.prefs)||{};
   document.getElementById('ms-notif-tasks').checked=prefs.tasks||false;
@@ -3383,45 +3339,38 @@ function downloadBackup(){
   if($('org-info-lastbackup'))$('org-info-lastbackup').textContent=new Date(DB.org.lastBackupAt).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   queueCloudSave();
 }
-function saveMyProfile(){
-  var u=DB.users.find(function(x){return x.name===SES.name;});
-  if(u){
-    u.email=document.getElementById('ms-email').value.trim();
-    u.phone=document.getElementById('ms-phone').value.trim();
-    queueCloudSave();
+// Real profile/password changes now go straight to Supabase (the account's own row and its
+// own Auth session) instead of this app's local DB.users record -- there is no more local
+// password store to check against or update (see the removed PASSWORD HASHING section).
+async function sgoaChangePassword(current,next,confirm,message){
+  if(next!==confirm || next.length<12){ message('Use at least 12 characters and matching new passwords.'); return; }
+  try{
+    // Supabase verifies the current password itself; there is no local credential table to
+    // check it against here.
+    var result=await supa.auth.updateUser({password:next,currentPassword:current});
+    if(result.error)throw result.error;
+    message('Password updated securely.');
+  }catch(e){
+    message((e&&e.message)||'Password could not be updated. Sign in again if a fresh session is required.');
   }
-  var m=document.getElementById('ms-profile-msg');
-  m.textContent='✅ Saved!'; setTimeout(function(){m.textContent='';},2500);
 }
 async function saveMyPassword(){
-  var cur=document.getElementById('ms-cur').value.trim();
-  var nw=document.getElementById('ms-new').value.trim();
-  var cf=document.getElementById('ms-cfm').value.trim();
-  var msg=document.getElementById('ms-pwd-msg');
-  function show(t,c){msg.textContent=t;msg.style.color=c;setTimeout(function(){msg.textContent='';},3500);}
-  var u=DB.users.find(function(x){return x.name===SES.name;});
-  if(!u){show('Account error — please contact IT.','var(--red)');return;}
-  if(!(await verifyUserPassword(u,cur))){show('Current password incorrect.','var(--red)');return;}
-  if(nw.length<6){show('Min 6 characters.','var(--red)');return;}
-  if(nw!==cf){show('Passwords do not match.','var(--red)');return;}
-  await setUserPassword(u,nw);
-  await syncAuthPasswordForCurrentUser(nw);
-  queueCloudSave();
-  show('✅ Password updated!','var(--green)');
+  await sgoaChangePassword($('ms-cur').value,$('ms-new').value,$('ms-cfm').value,function(m){$('ms-pwd-msg').textContent=m;});
+  ['ms-cur','ms-new','ms-cfm'].forEach(function(k){$(k).value='';});
 }
-function saveMyPrefs(){
-  var u=DB.users.find(function(x){return x.name===SES.name;});
-  if(u){
-    u.prefs={
-      tasks:document.getElementById('ms-notif-tasks').checked,
-      pr:document.getElementById('ms-notif-pr').checked,
-      leave:document.getElementById('ms-notif-leave').checked,
-      wf:document.getElementById('ms-notif-wf').checked
-    };
-    queueCloudSave();
-  }
-  var m=document.getElementById('ms-prefs-msg');
-  m.textContent='✅ Saved!'; setTimeout(function(){m.textContent='';},2500);
+async function saveMyProfile(){
+  var r=await supa.from('profiles').update({phone:$('ms-phone').value.trim()}).eq('id',SES.authUserId).select('id').single();
+  $('ms-profile-msg').textContent = r.error ? 'Profile was not saved. Contact IT.' : 'Phone saved. Work email changes require the administrator.';
+}
+async function saveMyPrefs(){
+  var prefs={
+    tasks:document.getElementById('ms-notif-tasks').checked,
+    pr:document.getElementById('ms-notif-pr').checked,
+    leave:document.getElementById('ms-notif-leave').checked,
+    wf:document.getElementById('ms-notif-wf').checked
+  };
+  var r=await supa.auth.updateUser({data:{sgoa_preferences:prefs}});
+  $('ms-prefs-msg').textContent = r.error ? 'Preferences were not saved.' : 'Preferences saved.';
 }
 function openPwdModal(){
   document.getElementById('pwd-current').value='';
@@ -3435,29 +3384,34 @@ function closePwdModal(){
   document.getElementById('pwd-modal').classList.remove('on');
 }
 async function doChangePassword(){
-  var cur=document.getElementById('pwd-current').value.trim();
-  var nw=document.getElementById('pwd-new').value.trim();
-  var cf=document.getElementById('pwd-confirm').value.trim();
   var msg=document.getElementById('pwd-msg');
-  function showMsg(t,type){msg.textContent=t;msg.className='pwd-msg '+type;msg.style.display='block';setTimeout(function(){msg.style.display='none';},3500);}
-  var dbUser=DB.users.find(function(u){return u.name===SES.name;});
-  if(!dbUser){showMsg('Account error — please contact IT.','err');return;}
-  if(!(await verifyUserPassword(dbUser,cur))){showMsg('Current password is incorrect.','err');return;}
-  if(nw.length<6){showMsg('New password must be at least 6 characters.','err');return;}
-  if(nw!==cf){showMsg('New passwords do not match.','err');return;}
-  await setUserPassword(dbUser,nw);
-  await syncAuthPasswordForCurrentUser(nw);
-  queueCloudSave();
-  showMsg('✅ Password updated successfully!','ok');
-  setTimeout(closePwdModal,2000);
+  await sgoaChangePassword(document.getElementById('pwd-current').value,document.getElementById('pwd-new').value,document.getElementById('pwd-confirm').value,function(t){
+    msg.textContent=t;msg.className='pwd-msg '+(/updated/i.test(t)?'ok':'err');msg.style.display='block';
+    setTimeout(function(){msg.style.display='none';},3500);
+    if(/updated/i.test(t))setTimeout(closePwdModal,2000);
+  });
+  ['pwd-current','pwd-new','pwd-confirm'].forEach(function(k){document.getElementById(k).value='';});
+}
+function sgoaClear(){
+  sgoaEpoch++; clearTimeout(cloudSaveTimer); cloudDirty=false; syncBlocked=true;
+  sgoaHashes={}; sgoaBaseline={};
+  Object.keys(DB).forEach(function(k){ delete DB[k]; });
+  Object.assign(DB, JSON.parse(JSON.stringify(sgoaEmpty)));
+  Object.keys(PROJ).forEach(function(k){ delete PROJ[k]; });
+  SES={role:null,name:'',init:'',permissions:[]};
+  pageHistory=[];currentPageId=null;
+  var app=$('app');
+  if(app){ app.classList.remove('on'); while(app.firstChild)app.removeChild(app.firstChild); }
+  var login=$('login');
+  if(login)login.classList.remove('hide');
+  document.querySelectorAll('[id^="m-"]').forEach(function(x){ while(x.firstChild)x.removeChild(x.firstChild); });
+  document.querySelectorAll('input,textarea').forEach(function(x){
+    if(!x.closest('#login')){ x.value=''; if(x.type==='checkbox')x.checked=false; }
+  });
 }
 async function doLogout(){
-  if(ENFORCE_SUPABASE_AUTH && cloudSyncEnabled){try{await supa.auth.signOut();}catch(e){}}
-  SES={role:null,name:'',init:''};
-  pageHistory=[];currentPageId=null;
-  $('login').classList.remove('hide');
-  $('app').classList.remove('on');
-  $('lp').value='';$('side').innerHTML='';
+  sgoaClear();
+  try{await supa.auth.signOut({scope:'local'});}finally{location.reload();}
 }
 
 function buildSide(r){
@@ -3474,7 +3428,7 @@ var pageHistory=[];
 var currentPageId=null;
 
 function go(pg,isBack){
-  if(SES.role){var a=ACCESS[SES.role]||[];if(a.indexOf(pg)===-1)pg='denied';}
+  if(SES.role){var a=ACCESS[SES.role]||[];if(a.indexOf(pg)===-1||!permissionAllowsPage(pg,SES.permissions||[]))pg='denied';}
   if(!isBack && currentPageId && currentPageId!==pg){
     pageHistory.push(currentPageId);
   }
@@ -3639,7 +3593,7 @@ function render(pg){
       else if(pg==='meal-risk'){renderRisks();renderAuditFindings();}
       else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
-      else if(pg==='meal-data'){renderDataHistory();}
+      else if(pg==='meal-data'){renderDataHistory();sgoaResultFields();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();renderFinanceInvoiceControls();renderBudgetRevisions();renderPayrollPeriods();}
       else if(pg==='finance-commitments'){renderCommitments();}
       else if(pg==='finance-advances'){renderAdvances();renderReconciliations();}
@@ -3925,9 +3879,9 @@ function drawAll(){
     }).join('');
   }
 
-  var p=PERF[per]||PERF['This Year'];
-  var pd=p[pf]||p.all;
-  line('c-line',p.lbl,[{d:pd,c:'#1A3A6B'},{d:p.lbl.map(function(){return 70;}),c:'#C8922A'}]);
+  // Replaces the old static PERF-demo-data trend line with the real one, built only from
+  // approved (reviewed by someone other than the submitter) monthly indicator results.
+  sgoaDrawTrend(pf,per);
 }
 
 function renderExec(){
@@ -4977,8 +4931,9 @@ function renderDocs(cid,dept){
     // Only allow http(s) links through — the URL normally comes from Supabase Storage,
     // but since anyone who can write to the shared data could set this to anything
     // (including a javascript: URL), validate the scheme before it becomes a href.
-    var safeUrl = d.fileUrl && /^https:\/\//i.test(d.fileUrl) ? d.fileUrl : null;
-    var fileLink = safeUrl ? '<a href="'+esc(safeUrl)+'" target="_blank" rel="noopener noreferrer" class="b bn bs" style="margin-left:8px;text-decoration:none">Download File</a>' : '';
+    // The file is in a private bucket now -- there is no public URL to link to directly.
+    // sgoaOpenFile() exchanges this marker for a short-lived signed URL only at click time.
+    var fileLink = d.fileUrl ? '<a href="#" data-private-file="'+esc(d.id)+'" class="b bn bs" style="margin-left:8px;text-decoration:none">Download File</a>' : '';
     e.innerHTML='<div class="dci">'+(ic[d.type]||'📄')+'</div><div style="flex:1"><div class="dct">'+esc(d.title)+(d.fileName?' <span style="font-size:10px;color:var(--g500)">('+esc(d.fileName)+')</span>':'')+'</div><div class="dcm">v'+esc(d.ver)+' · '+dt(d.date)+' · '+esc(d.by)+(d.desc?' · '+esc(d.desc):'')+'</div></div><span class="bdg bY">'+esc(d.type)+'</span><button class="b bo bs" data-doc="'+d.id+'" style="margin-left:8px">Open</button>'+fileLink;
     c.appendChild(e);
   });
@@ -4990,20 +4945,37 @@ function showFileName(){
 }
 
 async function uploadFileToStorage(file, folder){
-  if(!cloudSyncEnabled){alert('File storage requires the database connection, which is not active.');return null;}
+  // Stored under this account's own id in a PRIVATE bucket, not a permanent public URL --
+  // the fileUrl saved on the record is an internal "sgoa-private://" marker, never a real
+  // fetchable link by itself (see sgoaOpenFile, which exchanges it for a short-lived signed
+  // URL only at the moment someone with permission actually opens it).
+  if(!SES.authUserId || (SES.permissions||[]).indexOf('documents.upload')===-1){
+    alert('Document upload permission is required.');return null;
+  }
+  if(file.size>10485760){alert('Maximum attachment size is 10 MB.');return null;}
   try{
     var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    var path = (folder||'general')+'/'+Date.now()+'_'+safeName;
-    var res = await supa.storage.from('sgoa-files').upload(path, file);
-    if(res.error){ console.error('Upload error:', res.error); alert('File upload failed: '+res.error.message); return null; }
-    var urlRes = supa.storage.from('sgoa-files').getPublicUrl(path);
-    return { url: urlRes.data.publicUrl, name: file.name, size: file.size, path: path };
+    var path = SES.authUserId+'/'+(folder||'documents')+'/'+crypto.randomUUID()+'-'+safeName;
+    var res = await supa.storage.from('sgoa-files').upload(path, file, {upsert:false});
+    if(res.error){ console.error('Upload error:', res.error); alert('Upload failed. No document was saved.'); return null; }
+    return { url: 'sgoa-private://sgoa-files/'+path, name: file.name, size: file.size, path: path };
   }catch(e){
     console.error('Upload exception:', e);
     alert('File upload failed. Check your connection.');
     return null;
   }
 }
+async function sgoaOpenFile(id){
+  var d=DB.docs.find(function(x){return x.id===id;});
+  if(!d || !d.fileUrl || d.fileUrl.indexOf('sgoa-private://sgoa-files/')!==0)return;
+  var r=await supa.storage.from('sgoa-files').createSignedUrl(d.fileUrl.slice('sgoa-private://sgoa-files/'.length),60);
+  if(r.error){alert('You cannot access this attachment.');return;}
+  var a=document.createElement('a');a.href=r.data.signedUrl;a.target='_blank';a.rel='noopener noreferrer';a.click();
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-private-file]');
+  if(b){e.preventDefault();e.stopPropagation();sgoaOpenFile(b.getAttribute('data-private-file'));}
+},true);
 
 // ============ DOCUMENT & RECORDS REGISTRY (cross-department) ============
 function docReviewDue(d){
@@ -6179,13 +6151,56 @@ function renderUsers(){
 }
 
 function renderDataHistory(){
-  var c=$('data-history');if(!c)return;c.innerHTML='';
-  if(!DB.dataSub.length){c.innerHTML='<tr><td colspan="6" class="empty">No submissions yet</td></tr>';return;}
-  DB.dataSub.forEach(function(d){
-    var r=el('tr');
-    r.innerHTML='<td>'+dt(d.date)+'</td><td>'+esc(d.proj)+'</td><td>'+esc(d.period)+'</td><td>'+esc(d.dist)+'</td><td>'+esc(d.by)+'</td><td><span class="bdg bG">Submitted</span></td>';
-    c.appendChild(r);
+  var c=$('data-history');if(!c)return;
+  if(!(DB.dataSub||[]).length){c.innerHTML='<tr><td colspan="6" class="empty">No submissions yet</td></tr>';return;}
+  // Nobody can verify or approve their own submission -- the Verify/Approve/Return buttons
+  // only ever appear on a record someone ELSE submitted, and only to a person who actually
+  // holds the matching permission for whichever step is next.
+  c.innerHTML=DB.dataSub.map(function(r){
+    var other=r.actorId!==SES.authUserId;
+    var canVerify=other && r.status==='Submitted' && (SES.permissions||[]).indexOf('meal.results.verify')>-1;
+    var canApprove=other && r.status==='Verified' && SES.role==='executive';
+    function button(label,state){return '<button class="b bo bs" data-result-decision="'+state+'" data-result-record="'+esc(r.id)+'">'+label+'</button>';}
+    return '<tr><td>'+dt(r.date)+'</td><td>'+esc(r.proj)+'</td><td>'+esc(r.period)+'</td><td>'+esc(r.dist||'')+'</td><td>'+esc(r.collector||r.by)+'</td>'+
+      '<td><span class="bdg '+(r.status==='Approved'?'bG':r.status==='Returned'?'bR':'bY')+'">'+esc(r.status||'Legacy submission · unverified')+'</span> '+
+      (canVerify?button('Verify','Verified'):'')+(canApprove?button('Approve','Approved'):'')+((canVerify||canApprove)?button('Return','Returned'):'')+'</td></tr>';
+  }).join('');
+}
+async function sgoaDecideResult(id,state){
+  var r=DB.dataSub.find(function(x){return x.id===id;});if(!r)return;
+  if(r.actorId===SES.authUserId){alert('Another authorized person must review your submission.');return;}
+  var note='';
+  if(state==='Returned'){ note=prompt('Reason for return:')||''; if(!note.trim())return; }
+  r.status=state;r.reviewNote=note;
+  if(state==='Verified'){r.verifiedBy=SES.name;r.verifiedAt=new Date().toISOString();}
+  if(state==='Approved'){r.approvedBy=SES.name;r.approvedAt=new Date().toISOString();}
+  queueCloudSave();
+  if(await saveToCloud()){renderDataHistory();refreshAll();}
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-result-decision]');
+  if(b)sgoaDecideResult(b.getAttribute('data-result-record'),b.getAttribute('data-result-decision'));
+});
+function sgoaApprovedTrend(project){
+  var periods={};
+  (DB.dataSub||[]).forEach(function(r){
+    if(r.status!=='Approved' || (project!=='all' && r.proj!==project))return;
+    (r.results||[]).forEach(function(x){
+      if(x.target>0){ (periods[r.period]=periods[r.period]||[]).push(x.actual/x.target*100); }
+    });
   });
+  var labels=Object.keys(periods).sort();
+  return{labels:labels,values:labels.map(function(p){var v=periods[p];return v.reduce(function(s,n){return s+n;},0)/v.length;})};
+}
+function sgoaDrawTrend(project,period){
+  var d=sgoaApprovedTrend(project);
+  var count=period==='This Quarter'?3:period==='Last 6 Months'?6:12;
+  if(d.labels.length){
+    line('c-line',d.labels.slice(-count),[{d:d.values.slice(-count),c:'#1A3A6B'}]);
+  }else{
+    var c=$('c-line');
+    if(c){var x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.fillStyle='#64748b';x.font='13px Segoe UI';x.fillText('No approved monthly indicator results',20,80);}
+  }
 }
 
 // ============ NOTIFICATION / TASK CENTER ============
@@ -6236,20 +6251,26 @@ function renderNotifPanel(){
   }).join('');
 }
 
-function openNotif(id){
+async function openNotif(id){
   var n=DB.notifications.find(function(x){return x.id===id;});
   if(!n)return;
+  // Read state is server-synced via sgoa_mark_notices (not part of sgoa_erp_save's regular
+  // diff-and-save) so another one of this person's own open tabs sees it as read too.
+  var r=await supa.rpc('sgoa_mark_notices',{ids:[id]});
+  if(r.error){alert('Notification could not be updated.');return;}
   n.read=true;
   renderNotifBell();renderNotifPanel();
   toggleNotifPanel(false);
   if(n.link)go(n.link);
-  queueCloudSave();
 }
 
-function markAllNotifsRead(){
+async function markAllNotifsRead(){
+  var ids=DB.notifications.filter(function(n){return n.user===SES.name && !n.read;}).map(function(n){return n.id;}).slice(0,200);
+  if(!ids.length)return;
+  var r=await supa.rpc('sgoa_mark_notices',{ids:ids});
+  if(r.error){alert('Notifications could not be updated.');return;}
   DB.notifications.forEach(function(n){if(n.user===SES.name)n.read=true;});
   renderNotifBell();renderNotifPanel();
-  queueCloudSave();
 }
 
 // ============ SAVE FUNCTIONS ============
@@ -7778,42 +7799,61 @@ function saveVisit(){
   closeM('m-visit');f.value='';renderVisits();queueCloudSave();
 }
 
-function submitData(){
-  var c=$('de-collector');
-  if(!c||!c.value.trim()){alert('Please enter data collector name.');return;}
-  var g=parseInt($('de-girls').value)||0,b=parseInt($('de-boys').value)||0;
-  var cl=parseInt($('de-classes').value)||0,tc=parseInt($('de-teachers').value)||0;
-  var proj=$('de-proj').value;
-  // This matches indicators by guessing at specific English phrases in their name, which
-  // rarely matches what MEAL actually typed when creating the indicator (free text) — so
-  // count real matches and report honestly instead of always claiming success.
-  var matched=0;
-  DB.indicators.forEach(function(i){
-    if(i.proj!==proj)return;
-    var before=i.actual;
-    if(i.name.indexOf('classes operational')>=0&&cl)i.actual=cl;
-    if(i.name.indexOf('girls enrolled')>=0&&g)i.actual=g;
-    if(i.name.indexOf('boys enrolled')>=0&&b)i.actual=b;
-    if(i.name.indexOf('pre-service training')>=0&&tc)i.actual=tc;
-    if(i.name.indexOf('girl attendance')>=0&&$('de-gatt').value)i.actual=parseInt($('de-gatt').value);
-    if(i.name.indexOf('boy attendance')>=0&&$('de-batt').value)i.actual=parseInt($('de-batt').value);
-    if(i.actual!==before)matched++;
-  });
-  DB.dataSub.unshift({date:today(),proj:proj,period:$('de-period').value,dist:$('de-dist').value,by:c.value.trim()});
+// Replaces the old "guess which indicator this hardcoded field means from its English name"
+// approach (which silently did nothing whenever MEAL's actual indicator wording didn't match)
+// with real per-indicator entry, gated behind independent Verify/Approve review before a
+// result ever reaches the approved trend chart (see sgoaResultFields/sgoaDecideResult).
+async function submitData(){
+  var proj=$('de-proj').value, period=$('de-period').value, collector=$('de-collector').value.trim();
+  if(!proj||!period||!collector){alert('Select the project, reporting month and collector.');return;}
+  var rows=document.querySelectorAll('[data-result-id]');
+  var results=[];
+  for(var i=0;i<rows.length;i++){
+    var row=rows[i];
+    var text=row.querySelector('[data-result-value]').value;
+    if(text==='')continue;
+    var actual=Number(text);
+    var femaleText=row.querySelector('[data-result-female]').value, maleText=row.querySelector('[data-result-male]').value;
+    var female=femaleText===''?null:Number(femaleText), male=maleText===''?null:Number(maleText);
+    var indicator=DB.indicators.find(function(x){return x.id===row.getAttribute('data-result-id');});
+    if(!indicator || isNaN(actual) || actual<0 || !(Number(indicator.target)>0)){alert('Enter a nonnegative actual and a positive indicator target.');return;}
+    if((female!==null&&female<0)||(male!==null&&male<0)||(female!==null&&male!==null&&Math.abs(female+male-actual)>.000001)){alert('Female and male values must reconcile with the actual.');return;}
+    results.push({indicatorId:indicator.id,actual:actual,target:Number(indicator.target),female:female,male:male});
+  }
+  if(!results.length){alert('Enter at least one indicator result, including zero where appropriate.');return;}
+  DB.dataSub.unshift({id:nid('RESULT'),proj:proj,period:period,dist:$('de-dist').value,collector:collector,by:SES.name,
+    actorId:SES.authUserId,date:today(),submittedAt:new Date().toISOString(),status:'Submitted',results:results,
+    observations:$('de-obs').value.trim()});
   if($('de-obs').value.trim()){
     DB.findings.push({id:nid('F'),title:'Data Entry Observation — '+$('de-dist').value,
       sev:'minor',proj:proj,dept:'MEAL',loc:$('de-dist').value,date:today(),src:'Data Collection',
       desc:$('de-obs').value.trim(),act:'Review and follow up',assign:SES.name,due:today(),status:'Open',progress:0});
   }
-  if(matched>0){
-    alert('Data submitted. '+matched+' indicator(s) for this project were updated and are visible on the Executive Dashboard.');
-  } else {
-    alert('Data submitted and logged, but no indicator for this project matched the standard field names (classes operational / girls or boys enrolled / pre-service training / attendance). Nothing was auto-updated — ask MEAL to update the indicator actuals directly from the Indicator Tracker if needed.');
+  ['de-obs','de-collector'].forEach(function(id){ if($(id))$(id).value=''; });
+  queueCloudSave();
+  if(await saveToCloud()){
+    renderDataHistory();sgoaResultFields();refreshAll();
+    alert('Monthly results saved for verification. The approved chart has not changed yet.');
   }
-  ['de-classes','de-teachers','de-girls','de-boys','de-gatt','de-batt','de-obs','de-collector'].forEach(function(id){
-    if($(id))$(id).value='';
+}
+function sgoaResultFields(){
+  var select=$('de-proj');if(!select)return;
+  var panel=$('sgoa-result-fields');
+  if(!panel){ panel=el('div');panel.id='sgoa-result-fields';select.closest('.fr').insertAdjacentElement('afterend',panel); }
+  ['de-classes','de-teachers','de-girls','de-boys','de-gatt','de-batt'].forEach(function(id){
+    var f=$(id);if(f)f.closest('.fg').hidden=true;
   });
-  renderDataHistory();refreshAll();queueCloudSave();
+  var indicators=DB.indicators.filter(function(i){return i.proj===select.value;});
+  panel.innerHTML='<h3>Indicator results · exact project definitions</h3>'+
+    '<p>Zero and decimal values are supported. Monthly results reach the director chart after independent verification and approval.</p>'+
+    indicators.map(function(i){
+      return '<div class="fr" data-result-id="'+esc(i.id)+'"><div class="fg"><label>'+esc(i.name)+' · target '+esc(i.target)+' '+esc(i.unit||'')+'</label>'+
+        '<input type="number" min="0" step="any" data-result-value placeholder="Actual value"></div>'+
+        '<div class="fg"><label>Female, where applicable</label><input type="number" min="0" step="any" data-result-female></div>'+
+        '<div class="fg"><label>Male, where applicable</label><input type="number" min="0" step="any" data-result-male></div></div>';
+    }).join('');
+  if(!indicators.length)panel.innerHTML+='<p>No indicators are defined for this project. Add its indicator definitions first.</p>';
+  if(!select.dataset.liveResultsBound){ select.addEventListener('change',sgoaResultFields); select.dataset.liveResultsBound='1'; }
 }
 
 function submitBudget(){
@@ -8392,30 +8432,12 @@ DB.users=[];
 
 var ROLE_TEMPLATE_LABEL={executive:'Executive Director',meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations',progdeputy:'Program Deputy Director',deputy:'Deputy Director',it:'IT Support Officer',access:'Access & Movement Officer'};
 
-async function saveNewUser(){
-  var name=$('nu-name'),user=$('nu-username'),pass=$('nu-password');
-  if(!name.value.trim()||!user.value.trim()||!pass.value.trim()){alert('Please fill in name, username, and password.');return;}
-  var dup=DB.users.some(function(u){return u.username===user.value.trim();}) || Object.keys(CRED).some(function(k){return CRED[k].u===user.value.trim();});
-  if(dup){alert('This username already exists. Please choose another.');return;}
-  var projSel=$('nu-projects');
-  var projects=Array.from(projSel.selectedOptions).map(function(o){return o.value;});
-  var rec={
-    id:nid('U'),name:name.value.trim(),username:user.value.trim(),
-    roleTemplate:$('nu-role').value,position:$('nu-position').value.trim(),
-    loc:$('nu-loc').value.trim()||'Kabul',
-    projects:projects.length?projects:['All'],status:$('nu-status').value,
-    createdBy:SES.name,created:today()
-  };
-  await setUserPassword(rec,pass.value.trim());
-  var authResult=ENFORCE_SUPABASE_AUTH?await supaAuthSignUp(rec.username,pass.value.trim()):{ok:true};
-  DB.users.push(rec);
-  closeM('m-add-user');
-  name.value='';user.value='';pass.value='';$('nu-position').value='';$('nu-loc').value='';
-  renderUserMgmt();
-  renderAllStaffDirectories();
-  queueCloudSave();
-  alert(authResult.ok?'User created successfully. They can now log in with the credentials provided.':
-    'User created, but their Supabase Auth login could not be provisioned automatically ('+(authResult.error&&authResult.error.message)+'). They will not be able to log in until this is fixed -- check whether public sign-up is disabled in Supabase Auth settings.');
+function saveNewUser(){
+  // Real accounts now require a Supabase Auth login plus profiles/user_roles rows, which
+  // this anon-key client has no privilege to create -- that has to happen through the
+  // trusted administrator workflow (the Supabase dashboard, or an admin-only backend
+  // function), not by pushing a record into this app's own local DB.users.
+  alert('New staff logins must be created through the trusted administrator workflow (Supabase). This form can no longer create a working login.');
 }
 
 // ============ DEPARTMENT-SCOPED STAFF ACCOUNT CREATION ============
@@ -8432,27 +8454,10 @@ function openDeptAddUser(){
   $('du-note').textContent='This account will have full '+DEPTNAME[deptKey]+' section access — the same dashboard and permissions as the '+DEPTNAME[deptKey]+' department head. There is currently no way to give a staff account narrower access than that; contact the platform administrator if finer-grained restrictions are needed.';
   openM('m-dept-add-user');
 }
-async function saveDeptUser(){
-  if(!_deptAddUserKey)return;
-  var name=$('du-name'),user=$('du-username'),pass=$('du-password');
-  if(!name.value.trim()||!user.value.trim()||!pass.value.trim()){alert('Please fill in name, username, and password.');return;}
-  var dup=DB.users.some(function(u){return u.username===user.value.trim();}) || Object.keys(CRED).some(function(k){return CRED[k].u===user.value.trim();});
-  if(dup){alert('This username already exists. Please choose another.');return;}
-  var rec={
-    id:nid('U'),name:name.value.trim(),username:user.value.trim(),
-    roleTemplate:_deptAddUserKey,position:$('du-position').value.trim()||(DEPTNAME[_deptAddUserKey]+' Officer'),
-    loc:$('du-loc').value.trim()||'Kabul',projects:['All'],status:$('du-status').value,
-    createdBy:SES.name,created:today()
-  };
-  await setUserPassword(rec,pass.value.trim());
-  var authResult=ENFORCE_SUPABASE_AUTH?await supaAuthSignUp(rec.username,pass.value.trim()):{ok:true};
-  DB.users.push(rec);
-  closeM('m-dept-add-user');
-  renderAllStaffDirectories();
-  renderUserMgmt();
-  queueCloudSave();
-  alert(authResult.ok?'Staff account created. They can now log in with the credentials provided.':
-    'Account created, but their Supabase Auth login could not be provisioned automatically ('+(authResult.error&&authResult.error.message)+'). They will not be able to log in until this is fixed -- check whether public sign-up is disabled in Supabase Auth settings.');
+function saveDeptUser(){
+  // Same gap as saveNewUser() above -- a department head's own anon-key session has no
+  // privilege to create a Supabase Auth login either.
+  alert('New staff logins must be created through the trusted administrator workflow (Supabase). This form can no longer create a working login.');
 }
 
 function editUser(id){
@@ -8466,27 +8471,8 @@ function editUser(id){
   openM('m-edit-user');
 }
 
-async function saveEditUser(){
-  var id=$('eu-id').value;
-  var u=DB.users.find(function(x){return x.id===id;});
-  if(!u){closeM('m-edit-user');return;}
-  var newUsername=$('eu-username').value.trim();
-  if(!newUsername){alert('Username cannot be empty.');return;}
-  var taken = DB.users.some(function(x){return x.id!==id && x.username===newUsername;}) ||
-    Object.keys(CRED).some(function(k){return CRED[k].u===newUsername;});
-  if(taken){alert('That username is already in use by another account. Please choose a different one.');return;}
-  var oldUsername=u.username;
-  var newPassword=$('eu-password').value.trim();
-  u.name=$('eu-name').value.trim();u.username=newUsername;u.status=$('eu-status').value;
-  u.roleTemplate=$('eu-role').value;u.position=$('eu-position').value.trim();
-  if(newPassword)await setUserPassword(u,newPassword);
-  if(oldUsername!==newUsername)logAudit('user-username-change',id,'Username changed from "'+oldUsername+'" to "'+newUsername+'" for '+u.name);
-  closeM('m-edit-user');renderUserMgmt();queueCloudSave();
-  // An admin resetting someone ELSE's password can only ever change the password this app
-  // checks -- the anon key has no admin API to reset another account's Supabase Auth
-  // password (only a logged-in user can change their OWN, via My Settings). Say so plainly
-  // rather than let the admin believe the person can log in with the new password right away.
-  if(newPassword && ENFORCE_SUPABASE_AUTH)alert('Password updated here, but their Supabase Auth login still has their OLD password -- that can only be changed by the account owner themselves (My Settings) or by you directly in the Supabase dashboard.');
+function saveEditUser(){
+  alert('Real account roles and activation must be changed through the trusted administrator workflow. Legacy directory edits cannot change staff access.');
 }
 
 function renderUserMgmt(){
@@ -8517,11 +8503,9 @@ function renderUserMgmt(){
 // per account, whether they logged in today and how often over the week/month/year, plus a
 // drill-down chart of their login history at daily/weekly/monthly/yearly granularity.
 function loginAccountsList(){
-  // Every one of the 13 built-in CRED accounts gets copied into DB.users the first time the
-  // app loads (see migrateCredAccounts()) so edits like a username/password change stick.
-  // After that, the same real person exists in both places -- list DB.users first (the
-  // up-to-date copy) and only fall back to CRED for an account that somehow hasn't migrated
-  // yet, so nobody shows up twice.
+  // Real logins now come from Supabase accounts, not CRED -- DB.users lists whoever this
+  // tab has otherwise recorded, with CRED kept only as a fallback label source so a legacy
+  // CRED username never shows up twice if it also happens to exist in DB.users.
   var list=[],seen={};
   DB.users.forEach(function(u){list.push({username:u.username,name:u.name,role:ROLE_TEMPLATE_LABEL[u.roleTemplate]||u.roleTemplate});seen[u.username]=true;});
   Object.keys(CRED).forEach(function(k){if(!seen[CRED[k].u])list.push({username:CRED[k].u,name:CRED[k].n,role:CRED[k].r});});
@@ -10214,34 +10198,48 @@ function rejectLeave(id){
 
 
 
-function submitPublicCFRM(){
-  var loc=$('pcf-loc'),desc=$('pcf-desc');
-  // Basic abuse mitigations for this unauthenticated, public-facing form. A hidden field
-  // real visitors never fill in catches simple bots; the button cooldown stops rapid
-  // repeat submissions from one browser. Neither stops a script hitting the database
-  // API directly — closing that gap needs a server-side rate limit (see the security
-  // notes for this platform), which isn't something a page-level change can provide.
-  if($('pcf-hp') && $('pcf-hp').value){return;}
-  var btn=$('pcf-submit-btn');
-  if(btn && btn.disabled){return;}
-  if(!loc.value.trim()){alert('Please enter your province or district.');return;}
-  if(!desc.value.trim()){alert('Please describe your concern.');return;}
-  if(btn){btn.disabled=true;setTimeout(function(){btn.disabled=false;},15000);}
-  DB.cfrm.push({
-    id:nid('CF'),date:today(),chan:'Public Portal',
-    dist:loc.value.trim(),proj:$('pcf-proj').value,type:$('pcf-type').value,
-    desc:(($('pcf-name').value.trim()?'Reporter: '+$('pcf-name').value.trim()+'. ':'Anonymous. ')+
-      ($('pcf-contact').value.trim()?'Contact: '+$('pcf-contact').value.trim()+'. ':'')+desc.value.trim()),
-    prio:$('pcf-type').value==='Safeguarding Concern'?'escalate':'normal',
-    assign:$('pcf-type').value==='Safeguarding Concern'?'Arzo Hotak':'Kamil Sanzar',
-    status:$('pcf-type').value==='Safeguarding Concern'?'Escalated':'Open'
-  });
-  $('pcf-form').style.display='none';
-  $('pcf-success').style.display='block';
-  // This is a public, unauthenticated form (no logged-in session) — call the save
-  // directly rather than relying on the 25s interval, so a visitor who closes the tab
-  // right after submitting doesn't lose their report before it's ever saved.
-  saveToCloud();
+// This form has no logged-in session at all, so it can never go through the authenticated
+// sgoa_erp_save pipeline (saveToCloud requires SES.authUserId) -- it goes through its own
+// dedicated, unauthenticated Edge Function instead, with its own idempotency guard so a
+// retried request (a flaky connection, a double click) can't create two reports for one
+// real submission: the same requestId is resent until the server actually confirms receipt.
+var sgoaConcernRetry=null;
+async function submitPublicCFRM(){
+  var button=$('pcf-submit-btn');
+  if(button && button.disabled)return;
+  var payload={
+    name:$('pcf-name').value.trim(), contact:$('pcf-contact').value.trim(), location:$('pcf-loc').value.trim(),
+    project:$('pcf-proj').value, type:$('pcf-type').value, description:$('pcf-desc').value.trim(),
+    honeypot:($('pcf-hp') && $('pcf-hp').value) || ''
+  };
+  if(!payload.location || !payload.description){alert('Enter the location and your concern.');return;}
+  var fingerprint=JSON.stringify(payload);
+  if(sgoaConcernRetry && sgoaConcernRetry.fingerprint!==fingerprint){
+    alert('The previous submission was not confirmed. Restore its text to retry it, or reload to start a new report.');
+    return;
+  }
+  if(!sgoaConcernRetry)sgoaConcernRetry={fingerprint:fingerprint,requestId:crypto.randomUUID()};
+  if(button)button.disabled=true;
+  try{
+    var body=Object.assign({},payload,{requestId:sgoaConcernRetry.requestId});
+    var response=await fetch(SUPA_URL+'/functions/v1/sgoa-public-concern',{method:'POST',headers:{'content-type':'application/json',apikey:SUPA_KEY},body:JSON.stringify(body)});
+    var result=await response.json();
+    if(!response.ok || result.received!==true || !result.receipt)throw Error(result.error||'Submission was not confirmed.');
+    $('pcf-form').style.display='none';
+    $('pcf-success').textContent='Your concern has been recorded. Reference: '+result.receipt+'. Keep this reference for follow-up.';
+    $('pcf-success').style.display='block';
+  }catch(e){
+    alert((e&&e.message)||'Submission was not confirmed. Your text has been kept.');
+  }finally{
+    if(button)button.disabled=false;
+  }
+}
+// A free-text field instead of a fixed dropdown of demo project codes -- a visitor's report
+// is never blocked just because their project isn't one of a few hardcoded options.
+if($('pcf-proj')){
+  var sgoaProjInput=document.createElement('input');
+  sgoaProjInput.id='pcf-proj';sgoaProjInput.placeholder='Project name or code, if known';sgoaProjInput.maxLength=100;
+  $('pcf-proj').replaceWith(sgoaProjInput);
 }
 
 if(window.location.hash==='#public-cfrm'){
@@ -10433,6 +10431,38 @@ function renderAdvances(){
 
 // ============ FINANCE: BANK / CASH RECONCILIATION ============
 DB.reconciliations=[];
+DB.holidays=[]; // declared at top level (not just lazily inside the holidays UI) so it is
+// captured below in sgoaEmpty and actually round-trips through the live sync, like every
+// other collection, instead of silently falling outside the save/load schema.
+
+// ============ LIVE SYNC STATE (SUPABASE RPC + HASH-BASED CONFLICT DETECTION) ============
+// Must come after every DB.x=[] declaration above -- sgoaEmpty is a snapshot of DB's own
+// shape, used by saveToCloud() to tell "a real collection with no data yet" apart from "a
+// collection this account's role was never granted a hash for at all" (see saveToCloud).
+var sgoaBaseline={}, sgoaHashes={}, sgoaEditSeq=0, sgoaEpoch=0, sgoaSigningIn=false;
+var sgoaEmpty=JSON.parse(JSON.stringify(DB));
+// Local-only: never round-tripped through sgoa_erp_save/sgoa_erp_load. loginLog and
+// deletionLog are append-only audit trails of this tab's own session; notifications and
+// _roadmapSeeded are derived/transient, not source data the backend owns.
+var sgoaNoSave=new Set(['users','loginLog','deletionLog','notifications','_roadmapSeeded']);
+function sgoaNorm(name,value){
+  var x=JSON.parse(JSON.stringify(value));
+  // PROJ's spend fields are computed client-side from other collections (expenditures,
+  // commitments, etc.), not independent data -- comparing them would make saveToCloud think
+  // PROJ changed on every single save, even when nothing a person actually edited did.
+  if(name==='PROJ')Object.keys(x).forEach(function(k){var p=x[k];delete p.spent;delete p.spentProgram;delete p.spentOperations;delete p.prog;});
+  return JSON.stringify(x);
+}
+function sgoaInstall(payload){
+  Object.keys(DB).forEach(function(k){ delete DB[k]; });
+  Object.assign(DB, JSON.parse(JSON.stringify(sgoaEmpty)), payload.DB||{});
+  Object.keys(PROJ).forEach(function(k){ delete PROJ[k]; });
+  Object.assign(PROJ, payload.PROJ||{});
+  sgoaHashes=payload.hashes||{};
+  sgoaBaseline={};
+  Object.keys(payload.DB||{}).forEach(function(k){ sgoaBaseline[k]=sgoaNorm(k,payload.DB[k]); });
+  sgoaBaseline.PROJ=sgoaNorm('PROJ',PROJ);
+}
 
 function saveReconciliation(){
   var acct=$('rec-account'),period=$('rec-period'),book=$('rec-book'),stmt=$('rec-statement');
@@ -10707,68 +10737,73 @@ function deleteItem(type,id){
 }
 
 function confirmDelete(){
-  var m=document.getElementById('m-delete-confirm');
-  var reason=document.getElementById('del-reason').value.trim();
-  if(!reason){alert('Please provide a reason for deletion.');return;}
-  var type=m.dataset.type,id=m.dataset.id;
-  var idx=-1;
-  if(type==='task'){
-    idx=DB.tasks.findIndex(function(x){return x.id===id;});
-    if(idx>-1){DB.tasks.splice(idx,1);}
-    closeM('m-delete-confirm');renderAllTasks();renderExecTasks();refreshAll();
-  } else if(type==='activity'){
-    idx=DB.activities.findIndex(function(x){return x.id===id;});
-    if(idx>-1){DB.activities.splice(idx,1);}
-    closeM('m-delete-confirm');renderActivities();refreshAll();
-  } else if(type==='expenditure'){
-    idx=DB.expenditures.findIndex(function(x){return x.id===id;});
-    if(idx>-1){DB.expenditures.splice(idx,1);}
-    closeM('m-delete-confirm');renderExpenditureLedger();refreshAll();
-  } else if(type==='project'){
-    idx=DB.pendingProjects.findIndex(function(x){return x.code===id;});
-    if(idx>-1){DB.pendingProjects.splice(idx,1);}
-    closeM('m-delete-confirm');renderPendingProjects();refreshAll();
-  } else if(type==='project-live'){
-    cascadeDeleteActiveProject(id);
-    closeM('m-delete-confirm');renderProjectCards();renderPendingProjects();renderProjectDeletionRequests();refreshAllProjectDropdowns();refreshAll();
-  } else if(type==='pr'){
-    idx=DB.pr.findIndex(function(x){return x.id===id;});
-    if(idx>-1){DB.pr.splice(idx,1);}
-    closeM('m-delete-confirm');renderMyPRs();renderPRApprovals();refreshAll();
-  } else if(type==='strategy'){
-    idx=DB.strategy.findIndex(function(x){return x.id===id;});
-    if(idx>-1){DB.strategy.splice(idx,1);}
-    closeM('m-delete-confirm');renderStrategy();
-  }
-  DB.deletionLog.unshift({type:type,recordId:id,reason:reason,by:SES.name,at:new Date().toISOString()});
-  queueCloudSave();
-  alert('Record deleted. Reason logged: '+reason);
+  // Record removal is disabled under the live backend: the RPC/hash-based save model has no
+  // "delete a row" path yet, and permanently destroying real organizational data needs an
+  // approved process, not a client-side splice. Existing data must be retained until one is
+  // configured server-side.
+  closeM('m-delete-confirm');
+  alert('Record removal is disabled. Existing data must be retained until an approved deletion process is configured.');
 }
 
-async function initAppOnLoad(){
-  if(cloudSyncEnabled){
-    var result = await loadFromCloud();
-    if(result==='empty'){
-      // Genuinely first time ever connecting (not a failed read) — push the current
-      // (empty) state as the baseline, after seeding the 13 built-in accounts into it.
-      await migrateCredAccounts();
-      await saveToCloud();
-    } else if(result==='error'){
-      // A failed read must never be treated as "nothing saved yet" — doing so is what
-      // wipes the whole database on a dropped connection. Block saving instead.
-      syncBlocked = true;
-      cloudStatus = 'blocked'; updateCloudStatusUI();
-      alert('Could not load saved data from the server. To prevent data loss, nothing will be saved in this session. Please check your connection and reload the page before entering any data.');
-    } else {
-      if(await migrateCredAccounts()) queueCloudSave();
+// Restores a real Supabase Auth session on reload (if one exists) and loads this account's
+// data via sgoa_erp_load -- there is no more client-side "seed the empty database" path, and
+// no sample data is ever substituted if the live backend can't be reached (see loadFromCloud).
+async function sgoaLiveInit(){
+  try{
+    if(!supa)throw Error('Secure sign-in is unavailable.');
+    var r=await supa.auth.getSession();
+    if(r.data.session){
+      var verified=await supa.auth.getUser();
+      if(verified.error || !verified.data.user)throw Error('Please sign in again.');
+      await applyAuthenticatedIdentity(verified.data.user,false);
+      syncBlocked=false;
+      if((await loadFromCloud())!=='ok')throw Error('Live ERP connection is not activated.');
+      await applyAuthenticatedIdentity(verified.data.user,true);
     }
+    supa.auth.onAuthStateChange(function(event){
+      if(event==='SIGNED_OUT' && !sgoaSigningIn){ sgoaClear(); location.reload(); }
+    });
+  }catch(e){
+    authError(e.message||'Unable to restore your session.');
+  }finally{
+    // Needed even for a signed-out visitor on the public complaints page, so real project
+    // names are available there too instead of the four hardcoded demo project names.
+    refreshAllProjectDropdowns();
+    applyOrgLogo();
+    var overlay=document.getElementById('login-loading');
+    if(overlay)overlay.style.display='none';
   }
-  // Also needed on the public complaints page (no login involved), so real project
-  // names are available there too instead of the four hardcoded demo project names.
-  refreshAllProjectDropdowns();
-  applyOrgLogo();
-  var overlay=document.getElementById('login-loading');
-  if(overlay)overlay.style.display='none';
+}
+// Wraps every submit/approve/reject/resolve action that writes one of these three
+// collections so its own "done!" alert is held back until an actual cloud save has been
+// AWAITED and confirmed -- not just queued -- instead of showing success immediately and
+// finding out only later (if at all) that the save itself failed.
+['submitITTicket','startITTicket','resolveITTicket','verifyITTicket','reopenITTicket',
+ 'submitLeaveRequest','approveLeave','rejectLeave','submitTAR','approveTAR','denyTAR'].forEach(function(name){
+  var original=window[name];
+  if(typeof original!=='function')return;
+  window[name]=async function(){
+    var collection = name.indexOf('IT')>-1 ? 'itTickets' : (name.indexOf('Leave')>-1 ? 'leaveRequests' : 'tars');
+    var before=JSON.stringify(DB[collection]);
+    var messages=[];
+    var realAlert=window.alert;
+    var args=arguments;
+    try{
+      window.alert=function(m){messages.push(String(m));};
+      original.apply(null,args);
+    }finally{
+      window.alert=realAlert;
+    }
+    if(JSON.stringify(DB[collection])!==before){
+      queueCloudSave();
+      if(await saveToCloud()){ messages.forEach(function(m){realAlert(m);}); }
+    } else {
+      messages.forEach(function(m){realAlert(m);});
+    }
+  };
+});
+async function initAppOnLoad(){
+  return await sgoaLiveInit();
 }
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded', initAppOnLoad);
