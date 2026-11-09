@@ -133,32 +133,70 @@ click must not create two tickets for one real submission. A successful response
 `{ received: true, receipt: "..." }`; the receipt is shown to the visitor as their
 reference number.
 
-## 8. Password changes — self-service only now
+## 8. Password changes
 
-`saveMyPassword()` / `doChangePassword()` both go through `supa.auth.updateUser()`
-directly. **There is no admin-reset path from inside the app anymore.** If someone is
-locked out, an administrator has to reset their password directly in the Supabase
-dashboard (Authentication → Users → that user → reset password) — there is nothing in
-User Management that can do this for them now, by design: the anon key has no privilege
-to change another account's Auth password.
+`saveMyPassword()` / `doChangePassword()` (while already signed in) both go through
+`supa.auth.updateUser()` directly — self-service, no admin needed.
+
+**Forgotten password** now has a real self-service path too: a "Forgot your password?"
+link on the sign-in screen asks for the account's work email and calls
+`supa.auth.resetPasswordForEmail(email, { redirectTo })`. Clicking the emailed link
+brings the person back to the app with a one-time recovery session; the app detects this
+(`type=recovery` in the URL, or Supabase's `PASSWORD_RECOVERY` auth event) and shows a
+"Set a new password" form instead of silently logging them in with no password change.
+
+**This depends on one Supabase setting being correct: Authentication → URL
+Configuration → Site URL** (and, if present, the Redirect URLs allow-list) must point at
+the app's real address — not the `localhost:3000` default. We hit exactly this in
+testing: a reset link landed on a blank `localhost` page until Site URL was changed to
+the deploy preview/production address. If reset links stop working again after the
+production domain changes, check this setting first.
+
+An administrator can still force-reset anyone's password directly from Authentication →
+Users → that account → "Send password recovery" (or, if available in that project's
+dashboard version, a direct password field) — useful when someone can't access their own
+email, or for the very first login on a brand-new account.
 
 ## 9. Provisioning a new staff account
 
-**User Management → "+ Add New User" (and a department head's "+ Add Staff Account")
-can no longer create a working login.** Both forms now just explain that real accounts
-must be created through the trusted administrator workflow, because creating one needs
-all of the following, which the anon key cannot do on its own:
+**User Management → "+ Add New User" now works again** — it calls a dedicated Edge
+Function, `sgoa-admin-create-staff` (source: `supabase/functions/sgoa-admin-create-staff/
+index.ts` in this repo), because creating a real account needs privileges the anon key
+intentionally doesn't have: creating a Supabase Auth user, plus matching `profiles` and
+`user_roles` rows, in one step. The function independently re-checks that whoever is
+calling it is actually allowed to (currently: an `executive_director` or `it_admin`
+role, checked server-side from their own session token — never trusted from the request
+itself), so this isn't something a lower-permission account can abuse even by calling the
+function directly.
 
-1. A Supabase Auth user (Authentication → Users → Add user, in the dashboard).
-2. A matching `profiles` row for that Auth user's id, with `status = 'active'`, their
-   `full_name`, `username`, `work_email`, `phone`, and `department_id`.
-3. A `user_roles` row linking that profile to the correct `roles` row (so it resolves
-   through `ROLE_KEYS`/the `department_head` special case above).
-4. Whatever `role_permissions` that role already carries — nothing extra to do here
-   unless a brand-new role is being introduced.
+A department head's own "+ Add Staff Account" button is **not** wired to this function
+(still shows the admin-workflow message) — only full User Management can create accounts,
+since ordinary department heads won't hold the required role.
 
-Until that admin-side tooling exists, each new hire's account has to be created by
-whoever has dashboard/service-role access, not by the app itself.
+### Deploying this function (needed once, not yet live)
+
+This function exists in the repo but has not been deployed, and could not be tested from
+this session (no network access to supabase.co from this sandbox). Before relying on it:
+
+1. In the Supabase dashboard, left sidebar → **Edge Functions**.
+2. Click **"Create a new function"** (or "Deploy a new function").
+3. Name it exactly `sgoa-admin-create-staff` — the app calls this exact name.
+4. Open `supabase/functions/sgoa-admin-create-staff/index.ts` from this repo, copy its
+   full contents, and paste them into the function's code editor, replacing anything
+   that's there by default.
+5. Click **Deploy**. No extra secrets need setting — `SUPABASE_URL`,
+   `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically to
+   every Edge Function in a project.
+6. **Test it once with a throwaway account** before trusting it with a real hire: sign
+   in as the Executive Director, use "+ Add New User" with a role you can verify
+   (e.g. `staff`), confirm the new account actually appears in Authentication → Users,
+   the `profiles` table, and the `user_roles` table, and that it can actually sign in.
+   The role codes in the "+ Add New User" dropdown (`meal_head`, `finance_head`, etc.)
+   are this app's best inference of what's in the `roles` table's `code` column — check
+   Table Editor → `roles` and adjust the dropdown in `index.html` if any don't match.
+7. If a role code doesn't match, the function fails cleanly with "Unknown role code
+   ..." rather than creating a half-finished account with no role — safe to retry once
+   the dropdown (or the `roles` table) is corrected.
 
 ## 10. Record deletion — disabled
 

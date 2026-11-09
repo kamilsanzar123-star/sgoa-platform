@@ -341,17 +341,36 @@ tbody tr:hover td{background:var(--g50);}
     <h1>SGOA</h1>
     <div class="sub">Sustainable Goals Organization for Afghanistan</div>
     <div class="lbar"></div>
+    <div id="lf-signin">
     <h2>Sign in to your account</h2>
     <div class="lf"><label>Username</label><input type="text" id="lu" autocomplete="off" placeholder="Enter username"></div>
     <div class="lf"><label>Password</label><input type="password" id="lp" placeholder="Enter password"></div>
     <select id="lr" style="display:none"><option value="meal">meal</option></select>
     <button class="lbtn" onclick="doLogin()">Sign In</button>
     <div class="lerr" id="lerr"></div>
+    <div class="lf" style="text-align:right;margin:8px 0 0"><a href="#" onclick="sgoaShowForgot();return false;" style="font-size:12px;color:var(--navy);text-decoration:none">Forgot your password?</a></div>
     <div class="lhint">
       <b>Authorized Access Only</b>
       <div>Each department has unique credentials</div>
       <div>Your access is limited to your department</div>
-      <div>Forgot credentials? Contact MEAL Head</div>
+      <div>Forgot credentials? Use "Forgot your password?" above, or contact IT.</div>
+    </div>
+    </div>
+    <div id="lf-forgot" style="display:none">
+      <h2>Reset your password</h2>
+      <div class="lf"><label>Your work email</label><input type="email" id="fp-email" autocomplete="off" placeholder="you@sgoa-af.org"></div>
+      <button class="lbtn" onclick="sgoaRequestReset()">Send reset link</button>
+      <div class="lerr" id="fp-err"></div>
+      <div class="lhint" id="fp-msg" style="display:none;background:var(--greenL);border-color:var(--green);color:var(--green)"></div>
+      <div class="lf" style="text-align:center;margin-top:10px"><a href="#" onclick="sgoaHideForgot();return false;" style="font-size:12px;color:var(--navy);text-decoration:none">Back to sign in</a></div>
+    </div>
+    <div id="lf-newpwd" style="display:none">
+      <h2>Set a new password</h2>
+      <p style="font-size:12px;color:var(--g500);margin-bottom:14px">You followed a password reset link. Choose a new password below to finish.</p>
+      <div class="lf"><label>New password</label><input type="password" id="np-new" autocomplete="new-password" placeholder="At least 12 characters"></div>
+      <div class="lf"><label>Confirm new password</label><input type="password" id="np-cfm" autocomplete="new-password" placeholder="Re-enter the new password"></div>
+      <button class="lbtn" onclick="sgoaSubmitNewPassword()">Set password</button>
+      <div class="lerr" id="np-err"></div>
     </div>
   </div>
 </div>
@@ -8432,12 +8451,40 @@ DB.users=[];
 
 var ROLE_TEMPLATE_LABEL={executive:'Executive Director',meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'Supply Chain',admin:'Admin',safeguarding:'Safeguarding',operations:'Operations',progdeputy:'Program Deputy Director',deputy:'Deputy Director',it:'IT Support Officer',access:'Access & Movement Officer'};
 
-function saveNewUser(){
-  // Real accounts now require a Supabase Auth login plus profiles/user_roles rows, which
-  // this anon-key client has no privilege to create -- that has to happen through the
-  // trusted administrator workflow (the Supabase dashboard, or an admin-only backend
-  // function), not by pushing a record into this app's own local DB.users.
-  alert('New staff logins must be created through the trusted administrator workflow (Supabase). This form can no longer create a working login.');
+async function saveNewUser(){
+  // Creating a real account (an Auth login, a profile row, a role) needs privileges this
+  // anon-key client doesn't have. This calls a separate, admin-only Edge Function instead --
+  // it independently re-checks that the person calling it actually has permission to create
+  // accounts, using THEIR OWN current session token, not anything this form sends it.
+  var err=$('nu-err');err.style.display='none';
+  var name=$('nu-name').value.trim(), username=$('nu-username').value.trim(), email=$('nu-email').value.trim(),
+      phone=$('nu-phone').value.trim(), password=$('nu-password').value, roleCode=$('nu-role').value;
+  if(!name || !username || !email || !password){
+    err.textContent='Fill in name, username, work email and a temporary password.';err.style.display='block';return;
+  }
+  if(password.length<12){err.textContent='Temporary password must be at least 12 characters.';err.style.display='block';return;}
+  if(!supa || !SES.authUserId){err.textContent='You must be signed in to create an account.';err.style.display='block';return;}
+  var btn=$('nu-submit-btn');if(btn)btn.disabled=true;
+  try{
+    var session=await supa.auth.getSession();
+    var token=session.data.session && session.data.session.access_token;
+    if(!token)throw Error('Your session has expired. Sign in again and retry.');
+    var response=await fetch(SUPA_URL+'/functions/v1/sgoa-admin-create-staff',{
+      method:'POST',
+      headers:{'content-type':'application/json',apikey:SUPA_KEY,'authorization':'Bearer '+token},
+      body:JSON.stringify({name:name,username:username,workEmail:email,phone:phone,password:password,roleCode:roleCode})
+    });
+    var result=await response.json();
+    if(!response.ok || !result.ok)throw Error(result.error||'The account could not be created.');
+    closeM('m-add-user');
+    $('nu-name').value='';$('nu-username').value='';$('nu-email').value='';$('nu-phone').value='';$('nu-password').value='';
+    alert('Account created for '+name+'. Give them their username and temporary password directly -- they should change it themselves via "Forgot your password?" on the sign-in page.');
+  }catch(e){
+    err.textContent=(e&&e.message)||'The account could not be created. Check your connection and try again.';
+    err.style.display='block';
+  }finally{
+    if(btn)btn.disabled=false;
+  }
 }
 
 // ============ DEPARTMENT-SCOPED STAFF ACCOUNT CREATION ============
@@ -10748,9 +10795,88 @@ function confirmDelete(){
 // Restores a real Supabase Auth session on reload (if one exists) and loads this account's
 // data via sgoa_erp_load -- there is no more client-side "seed the empty database" path, and
 // no sample data is ever substituted if the live backend can't be reached (see loadFromCloud).
+// ============ FORGOT PASSWORD / SELF-SERVICE RESET ============
+function sgoaShowForgot(){
+  $('lf-signin').style.display='none';
+  $('lf-newpwd').style.display='none';
+  $('lf-forgot').style.display='block';
+  $('fp-err').style.display='none';
+  $('fp-msg').style.display='none';
+}
+function sgoaHideForgot(){
+  $('lf-forgot').style.display='none';
+  $('lf-newpwd').style.display='none';
+  $('lf-signin').style.display='block';
+}
+function sgoaShowNewPassword(){
+  $('lf-signin').style.display='none';
+  $('lf-forgot').style.display='none';
+  $('lf-newpwd').style.display='block';
+}
+async function sgoaRequestReset(){
+  var email=$('fp-email').value.trim();
+  var err=$('fp-err'),msg=$('fp-msg');
+  err.style.display='none';msg.style.display='none';
+  if(!email){err.textContent='Enter your work email.';err.style.display='block';return;}
+  if(!supa){err.textContent='Secure sign-in is unavailable.';err.style.display='block';return;}
+  var btn=document.querySelector('#lf-forgot .lbtn');
+  if(btn)btn.disabled=true;
+  try{
+    await supa.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+    // Supabase reports success here whether or not that email actually has an account, by
+    // design -- that is what stops this form from being usable to find out who does and
+    // doesn't have a login. Show the same message either way.
+    msg.textContent='If that email has an account, a reset link has been sent. Check your inbox (and spam folder), then click the link to set a new password.';
+    msg.style.display='block';
+  }catch(e){
+    err.textContent=(e&&e.message)||'Could not send the reset link. Check your connection and try again.';
+    err.style.display='block';
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
+async function sgoaSubmitNewPassword(){
+  var n=$('np-new').value,c=$('np-cfm').value,err=$('np-err');
+  err.style.display='none';
+  if(n.length<12 || n!==c){err.textContent='Use at least 12 characters and matching passwords.';err.style.display='block';return;}
+  var btn=document.querySelector('#lf-newpwd .lbtn');
+  if(btn)btn.disabled=true;
+  try{
+    var r=await supa.auth.updateUser({password:n});
+    if(r.error)throw r.error;
+    alert('Password updated. Please sign in with your new password.');
+    await supa.auth.signOut({scope:'local'});
+    location.reload();
+  }catch(e){
+    err.textContent=(e&&e.message)||'Could not update the password. The reset link may have expired -- request a new one.';
+    err.style.display='block';
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
 async function sgoaLiveInit(){
   try{
     if(!supa)throw Error('Secure sign-in is unavailable.');
+    // A password-reset link lands back on this same page with its outcome in the URL
+    // fragment -- either "type=recovery" (a valid, just-established recovery session) or
+    // "error=..." (expired/already-used link). Handle both BEFORE the normal auto-login
+    // check below, so a recovery link never gets silently treated as an ordinary sign-in.
+    var hashParams=new URLSearchParams((location.hash||'').replace(/^#/,''));
+    if(hashParams.get('error')){
+      history.replaceState(null,'',location.pathname+location.search);
+      sgoaShowForgot();
+      var desc=hashParams.get('error_description');
+      authError(desc?decodeURIComponent(desc.replace(/\+/g,' ')):'That link is no longer valid. Request a new one below.');
+      return;
+    }
+    if(hashParams.get('type')==='recovery'){
+      var recovered=await supa.auth.getSession();
+      if(recovered.data.session){
+        history.replaceState(null,'',location.pathname+location.search);
+        sgoaShowNewPassword();
+        return;
+      }
+    }
     var r=await supa.auth.getSession();
     if(r.data.session){
       var verified=await supa.auth.getUser();
@@ -10762,6 +10888,7 @@ async function sgoaLiveInit(){
     }
     supa.auth.onAuthStateChange(function(event){
       if(event==='SIGNED_OUT' && !sgoaSigningIn){ sgoaClear(); location.reload(); }
+      if(event==='PASSWORD_RECOVERY'){ sgoaShowNewPassword(); }
     });
   }catch(e){
     authError(e.message||'Unable to restore your session.');
@@ -10949,44 +11076,41 @@ document.addEventListener('keydown',function(e){
 
 
 <div class="mb" id="m-add-user"><div class="md" style="max-width:620px">
-<div class="mh"><h3>Add New User</h3><button class="mx" onclick="closeM('m-add-user')">&times;</button></div>
+<div class="mh"><h3>Add New Staff Account</h3><button class="mx" onclick="closeM('m-add-user')">&times;</button></div>
 <div class="mbd">
   <div class="fr">
     <div class="fg ff"><label>Full Name *</label><input type="text" id="nu-name" placeholder="e.g. Zahara Ali Zada"></div>
     <div class="fg"><label>Username *</label><input type="text" id="nu-username" placeholder="e.g. zahara.alizada"></div>
-    <div class="fg"><label>Password *</label><div style="display:flex;gap:6px"><input type="password" id="nu-password" placeholder="e.g. Field@sgoa26" style="flex:1"><button type="button" class="b bo bs" onclick="var f=$('nu-password');f.type=f.type==='password'?'text':'password';">Show</button></div></div>
+    <div class="fg ff"><label>Work Email * (their real Supabase/sign-in email)</label><input type="email" id="nu-email" placeholder="e.g. zahara.alizada@sgoa-af.org"></div>
+    <div class="fg"><label>Phone</label><input type="text" id="nu-phone" placeholder="e.g. 0700000000"></div>
+    <div class="fg"><label>Temporary Password *</label><div style="display:flex;gap:6px"><input type="password" id="nu-password" placeholder="At least 12 characters" style="flex:1"><button type="button" class="b bo bs" onclick="var f=$('nu-password');f.type=f.type==='password'?'text':'password';">Show</button></div></div>
     <div class="fg ff">
-      <label>Role Template (defines what this user can do)</label>
+      <label>Role *</label>
       <select id="nu-role">
-        <option value="meal">MEAL &mdash; full MEAL section access</option>
-        <option value="finance">Finance &mdash; full Finance section access</option>
-        <option value="hr">HR &mdash; full HR section access</option>
-        <option value="programs">Programs &mdash; full Programs section access</option>
-        <option value="supply">Supply Chain &mdash; full Supply Chain section access</option>
-        <option value="admin">Admin &mdash; full Admin section access</option>
-        <option value="safeguarding">Safeguarding &mdash; full Safeguarding section access</option>
-        <option value="operations">Operations &mdash; full Operations section access</option>
-        <option value="progdeputy">Program Deputy Director &mdash; PR approvals only</option>
-        <option value="deputy">Deputy Director &mdash; PR approvals only</option>
+        <option value="meal_head">MEAL Head</option>
+        <option value="finance_head">Finance Head</option>
+        <option value="hr_head">HR Head</option>
+        <option value="program_manager">Programs / Project Manager</option>
+        <option value="supply_head">Supply Chain Head</option>
+        <option value="admin_head">Admin Head</option>
+        <option value="safeguarding_focal_point">Safeguarding Focal Point</option>
+        <option value="operations_head">Operations Head</option>
+        <option value="program_deputy_director">Program Deputy Director</option>
+        <option value="deputy_director">Deputy Director</option>
+        <option value="it_admin">IT Admin</option>
+        <option value="access_officer">Access &amp; Movement Officer</option>
+        <option value="executive_director">Executive Director</option>
+        <option value="staff" selected>General Staff (self-service only &mdash; no department dashboard)</option>
       </select>
+      <div style="font-size:10px;color:var(--g500);margin-top:3px">This must match a role code that already exists in the Supabase "roles" table, or the account will be created without one.</div>
     </div>
-    <div class="fg ff">
-      <label>Linked Projects (for reference only — does not currently restrict what this user can see or do)</label>
-      <select id="nu-projects" multiple size="4" style="height:auto">
-        <option value="All" selected>All Projects</option>
-        <option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option>
-      </select>
-      <div style="font-size:10px;color:var(--g500);margin-top:3px">Hold Ctrl to select multiple, or leave "All Projects" selected</div>
-    </div>
-    <div class="fg"><label>Position / Title</label><input type="text" id="nu-position" placeholder="e.g. Field Officer"></div>
-    <div class="fg"><label>Province / Location</label><input type="text" id="nu-loc" placeholder="e.g. Kandahar"></div>
-    <div class="fg"><label>Status</label><select id="nu-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
   </div>
   <div style="background:var(--g50);padding:10px;border-radius:7px;font-size:11.5px;color:var(--g600);margin-top:10px">
-    This user will have the same sidebar, pages, and permissions as the selected Role Template. To restrict them further, contact the platform administrator.
+    This creates a real sign-in: a Supabase Auth account, a staff profile, and the selected role, in one step. Tell the new person their username and temporary password directly &mdash; they should change it themselves afterward via "Forgot your password?" on the sign-in page.
   </div>
+  <div class="lerr" id="nu-err" style="display:none"></div>
 </div>
-<div class="mf"><button class="b bo" onclick="closeM('m-add-user')">Cancel</button><button class="b bn" onclick="saveNewUser()">Create User</button></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-add-user')">Cancel</button><button class="b bn" id="nu-submit-btn" onclick="saveNewUser()">Create Account</button></div>
 </div></div>
 
 <div class="mb" id="m-dept-add-user"><div class="md">
