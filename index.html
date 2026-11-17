@@ -658,36 +658,48 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL HOME -->
 <div class="pg" id="p-meal">
-  <div class="wb" style="background:linear-gradient(135deg,#1A3A6B,#243f7a)"><div><div class="wbt">MEAL Department</div><div class="wbs">Monitoring · Evaluation · Accountability · Learning</div></div><div class="wbi">&#128202;</div></div>
-  <div class="qn">
-    <div class="qi" onclick="go('meal-ind')"><div class="qii">&#128200;</div><div class="qil">Indicators &amp; Logframe</div></div>
-    <div class="qi" onclick="go('meal-cfrm')"><div class="qii">&#128222;</div><div class="qil">CFRM</div></div>
-    <div class="qi" onclick="go('meal-visits')"><div class="qii">&#128506;</div><div class="qil">Field Visits</div></div>
-    <div class="qi" onclick="go('meal-find')"><div class="qii">&#128269;</div><div class="qil">Findings</div></div>
-    <div class="qi" onclick="go('meal-risk')"><div class="qii">&#9888;</div><div class="qil">Risks</div></div>
-    <div class="qi" onclick="go('meal-dqa')"><div class="qii">&#9989;</div><div class="qil">DQA &amp; Evaluations</div></div>
-    <div class="qi" onclick="go('meal-docs')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
-    <div class="qi" onclick="go('meal-data')"><div class="qii">&#9999;</div><div class="qil">Data Entry</div></div>
-    <div class="qi" onclick="go('projects');setTimeout(function(){openM('m-project');},150)"><div class="qii">&#127919;</div><div class="qil">Add Project</div></div>
-  </div>
-  <div class="stats">
-    <div class="st nv"><div class="stl">Total Indicators</div><div class="stv" id="mi-tot">15</div></div>
-    <div class="st gr"><div class="stl">On Track</div><div class="stv" id="mi-on">11</div></div>
-    <div class="st og"><div class="stl">At Risk</div><div class="stv" id="mi-risk">3</div></div>
-    <div class="st rd"><div class="stl">Off Track</div><div class="stv" id="mi-off">1</div></div>
-    <div class="st og"><div class="stl">Open CFRM Cases</div><div class="stv" id="mi-cfrm-open">0</div></div>
-    <div class="st rd"><div class="stl">Open Findings</div><div class="stv" id="mi-find-open">0</div></div>
+  <div class="ph"><div><h1>MEAL Dashboard</h1><p>Monitoring, Evaluation, Accountability and Learning</p></div>
+  <div class="pha"><button class="b bo bs" onclick="exportMonthlyReport()">Export Report</button><button class="b bn bs" onclick="go('meal-ind')">Open Indicator Tracker &amp; Logframes</button></div></div>
+
+  <div class="wb" style="background:linear-gradient(135deg,#1A3A6B,#243f7a)">
+    <div>
+      <div style="font-size:10.5px;letter-spacing:.06em;color:#C8922A;font-weight:700;text-transform:uppercase;margin-bottom:5px">MEAL · Management &amp; Action Center</div>
+      <div class="wbt" style="font-size:18px">Enter, verify and report project results every month.</div>
+      <div class="wbs">Projects · people · approvals · evidence · department coordination</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div style="font-size:30px;font-weight:700;color:#fff" id="meal-verified-pct">0%</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.75)">Results Verified</div>
+    </div>
   </div>
 
-  <div class="cd"><div class="cdh"><div class="cdt">MEAL Analytics &amp; Trends</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+  <div class="fr" style="align-items:flex-end;margin:16px 0 14px">
+    <div class="fg"><label>Project</label><select id="meal-proj-filter" onchange="renderMealHome()"><option value="all">All Projects</option></select></div>
+    <div class="fg"><label>Period</label><input type="month" id="mv-month" onchange="renderMonthlyVerification();renderMonthlyReport();renderMealHome();"></div>
+  </div>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="st nv"><div class="stl">Active Indicators</div><div class="stv" id="mh-active">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-active-sub">—</div></div>
+    <div class="st gr"><div class="stl">Indicators on Track</div><div class="stv" id="mh-ontrack">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-ontrack-sub">—</div></div>
+    <div class="st og"><div class="stl">At Risk / Off Track</div><div class="stv" id="mh-riskoff">0 / 0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Action plans required</div></div>
+    <div class="st nv"><div class="stl">Reports Received</div><div class="stv" id="mh-reports">0 / 0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-reports-sub">—</div></div>
+    <div class="st gr"><div class="stl">Verified Result Records</div><div class="stv" id="mh-verified">0 / 0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-verified-sub">—</div></div>
+    <div class="st rd"><div class="stl">Open CFRM Cases</div><div class="stv" id="mh-cfrm">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-cfrm-sub">—</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">Indicator Performance Status</div></div>
+      <div class="cdb" style="display:flex;align-items:center;gap:16px">
+        <canvas id="meal-ch-indstatus" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+        <div style="flex:1;font-size:12px" id="meal-ch-indstatus-leg"></div>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Indicator Actual vs Target</div></div>
+      <div class="cdb" style="padding:14px"><canvas id="meal-ch-targetactual" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+  </div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
   <div class="cdb" style="padding:14px 17px 4px">
     <div class="g2">
-      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Indicator Status</div>
-        <div style="display:flex;align-items:center;gap:14px"><canvas id="meal-ch-indstatus" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="meal-ch-indstatus-leg"></div></div></div>
-      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Indicators by Project</div>
-        <canvas id="meal-ch-indproj" width="420" height="150" style="width:100%;height:150px"></canvas></div>
-    </div>
-    <div class="g2" style="margin-top:18px">
       <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">CFRM Cases by Status</div>
         <div style="display:flex;align-items:center;gap:14px"><canvas id="meal-ch-cfrmstatus" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="meal-ch-cfrmstatus-leg"></div></div></div>
       <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Severity</div>
@@ -720,7 +732,7 @@ tbody tr:hover td{background:var(--g50);}
       <option value="all">All Projects</option></select></div><div class="cdb" id="meal-gender"></div></div>
 
   <div class="cd"><div class="cdh"><div class="cdt">Monthly Verification &amp; Locking</div>
-    <input type="month" id="mv-month" onchange="renderMonthlyVerification();renderMonthlyReport();" style="font-size:12px;padding:5px 9px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+    <span style="font-size:10.5px;color:var(--g400)">Period set above</span>
   </div>
   <div class="cdb tw"><table><thead><tr><th>Indicator</th><th>Project</th><th>Submitted Result</th><th>Verification Decision</th><th>Correction History</th><th></th></tr></thead><tbody id="mv-body"></tbody></table></div></div>
 
@@ -4728,19 +4740,54 @@ function mealLast6Months(){
 }
 
 function renderMealHome(){
-  var inds=DB.indicators; // was hardcoded to a demo project code that never exists in a real deployment
+  var pf=$('meal-proj-filter')?$('meal-proj-filter').value:'all';
+  var monthEl=$('mv-month');
+  if(monthEl&&!monthEl.value)monthEl.value=today().slice(0,7);
+  var month=monthEl&&monthEl.value?monthEl.value:today().slice(0,7);
+  var inds=pf==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===pf;});
+  var cfrm=pf==='all'?DB.cfrm:DB.cfrm.filter(function(x){return x.proj===pf;});
+  var findings=pf==='all'?DB.findings:DB.findings.filter(function(f){return f.proj===pf;});
+  var dqas=pf==='all'?DB.dqas:DB.dqas.filter(function(d){return d.project===pf;});
+
   var on=0,risk=0,off=0,pending=0;
-  DB.indicators.forEach(function(i){
+  inds.forEach(function(i){
     if(!i.target){pending++;return;}
     var p=i.actual/i.target;
     if(p>=0.9)on++;else if(p>=0.7)risk++;else if(i.actual>0)off++;else pending++;
   });
-  if($('mi-tot'))$('mi-tot').textContent=DB.indicators.length;
-  if($('mi-on'))$('mi-on').textContent=on;
-  if($('mi-risk'))$('mi-risk').textContent=risk;
-  if($('mi-off'))$('mi-off').textContent=off;
-  if($('mi-cfrm-open'))$('mi-cfrm-open').textContent=DB.cfrm.filter(function(x){return x.status!=='Resolved';}).length;
-  if($('mi-find-open'))$('mi-find-open').textContent=DB.findings.filter(function(f){return f.status!=='Resolved';}).length;
+
+  // ---- Verification/reporting status for the selected period (reuses the Monthly Verification machinery) ----
+  var achieved=0,offtrack=0,outstanding=0,reportingProjSet={},submittedProjSet={};
+  inds.forEach(function(i){
+    reportingProjSet[i.proj]=true;
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    if(sub)submittedProjSet[i.proj]=true;
+    if(!sub||!v||v.status!=='Verified'){outstanding++;return;}
+    var pct=i.target?v.value/i.target:1;
+    if(pct<0.7)offtrack++;else achieved++;
+  });
+  var totalProjCovered=Object.keys(reportingProjSet).length;
+  var submittedProjCount=Object.keys(submittedProjSet).length;
+  var verifiedTotal=achieved+offtrack;
+
+  if($('meal-verified-pct'))$('meal-verified-pct').textContent=(inds.length?Math.round(verifiedTotal/inds.length*100):0)+'%';
+
+  var distinctLevels=Object.keys(inds.reduce(function(a,i){if(i.level)a[i.level]=1;return a;},{})).length;
+  if($('mh-active'))$('mh-active').textContent=inds.length;
+  if($('mh-active-sub'))$('mh-active-sub').textContent=totalProjCovered+' project'+(totalProjCovered===1?'':'s')+' · '+distinctLevels+' result level'+(distinctLevels===1?'':'s');
+  if($('mh-ontrack'))$('mh-ontrack').textContent=on;
+  if($('mh-ontrack-sub'))$('mh-ontrack-sub').textContent=(inds.length?Math.round(on/inds.length*100):0)+'% of active indicators';
+  if($('mh-riskoff'))$('mh-riskoff').textContent=risk+' / '+off;
+  if($('mh-reports'))$('mh-reports').textContent=submittedProjCount+' / '+totalProjCovered;
+  if($('mh-reports-sub'))$('mh-reports-sub').textContent=(totalProjCovered-submittedProjCount)+' project(s) not submitted';
+  if($('mh-verified'))$('mh-verified').textContent=verifiedTotal+' / '+inds.length;
+  if($('mh-verified-sub'))$('mh-verified-sub').textContent=outstanding+' awaiting verification';
+  var cfOpen=cfrm.filter(function(x){return x.status==='Open';}).length;
+  var cfEsc=cfrm.filter(function(x){return x.status==='Escalated';}).length;
+  var cfRes=cfrm.filter(function(x){return x.status==='Resolved';}).length;
+  if($('mh-cfrm'))$('mh-cfrm').textContent=cfOpen+cfEsc;
+  if($('mh-cfrm-sub'))$('mh-cfrm-sub').textContent=cfEsc+' priority response'+(cfEsc===1?'':'s');
 
   // ---- Indicator tracker (top 8, real data) ----
   var c=$('meal-mini-ind');
@@ -4788,41 +4835,38 @@ function renderMealHome(){
     if(!dl.innerHTML)dl.innerHTML='<div class="empty">No upcoming deadlines</div>';
   }
 
-  // ---- Charts (all from live DB) ----
+  // ---- Charts (all from live DB, scoped to the Project filter above) ----
   var onS=on,riskS=risk,offS=off,pendS=pending;
   donut('meal-ch-indstatus',[{v:onS,c:'#16a34a'},{v:riskS,c:'#C8922A'},{v:offS,c:'#dc2626'},{v:pendS,c:'#cbd5e1'}],18);
   var legHtml=function(rows){return rows.map(function(r){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+esc(r.l)+' — <b>'+r.v+'</b></div>';}).join('');};
   if($('meal-ch-indstatus-leg'))$('meal-ch-indstatus-leg').innerHTML=legHtml([{l:'On Track',v:onS,c:'#16a34a'},{l:'At Risk',v:riskS,c:'#C8922A'},{l:'Off Track',v:offS,c:'#dc2626'},{l:'Pending Baseline',v:pendS,c:'#cbd5e1'}]);
 
-  var byProj={};
-  DB.indicators.forEach(function(i){var k=i.proj||'Unassigned';byProj[k]=(byProj[k]||0)+1;});
-  var projKeys=Object.keys(byProj);
-  if(projKeys.length)bars('meal-ch-indproj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+  var withTarget=inds.filter(function(i){return i.target;}).slice(0,8);
+  if(withTarget.length)bars('meal-ch-targetactual',withTarget.map(function(i){return i.name.length>14?i.name.slice(0,14)+'…':i.name;}),
+    [{d:withTarget.map(function(i){return i.target;}),c:'#C8922A'},{d:withTarget.map(function(i){return i.actual;}),c:'#1A3A6B'}],
+    function(v){return Math.round(v);});
 
-  var cfOpen=DB.cfrm.filter(function(x){return x.status==='Open';}).length;
-  var cfEsc=DB.cfrm.filter(function(x){return x.status==='Escalated';}).length;
-  var cfRes=DB.cfrm.filter(function(x){return x.status==='Resolved';}).length;
   donut('meal-ch-cfrmstatus',[{v:cfOpen,c:'#C8922A'},{v:cfEsc,c:'#dc2626'},{v:cfRes,c:'#16a34a'}],18);
   if($('meal-ch-cfrmstatus-leg'))$('meal-ch-cfrmstatus-leg').innerHTML=legHtml([{l:'Open',v:cfOpen,c:'#C8922A'},{l:'Escalated',v:cfEsc,c:'#dc2626'},{l:'Resolved',v:cfRes,c:'#16a34a'}]);
 
-  var sevCounts=['critical','major','minor','positive'].map(function(s){return DB.findings.filter(function(f){return f.sev===s;}).length;});
+  var sevCounts=['critical','major','minor','positive'].map(function(s){return findings.filter(function(f){return f.sev===s;}).length;});
   bars('meal-ch-sev',['Critical','Major','Minor','Positive'],[{d:sevCounts,c:['#dc2626','#ea580c','#2563eb','#16a34a']}],function(v){return Math.round(v);});
 
   var dqDims=[{k:'validity',l:'Validity'},{k:'integrity',l:'Integrity'},{k:'precision',l:'Precision'},{k:'reliability',l:'Reliability'},{k:'timeliness',l:'Timeliness'}];
-  if(DB.dqas.length){
-    var dqPct=dqDims.map(function(d){return Math.round(DB.dqas.filter(function(a){return a[d.k]==='Yes';}).length/DB.dqas.length*100);});
+  if(dqas.length){
+    var dqPct=dqDims.map(function(d){return Math.round(dqas.filter(function(a){return a[d.k]==='Yes';}).length/dqas.length*100);});
     bars('meal-ch-dq',dqDims.map(function(d){return d.l;}),[{d:dqPct,c:'#0d9488'}],function(v){return Math.round(v)+'%';});
   }
 
-  var findResolved=DB.findings.filter(function(f){return f.status==='Resolved';}).length;
-  var findOpenIp=DB.findings.length-findResolved;
-  donut('meal-ch-corrective',[{v:findResolved,c:'#16a34a'},{v:findOpenIp,c:'#ea580c'}],18,'Closed',DB.findings.length?Math.round(findResolved/DB.findings.length*100)+'%':'—');
+  var findResolved=findings.filter(function(f){return f.status==='Resolved';}).length;
+  var findOpenIp=findings.length-findResolved;
+  donut('meal-ch-corrective',[{v:findResolved,c:'#16a34a'},{v:findOpenIp,c:'#ea580c'}],18,'Closed',findings.length?Math.round(findResolved/findings.length*100)+'%':'—');
   if($('meal-ch-corrective-leg'))$('meal-ch-corrective-leg').innerHTML=legHtml([{l:'Resolved',v:findResolved,c:'#16a34a'},{l:'Open / In Progress',v:findOpenIp,c:'#ea580c'}]);
 
   var months=mealLast6Months();
   var trendData=months.map(function(m){
     var pcts=[];
-    DB.indicators.forEach(function(i){
+    inds.forEach(function(i){
       if(!i.target||!i.updates)return;
       var upd=i.updates.filter(function(u){return (u.date||'').slice(0,7)===m.key;});
       if(upd.length){var last=upd[upd.length-1];pcts.push(Math.min(100,Math.round(last.actual/i.target*100)));}
@@ -4831,17 +4875,20 @@ function renderMealHome(){
   });
   line('meal-ch-trend',months.map(function(m){return m.label;}),[{d:trendData,c:'#1A3A6B'}]);
 
-  var cfrmByMonth=months.map(function(m){return DB.cfrm.filter(function(x){return (x.date||'').slice(0,7)===m.key;}).length;});
+  var cfrmByMonth=months.map(function(m){return cfrm.filter(function(x){return (x.date||'').slice(0,7)===m.key;}).length;});
   bars('meal-ch-cfrmmonth',months.map(function(m){return m.label;}),[{d:cfrmByMonth,c:'#7c3aed'}],function(v){return Math.round(v);});
 
-  // ---- MEAL workspaces (real counts, same sub-pages as the quick-nav above) ----
+  // ---- MEAL workspaces (real counts across the whole department, independent of the Project filter) ----
   var ws=$('meal-workspaces');
   if(ws){
+    var cfOpenAll=DB.cfrm.filter(function(x){return x.status==='Open';}).length;
+    var cfEscAll=DB.cfrm.filter(function(x){return x.status==='Escalated';}).length;
+    var findOpenAll=DB.findings.filter(function(f){return f.status!=='Resolved';}).length;
     var items2=[
       {icon:'📈',label:'Indicators & Logframe',count:DB.indicators.length+' tracked',page:'meal-ind'},
-      {icon:'📞',label:'CFRM',count:cfOpen+cfEsc+' open cases',page:'meal-cfrm'},
+      {icon:'📞',label:'CFRM',count:cfOpenAll+cfEscAll+' open cases',page:'meal-cfrm'},
       {icon:'🌍',label:'Field Visits',count:DB.visits.length+' logged',page:'meal-visits'},
-      {icon:'🔍',label:'Findings',count:findOpenIp+' open',page:'meal-find'},
+      {icon:'🔍',label:'Findings',count:findOpenAll+' open',page:'meal-find'},
       {icon:'⚠️',label:'Risks',count:DB.risks.filter(function(r){return r.lvl==='critical'||r.lvl==='high';}).length+' high priority',page:'meal-risk'},
       {icon:'✅',label:'DQA & Evaluations',count:(DB.dqas.length+DB.evaluations.length)+' records',page:'meal-dqa'},
       {icon:'📁',label:'Documents',count:DB.docs.filter(function(d){return (d.dept==='MEAL'||d.dept==='All')&&d.status!=='Archived';}).length+' files',page:'meal-docs'},
@@ -6967,6 +7014,7 @@ var PROJECT_SELECT_IDS=[
   {id:'w-proj',all:true,core:false},
   {id:'mit-reg-proj',all:true,core:false},
   {id:'mit-entry-proj',all:true,core:false},
+  {id:'meal-proj-filter',all:true,core:false},
   {id:'a-proj',all:false,core:true},
   {id:'t-proj',all:false,core:false,none:true},
   {id:'in-proj',all:false,core:false},
