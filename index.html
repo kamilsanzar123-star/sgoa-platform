@@ -660,10 +660,9 @@ tbody tr:hover td{background:var(--g50);}
 <div class="pg" id="p-meal">
   <div class="wb" style="background:linear-gradient(135deg,#1A3A6B,#243f7a)"><div><div class="wbt">MEAL Department</div><div class="wbs">Monitoring · Evaluation · Accountability · Learning</div></div><div class="wbi">&#128202;</div></div>
   <div class="qn">
-    <div class="qi" onclick="go('meal-ind')"><div class="qii">&#128200;</div><div class="qil">Indicators</div></div>
+    <div class="qi" onclick="go('meal-ind')"><div class="qii">&#128200;</div><div class="qil">Indicators &amp; Logframe</div></div>
     <div class="qi" onclick="go('meal-cfrm')"><div class="qii">&#128222;</div><div class="qil">CFRM</div></div>
     <div class="qi" onclick="go('meal-visits')"><div class="qii">&#128506;</div><div class="qil">Field Visits</div></div>
-    <div class="qi" onclick="go('meal-lf')"><div class="qii">&#128203;</div><div class="qil">Logframe</div></div>
     <div class="qi" onclick="go('meal-find')"><div class="qii">&#128269;</div><div class="qil">Findings</div></div>
     <div class="qi" onclick="go('meal-risk')"><div class="qii">&#9888;</div><div class="qil">Risks</div></div>
     <div class="qi" onclick="go('meal-dqa')"><div class="qii">&#9989;</div><div class="qil">DQA &amp; Evaluations</div></div>
@@ -755,12 +754,84 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL INDICATORS -->
 <div class="pg" id="p-meal-ind">
-  <div class="ph"><div><h1>Indicator Tracker</h1><p>All project indicators with live achievement tracking</p></div>
+  <div class="ph"><div><h1>Indicator Tracker &amp; Logframes</h1><p>Baselines, targets, current results and means of verification</p></div>
   <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-ind')">+ Add Indicator</button></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Indicators</div>
-    <select id="if-proj" onchange="renderInd()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
-      <option value="all">All Projects</option><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select>
-  </div><div class="cdb" id="ind-list"></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Active Indicators</div><div class="stv" id="mit-tot">0</div></div>
+    <div class="st gr"><div class="stl">Outcome Indicators</div><div class="stv" id="mit-outcome">0</div></div>
+    <div class="st og"><div class="stl">Output Indicators</div><div class="stv" id="mit-output">0</div></div>
+    <div class="st rd"><div class="stl">Targets Needing Definition</div><div class="stv" id="mit-notarget">0</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mit-tab-overview" onclick="setIndTab('overview')">Overview</button>
+    <button class="b bo bs" id="mit-tab-register" onclick="setIndTab('register')">Record Register</button>
+    <button class="b bo bs" id="mit-tab-entry" onclick="setIndTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mit-tab-review" onclick="setIndTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mit-tab-evidence" onclick="setIndTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mit-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Indicator Definitions by Result Level</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mit-ch-level" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mit-ch-level-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Indicator Achievement Against Target</div></div>
+        <div class="cdb" id="mit-achievement"></div></div>
+    </div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mit-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Indicator Register</div>
+      <select id="mit-reg-proj" onchange="renderIndRegister()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"><option value="all">All Projects</option></select>
+    </div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mit-reg-search" oninput="renderIndRegister()" placeholder="Reference, project or result statement"></div>
+        <div class="fg"><label>Status</label><select id="mit-reg-status" onchange="renderIndRegister()"><option value="all">All States</option><option value="On Track">On Track</option><option value="At Risk">At Risk</option><option value="Off Track">Off Track</option><option value="Pending">Baseline Pending</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mit-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mit-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Record a New Result</div></div>
+      <div class="cdb">
+        <div class="fr">
+          <div class="fg"><label>Project</label><select id="mit-entry-proj" onchange="renderIndEntry()"><option value="all">All Projects</option></select></div>
+          <div class="fg ff"><label>Indicator</label><select id="mit-entry-ind" onchange="renderIndEntry()"></select></div>
+        </div>
+        <div id="mit-entry-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin:10px 0"></div>
+        <button class="b bn bs" id="mit-entry-btn" onclick="mitRecordResult()">Record New Result</button>
+        <button class="b bo bs" onclick="openM('m-ind')">+ Add New Indicator</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How an Indicator Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Define indicator</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Approve baseline / target</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Link means of verification</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Periodic updates</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Verify &amp; lock monthly</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mit-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Targets Needing Definition</div></div><div class="cdb tw" id="mit-review-notarget"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Off-Track Indicators Needing Corrective Action</div></div><div class="cdb tw" id="mit-review-offtrack"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mit-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Means of Verification by Indicator</div></div><div class="cdb tw" id="mit-evidence-mov"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Update History Log</div></div><div class="cdb tw" id="mit-evidence-history"></div></div>
+  </div>
 </div>
 
 <!-- MEAL CFRM -->
@@ -781,14 +852,6 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>District</th><th>Sites</th><th>Conducted By</th><th>Key Findings</th><th>Status</th></tr></thead><tbody id="visits-body"></tbody></table></div></div>
 </div>
 
-<!-- MEAL LOGFRAME -->
-<div class="pg" id="p-meal-lf">
-  <div class="ph"><div><h1>Logical Framework</h1><p>Results chain built live from project indicators</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-ind')">+ Add Indicator</button></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Results Chain</div>
-    <select id="lf-proj" onchange="renderLF()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"><option value="all">All Projects</option></select>
-  </div><div class="cdb tw"><table><thead><tr><th>Level</th><th>Statement / Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>MoV</th></tr></thead><tbody id="lf-body"></tbody></table></div></div>
-</div>
 
 <!-- MEAL FINDINGS -->
 <div class="pg" id="p-meal-find">
@@ -2423,10 +2486,10 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 // ============ ACCESS ============
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
-'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
+'meal','meal-ind','meal-cfrm','meal-visits','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
 'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
 'admin','admin-registry','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
-meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-find','meal-risk','meal-dqa','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 finance:['finance','finance-commitments','finance-advances','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 hr:['hr','hr-recruitment','hr-training','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
@@ -2435,11 +2498,11 @@ admin:['admin','admin-registry','projects','project-detail','roadmap','workflow'
 safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
-  'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
+  'meal','meal-ind','meal-cfrm','meal-visits','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','admin-registry','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
-  'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
+  'meal','meal-ind','meal-cfrm','meal-visits','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','admin-registry','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','timesheet-approve','my-settings'],
@@ -2451,7 +2514,7 @@ executive:[
 {l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'},{p:'deputy',n:'Deputy Director'},{p:'progdeputy',n:'Program Deputy Director'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk & Audit Findings'},{p:'meal-dqa',n:'DQA & Evaluations'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
+meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker & Logframes'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk & Audit Findings'},{p:'meal-dqa',n:'DQA & Evaluations'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'finance-advances',n:'Advances & Reconciliation'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -2671,7 +2734,7 @@ function permissionAllowsPage(pg,perms){
  // to the single-permission department map below.
  var shared={'leave-request':'hr.leave.request','tar-request':'access.requests.create','it-tickets':'it.tickets.create','timesheet':'timesheets.submit','raise-pr':'procurement.pr.create'};
  if(shared[pg] && (perms.indexOf(shared[pg])>-1 || perms.indexOf('*')>-1))return true;
- var map={'exec':['organization.view'],'all-tasks':['tasks.view'],'all-challenges':['audit.view'],'meal':['meal.view'],'meal-ind':['meal.indicators.manage'],'meal-cfrm':['cfrm.view','cfrm.manage','cfrm.assign','cfrm.close'],'meal-visits':['meal.visits.manage'],'meal-lf':['meal.view'],'meal-find':['meal.findings.manage'],'meal-risk':['meal.risks.manage'],'meal-dqa':['meal.dqa.manage','meal.evaluations.manage'],'meal-docs':['documents.view','documents.manage','documents.upload'],'meal-data':['meal.results.create','meal.results.verify','meal.data.export'],'finance':['finance.view'],'finance-commitments':['finance.commitments.manage'],'finance-advances':['finance.advances.manage','finance.reconciliation.manage'],'hr':['hr.view'],'hr-recruitment':['hr.recruitment.manage'],'hr-training':['hr.training.manage'],'programs':['programs.view'],'prog-activities':['programs.activities.manage'],'prog-benef':['programs.beneficiaries.view','programs.beneficiaries.manage'],'prog-analysis':['programs.view'],'prog-partners':['programs.partners.manage'],'prog-grants':['programs.grants.manage'],'supply':['procurement.view'],'supply-proc':['procurement.manage'],'supply-dist':['distribution.manage'],'supply-suppliers':['procurement.suppliers.manage'],'supply-po':['procurement.po.manage'],'supply-grn':['procurement.grn.manage'],'supply-warehouse':['warehouse.view','warehouse.manage'],'admin':['admin.view'],'admin-registry':['documents.view'],'safeguarding':['safeguarding.case.view','safeguarding.case.manage'],'operations':['operations.view'],'ops-assets':['assets.manage'],'ops-fleet':['fleet.manage'],'roadmap':['projects.view'],'projects':['projects.view'],'project-detail':['projects.view'],'raise-pr':['procurement.pr.create'],'pr-approvals':['procurement.pr.approve'],'it':['it.view'],'it-tickets':['it.tickets.manage'],'access':['access.view'],'deputy':['departments.view'],'progdeputy':['programs.view'],'users':['users.view'],'settings':['organization.manage'],'my-settings':['organization.view'],'my-work':['tasks.view'],'workflow':['workflow.view'],'timesheet':['timesheets.view','timesheets.submit'],'timesheet-approve':['timesheets.approve'],'leave-request':['hr.leave.manage'],'tar-request':['travel_authorizations.view']};
+ var map={'exec':['organization.view'],'all-tasks':['tasks.view'],'all-challenges':['audit.view'],'meal':['meal.view'],'meal-ind':['meal.indicators.manage','meal.view'],'meal-cfrm':['cfrm.view','cfrm.manage','cfrm.assign','cfrm.close'],'meal-visits':['meal.visits.manage'],'meal-find':['meal.findings.manage'],'meal-risk':['meal.risks.manage'],'meal-dqa':['meal.dqa.manage','meal.evaluations.manage'],'meal-docs':['documents.view','documents.manage','documents.upload'],'meal-data':['meal.results.create','meal.results.verify','meal.data.export'],'finance':['finance.view'],'finance-commitments':['finance.commitments.manage'],'finance-advances':['finance.advances.manage','finance.reconciliation.manage'],'hr':['hr.view'],'hr-recruitment':['hr.recruitment.manage'],'hr-training':['hr.training.manage'],'programs':['programs.view'],'prog-activities':['programs.activities.manage'],'prog-benef':['programs.beneficiaries.view','programs.beneficiaries.manage'],'prog-analysis':['programs.view'],'prog-partners':['programs.partners.manage'],'prog-grants':['programs.grants.manage'],'supply':['procurement.view'],'supply-proc':['procurement.manage'],'supply-dist':['distribution.manage'],'supply-suppliers':['procurement.suppliers.manage'],'supply-po':['procurement.po.manage'],'supply-grn':['procurement.grn.manage'],'supply-warehouse':['warehouse.view','warehouse.manage'],'admin':['admin.view'],'admin-registry':['documents.view'],'safeguarding':['safeguarding.case.view','safeguarding.case.manage'],'operations':['operations.view'],'ops-assets':['assets.manage'],'ops-fleet':['fleet.manage'],'roadmap':['projects.view'],'projects':['projects.view'],'project-detail':['projects.view'],'raise-pr':['procurement.pr.create'],'pr-approvals':['procurement.pr.approve'],'it':['it.view'],'it-tickets':['it.tickets.manage'],'access':['access.view'],'deputy':['departments.view'],'progdeputy':['programs.view'],'users':['users.view'],'settings':['organization.manage'],'my-settings':['organization.view'],'my-work':['tasks.view'],'workflow':['workflow.view'],'timesheet':['timesheets.view','timesheets.submit'],'timesheet-approve':['timesheets.approve'],'leave-request':['hr.leave.manage'],'tar-request':['travel_authorizations.view']};
  var names=map[pg]||[pg.replace(/-/g,'_')];
  return perms.some(function(p){return p==='*'||p==='all'||names.some(function(n){return p===n;});});
 }
@@ -3653,8 +3716,7 @@ function render(pg){
       else if(pg==='users'){renderUsers();renderUserMgmt();renderLoginActivity();}
       else if(pg==='settings'){renderSettings();}
       else if(pg==='meal'){renderMealHome();renderMonthlyVerification();renderMonthlyReport();}
-      else if(pg==='meal-ind'){renderInd();}
-      else if(pg==='meal-lf'){renderLF();}
+      else if(pg==='meal-ind'){renderIndicatorTracker();}
       else if(pg==='meal-cfrm'){renderCFRM();}
       else if(pg==='meal-visits'){renderVisits();}
       else if(pg==='meal-find'){renderFindings();}
@@ -4776,10 +4838,9 @@ function renderMealHome(){
   var ws=$('meal-workspaces');
   if(ws){
     var items2=[
-      {icon:'📈',label:'Indicators',count:DB.indicators.length+' tracked',page:'meal-ind'},
+      {icon:'📈',label:'Indicators & Logframe',count:DB.indicators.length+' tracked',page:'meal-ind'},
       {icon:'📞',label:'CFRM',count:cfOpen+cfEsc+' open cases',page:'meal-cfrm'},
       {icon:'🌍',label:'Field Visits',count:DB.visits.length+' logged',page:'meal-visits'},
-      {icon:'📋',label:'Logframe',count:DB.indicators.length+' statements',page:'meal-lf'},
       {icon:'🔍',label:'Findings',count:findOpenIp+' open',page:'meal-find'},
       {icon:'⚠️',label:'Risks',count:DB.risks.filter(function(r){return r.lvl==='critical'||r.lvl==='high';}).length+' high priority',page:'meal-risk'},
       {icon:'✅',label:'DQA & Evaluations',count:(DB.dqas.length+DB.evaluations.length)+' records',page:'meal-dqa'},
@@ -4814,50 +4875,163 @@ function renderMealHome(){
   }
 }
 
-function renderInd(){
-  var c=$('ind-list');if(!c)return;c.innerHTML='';
-  var pf=$('if-proj')?$('if-proj').value:'all';
-  var inds=pf==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===pf;});
-  if(!inds.length){c.innerHTML='<div class="empty">No indicators</div>';return;}
-  inds.forEach(function(i){
-    var pct=i.target?Math.round(i.actual/i.target*100):0;
-    var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
-    var bdg=pct>=90?'<span class="bdg bG">On Track</span>':pct>=70?'<span class="bdg bO">At Risk</span>':pct>0?'<span class="bdg bR">Off Track</span>':'<span class="bdg bY">Baseline Pending</span>';
-    var d=el('div','ind');
-    var sexBreakdown=(i.actualFemale!=null||i.actualMale!=null)?
-      ' <span style="color:var(--g500)">(F: '+fmt(i.actualFemale||0)+' &middot; M: '+fmt(i.actualMale||0)+')</span>':'';
-    d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:5px"><div class="indn">'+i.id+' — '+esc(i.name)+'</div>'+bdg+'</div>'+
-      '<div class="indm"><span><b>Project:</b> '+esc(i.proj)+'</span><span><b>Level:</b> '+esc(i.level)+'</span><span><b>Baseline:</b> '+fmt(i.baseline||0)+'</span><span><b>Target:</b> '+fmt(i.target)+' '+esc(i.unit)+'</span><span><b>Actual:</b> '+(i.actual>0?fmt(i.actual):'Pending')+sexBreakdown+'</span><span><b>MoV:</b> '+esc(i.mov)+'</span><span><b>Frequency:</b> '+esc(i.freq)+'</span></div>'+
-      (i.actual>0?'<div class="indp"><div class="pw" style="flex:1"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><div class="indv" style="color:'+col+'">'+pct+'%</div></div>':'')+
-      '<div style="margin-top:6px"><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button>'+
-      (i.updates&&i.updates.length?' <span style="font-size:10.5px;color:var(--g400)">'+i.updates.length+' update'+(i.updates.length>1?'s':'')+' logged · last: '+dt(i.updates[i.updates.length-1].date)+'</span>':'')+'</div>';
-    c.appendChild(d);
+// ============ INDICATOR TRACKER & LOGFRAMES (tabbed) ============
+var mitTab='overview';
+function setIndTab(tab){
+  mitTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mit-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mit-panel-'+t);if(p)p.style.display=t===tab?'':'none';
   });
+  renderIndicatorTrackerBody();
+}
+function indStatusOf(i){
+  if(!i.target)return 'Pending';
+  var p=i.actual/i.target;
+  if(p>=0.9)return 'On Track';if(p>=0.7)return 'At Risk';if(i.actual>0)return 'Off Track';return 'Pending';
+}
+function renderIndicatorTracker(){
+  // KPI tiles -- shared across every tab, always real
+  if($('mit-tot'))$('mit-tot').textContent=DB.indicators.length;
+  if($('mit-outcome'))$('mit-outcome').textContent=DB.indicators.filter(function(i){return i.level==='Outcome';}).length;
+  if($('mit-output'))$('mit-output').textContent=DB.indicators.filter(function(i){return i.level==='Output';}).length;
+  if($('mit-notarget'))$('mit-notarget').textContent=DB.indicators.filter(function(i){return !i.target;}).length;
+  setIndTab(mitTab);
+}
+function renderIndicatorTrackerBody(){
+  if(mitTab==='overview')renderIndOverview();
+  else if(mitTab==='register')renderIndRegister();
+  else if(mitTab==='entry')renderIndEntry();
+  else if(mitTab==='review')renderIndReview();
+  else if(mitTab==='evidence')renderIndEvidence();
 }
 
-function renderLF(){
-  var sel=$('lf-proj');
-  if(sel){
-    var cur=sel.value;
-    sel.innerHTML='<option value="all">All Projects</option>';
-    Object.keys(PROJ).forEach(function(k){
-      var o=document.createElement('option');o.value=k;o.textContent=k+' — '+PROJ[k].name;
-      sel.appendChild(o);
-    });
-    if(cur&&(cur==='all'||PROJ[cur]))sel.value=cur;
+function renderIndOverview(){
+  var byLevel={Outcome:0,Output:0,Impact:0};
+  DB.indicators.forEach(function(i){if(byLevel[i.level]!==undefined)byLevel[i.level]++;});
+  donut('mit-ch-level',[{v:byLevel.Outcome,c:'#16a34a'},{v:byLevel.Output,c:'#2563eb'},{v:byLevel.Impact,c:'#C8922A'}],18,'Total',DB.indicators.length);
+  var leg=$('mit-ch-level-leg');
+  if(leg)leg.innerHTML=[{l:'Outcome',v:byLevel.Outcome,c:'#16a34a'},{l:'Output',v:byLevel.Output,c:'#2563eb'},{l:'Impact',v:byLevel.Impact,c:'#C8922A'}].map(function(r){
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+r.v+'</b></div>';
+  }).join('');
+  var box=$('mit-achievement');
+  if(box){
+    var withTarget=DB.indicators.filter(function(i){return i.target;}).slice().sort(function(a,b){return (b.actual/b.target)-(a.actual/a.target);});
+    if(!withTarget.length){box.innerHTML='<div class="empty">No indicators with a target yet</div>';}
+    else{
+      box.innerHTML='';
+      withTarget.slice(0,6).forEach(function(i){
+        var pct=Math.round(i.actual/i.target*100);
+        var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
+        var r=el('div','mbr');
+        r.innerHTML='<div class="mbl" style="font-size:11.5px" title="'+esc(i.name)+'">'+esc(i.name.length>36?i.name.slice(0,36)+'…':i.name)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
+        box.appendChild(r);
+      });
+    }
   }
-  var c=$('lf-body');if(!c)return;c.innerHTML='';
-  var pf=sel?sel.value:'all';
-  var inds=pf==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===pf;});
-  if(!inds.length){c.innerHTML='<tr><td colspan="6" class="empty">No indicators recorded yet</td></tr>';return;}
-  var order={Impact:0,Outcome:1,Output:2};
-  inds=inds.slice().sort(function(a,b){return (order[a.level]||9)-(order[b.level]||9);});
-  var badge={Impact:'bN',Outcome:'bD',Output:'bB'};
-  inds.forEach(function(i){
-    var r=el('tr');
-    r.innerHTML='<td><span class="bdg '+(badge[i.level]||'bB')+'">'+esc(i.level)+'</span></td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+' '+esc(i.unit)+'</td><td>'+(i.actual>0?fmt(i.actual)+' '+esc(i.unit):'-')+'</td><td>'+esc(i.mov)+'</td>';
-    c.appendChild(r);
+}
+
+function renderIndRegister(){
+  var c=$('mit-reg-body');if(!c)return;
+  var pf=$('mit-reg-proj')?$('mit-reg-proj').value:'all';
+  var search=($('mit-reg-search')?$('mit-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mit-reg-status')?$('mit-reg-status').value:'all';
+  var inds=DB.indicators.filter(function(i){
+    if(pf!=='all'&&i.proj!==pf)return false;
+    if(statusF!=='all'&&indStatusOf(i)!==statusF)return false;
+    if(search&&(i.name+' '+i.proj).toLowerCase().indexOf(search)<0)return false;
+    return true;
   });
+  if(!inds.length){c.innerHTML='<div class="empty">No indicators match</div>';return;}
+  var bdgCls={'On Track':'bG','At Risk':'bO','Off Track':'bR','Pending':'bY'};
+  var h='<table><thead><tr><th>Indicator ID</th><th>Result Statement</th><th>Project</th><th>Baseline</th><th>Target</th><th>Unit / Frequency</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  inds.forEach(function(i){
+    var st=indStatusOf(i);
+    h+='<tr><td>'+esc(i.id)+'</td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.baseline||0)+'</td><td>'+fmt(i.target)+'</td><td>'+esc(i.unit)+' / '+esc(i.freq)+'</td><td><span class="bdg '+(bdgCls[st]||'bY')+'">'+st+'</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Open</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+
+function renderIndEntry(){
+  var proj=$('mit-entry-proj')?$('mit-entry-proj').value:'all';
+  var indSel=$('mit-entry-ind');if(!indSel)return;
+  var curId=indSel.value;
+  var inds=proj==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===proj;});
+  indSel.innerHTML=inds.map(function(i){return '<option value="'+i.id+'">'+esc(i.id)+' — '+esc(i.name)+'</option>';}).join('')||'<option value="">No indicators</option>';
+  if(curId&&inds.some(function(i){return i.id===curId;}))indSel.value=curId;
+  var i=DB.indicators.find(function(x){return x.id===indSel.value;});
+  var ctx=$('mit-entry-ctx'),btn=$('mit-entry-btn');
+  if(!i){if(ctx)ctx.innerHTML='<span style="color:var(--g500)">No indicator selected.</span>';if(btn)btn.disabled=true;return;}
+  if(btn)btn.disabled=false;
+  if(ctx)ctx.innerHTML='<b>'+esc(i.name)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
+}
+function mitRecordResult(){
+  var id=$('mit-entry-ind')?$('mit-entry-ind').value:null;
+  if(!id)return;
+  openIndicatorUpdateModal(id);
+}
+
+function renderIndReview(){
+  var noTarget=DB.indicators.filter(function(i){return !i.target;});
+  var ntBox=$('mit-review-notarget');
+  if(ntBox){
+    if(!noTarget.length){ntBox.innerHTML='<div class="empty">Every indicator has a defined target</div>';}
+    else{
+      var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Level</th><th></th></tr></thead><tbody>';
+      noTarget.forEach(function(i){
+        h+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.level)+'</td><td><button class="b bo bs" onclick="setIndTab(\'register\');$(\'mit-reg-search\').value='+esc(JSON.stringify(i.name))+';renderIndRegister();">View in Register</button></td></tr>';
+      });
+      h+='</tbody></table>';
+      ntBox.innerHTML=h;
+    }
+  }
+  var offTrack=DB.indicators.filter(function(i){return i.target&&indStatusOf(i)==='Off Track';});
+  var otBox=$('mit-review-offtrack');
+  if(otBox){
+    if(!offTrack.length){otBox.innerHTML='<div class="empty">No off-track indicators</div>';}
+    else{
+      var h2='<table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>%</th><th></th></tr></thead><tbody>';
+      offTrack.forEach(function(i){
+        var pct=Math.round(i.actual/i.target*100);
+        h2+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td><span class="bdg bR">'+pct+'%</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button></td></tr>';
+      });
+      h2+='</tbody></table>';
+      otBox.innerHTML=h2;
+    }
+  }
+}
+
+function renderIndEvidence(){
+  var movBox=$('mit-evidence-mov');
+  if(movBox){
+    if(!DB.indicators.length){movBox.innerHTML='<div class="empty">No indicators yet</div>';}
+    else{
+      var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Means of Verification</th><th>Frequency</th></tr></thead><tbody>';
+      DB.indicators.forEach(function(i){
+        h+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.mov||'-')+'</td><td>'+esc(i.freq||'-')+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      movBox.innerHTML=h;
+    }
+  }
+  var histBox=$('mit-evidence-history');
+  if(histBox){
+    var rows=[];
+    DB.indicators.forEach(function(i){
+      (i.updates||[]).forEach(function(u){rows.push({ind:i.name,proj:i.proj,date:u.date,actual:u.actual,female:u.female,male:u.male,note:u.note,by:u.by});});
+    });
+    rows.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+    if(!rows.length){histBox.innerHTML='<div class="empty">No progress updates logged yet</div>';}
+    else{
+      var h2='<table><thead><tr><th>Date</th><th>Indicator</th><th>Project</th><th>Actual</th><th>F / M</th><th>Note</th><th>By</th></tr></thead><tbody>';
+      rows.forEach(function(r){
+        h2+='<tr><td>'+dt(r.date)+'</td><td>'+esc(r.ind)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.actual)+'</td><td>'+(r.female!=null||r.male!=null?fmt(r.female||0)+' / '+fmt(r.male||0):'-')+'</td><td>'+esc(r.note||'-')+'</td><td>'+esc(r.by||'-')+'</td></tr>';
+      });
+      h2+='</tbody></table>';
+      histBox.innerHTML=h2;
+    }
+  }
 }
 
 function renderCFRM(){
@@ -6521,7 +6695,7 @@ function saveInd(){
   DB.indicators.push({id:nid('I'),name:n.value.trim(),proj:$('i-proj').value,level:$('i-level').value,
     target:parseInt($('i-target').value)||0,baseline:baseline,actual:baseline,
     unit:$('i-unit').value||'#',mov:$('i-mov').value,freq:$('i-freq').value,updates:[]});
-  closeM('m-ind');n.value='';renderInd();queueCloudSave();
+  closeM('m-ind');n.value='';renderIndicatorTracker();queueCloudSave();
 }
 
 // ============ INDICATOR PROGRESS UPDATES (with sex disaggregation) ============
@@ -6555,7 +6729,7 @@ function saveIndicatorUpdate(){
   i.actual=actual;
   if(female!==null)i.actualFemale=female;
   if(male!==null)i.actualMale=male;
-  closeM('m-ind-update');renderInd();queueCloudSave();
+  closeM('m-ind-update');renderIndicatorTracker();queueCloudSave();
 }
 
 // ============ MONTHLY VERIFICATION & LOCKING (MEAL) ============
@@ -6791,7 +6965,8 @@ var PROJECT_SELECT_IDS=[
   {id:'fn-proj',all:false,core:false},
   {id:'r-proj',all:true,core:false},
   {id:'w-proj',all:true,core:false},
-  {id:'if-proj',all:true,core:false},
+  {id:'mit-reg-proj',all:true,core:false},
+  {id:'mit-entry-proj',all:true,core:false},
   {id:'a-proj',all:false,core:true},
   {id:'t-proj',all:false,core:false,none:true},
   {id:'in-proj',all:false,core:false},
