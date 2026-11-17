@@ -859,9 +859,75 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL VISITS -->
 <div class="pg" id="p-meal-visits">
-  <div class="ph"><div><h1>Field Visits</h1><p>Monitoring visit log with findings</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-visit')">+ Log Visit</button></div></div>
-  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>District</th><th>Sites</th><th>Conducted By</th><th>Key Findings</th><th>Status</th></tr></thead><tbody id="visits-body"></tbody></table></div></div>
+  <div class="ph"><div><h1>Field Visits &amp; Monitoring</h1><p>MEAL · Visit plans, observations, actions and evidence</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Visits Planned</div><div class="stv" id="mfv-planned">0</div></div>
+    <div class="st gr"><div class="stl">Visits Completed</div><div class="stv" id="mfv-completed">0</div></div>
+    <div class="st og"><div class="stl">Sites Monitored</div><div class="stv" id="mfv-sites">0</div></div>
+    <div class="st rd"><div class="stl">Visit Actions Open</div><div class="stv" id="mfv-actions">0</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mfv-tab-overview" onclick="setFvTab('overview')">Overview</button>
+    <button class="b bo bs" id="mfv-tab-register" onclick="setFvTab('register')">Record Register</button>
+    <button class="b bo bs" id="mfv-tab-entry" onclick="setFvTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mfv-tab-review" onclick="setFvTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mfv-tab-evidence" onclick="setFvTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mfv-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Monitoring Visit Stages</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mfv-ch-stage" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mfv-ch-stage-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Visits Completed by District / Province</div></div>
+        <div class="cdb" id="mfv-byprov"></div></div>
+    </div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mfv-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Field Visits &amp; Monitoring — Visit Register</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mfv-reg-search" oninput="renderFvRegister()" placeholder="Reference, project, monitor or site"></div>
+        <div class="fg"><label>Status</label><select id="mfv-reg-status" onchange="renderFvRegister()"><option value="all">All States</option><option value="Planned">Planned</option><option value="In Field">In Field</option><option value="Report Filed">Report Filed</option><option value="Verified">Verified</option></select></div>
+      </div>
+      <button class="b bn bs" onclick="openM('m-visit')" style="margin-bottom:10px">+ New Visit</button>
+    </div>
+    <div class="cdb tw" id="mfv-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mfv-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Log a Field Visit</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Opens the full visit form, including travel request linking.</p>
+        <button class="b bn" onclick="openM('m-visit')">+ New Visit</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Visit Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Plan visit</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Travel approval</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Field monitoring</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Visit report</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Follow-up verification</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mfv-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Open Follow-Up Actions</div></div><div class="cdb tw" id="mfv-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mfv-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Visit History</div></div><div class="cdb tw"><table><thead><tr><th>Planned Date</th><th>Actual Date</th><th>Project / Site</th><th>District</th><th>Monitor</th><th>Key Findings</th><th>TAR</th><th>Stage</th></tr></thead><tbody id="visits-body"></tbody></table></div></div>
+  </div>
 </div>
 
 
@@ -2520,13 +2586,17 @@ tbody tr:hover td{background:var(--g50);}
 <div class="mb" id="m-visit"><div class="md">
 <div class="mh"><h3>Log Field Visit</h3><button class="mx" onclick="closeM('m-visit')">&times;</button></div>
 <div class="mbd"><div class="fr">
-<div class="fg"><label>Date *</label><input type="date" id="fv-date"></div>
+<div class="fg"><label>Planned Date *</label><input type="date" id="fv-planned"></div>
+<div class="fg"><label>Actual Visit Date</label><input type="date" id="fv-date"></div>
 <div class="fg"><label>Project</label><select id="fv-proj"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
-<div class="fg"><label>District</label><input type="text" id="fv-dist"></div>
-<div class="fg"><label>Sites Visited</label><input type="number" id="fv-sites"></div>
-<div class="fg"><label>Conducted By</label><input type="text" id="fv-by"></div>
+<div class="fg"><label>Site / Location Name</label><input type="text" id="fv-site" placeholder="e.g. School A"></div>
+<div class="fg"><label>District / Province</label><input type="text" id="fv-dist"></div>
+<div class="fg"><label>Sites Visited (count)</label><input type="number" id="fv-sites"></div>
+<div class="fg"><label>Monitor / Conducted By</label><input type="text" id="fv-by"></div>
 <div class="fg"><label>Visit Type</label><select id="fv-type"><option>Routine Monitoring</option><option>Data Collection</option><option>Supervision</option><option>Verification</option><option>Follow-up</option></select></div>
-<div class="fg ff"><label>Key Findings *</label><textarea rows="3" id="fv-find"></textarea></div>
+<div class="fg"><label>Stage</label><select id="fv-stage"><option>Planned</option><option>In Field</option><option>Report Filed</option><option>Verified</option></select></div>
+<div class="fg"><label>Travel Request (TAR)</label><select id="fv-tar"><option value="">No travel required</option></select></div>
+<div class="fg ff"><label>Key Findings</label><textarea rows="3" id="fv-find"></textarea></div>
 <div class="fg ff"><label>Follow-up Actions</label><textarea rows="2" id="fv-act"></textarea></div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-visit')">Cancel</button><button class="b bn" onclick="saveVisit()">Save Visit</button></div>
@@ -3651,7 +3721,7 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();if(id==='m-audit-finding')resetAuditFindingModal();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();if(id==='m-audit-finding')resetAuditFindingModal();if(id==='m-visit')resetVisitModal();}
 
 // A department head could previously pick ANY department in the Add Task modal and assign
 // work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
@@ -3786,7 +3856,7 @@ function render(pg){
       else if(pg==='meal'){renderMealHome();renderMonthlyVerification();renderMonthlyReport();}
       else if(pg==='meal-ind'){renderIndicatorTracker();}
       else if(pg==='meal-cfrm'){renderCFRM();}
-      else if(pg==='meal-visits'){renderVisits();}
+      else if(pg==='meal-visits'){renderFieldVisitsTracker();}
       else if(pg==='meal-find'){renderFindings();}
       else if(pg==='meal-risk'){renderRisks();renderAuditFindings();}
       else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
@@ -5165,15 +5235,110 @@ document.addEventListener('change',function(e){
   }
 });
 
+function fvTarLabel(v){
+  if(!v.tarId)return '<span style="color:var(--g400)">No travel required</span>';
+  var t=DB.tars.find(function(x){return x.id===v.tarId;});
+  if(!t)return '<span style="color:var(--g400)">Not yet approved</span>';
+  var bd=t.status==='Approved'?'bG':t.status==='Rejected'?'bR':'bO';
+  return esc(t.id)+' <span class="bdg '+bd+'" style="margin-left:4px">'+esc(t.status)+'</span>';
+}
 function renderVisits(){
   var c=$('visits-body');if(!c)return;c.innerHTML='';
-  if(!DB.visits.length){c.innerHTML='<tr><td colspan="7" class="empty">No visits logged</td></tr>';return;}
+  if(!DB.visits.length){c.innerHTML='<tr><td colspan="8" class="empty">No visits logged</td></tr>';return;}
   DB.visits.forEach(function(v){
-    var sb=v.status==='Complete'?'bG':v.status==='Action Required'?'bR':'bO';
+    var stage=visitStage(v);
+    var sb={Planned:'bY','In Field':'bB','Report Filed':'bO',Verified:'bG'}[stage]||'bY';
     var r=el('tr');
-    r.innerHTML='<td>'+dt(v.date)+'</td><td>'+esc(v.proj)+'</td><td>'+esc(v.dist)+'</td><td>'+v.sites+'</td><td>'+esc(v.by)+'</td><td style="font-size:11.5px">'+esc(v.find)+'</td><td><span class="bdg '+sb+'">'+esc(v.status)+'</span></td>';
+    r.innerHTML='<td>'+dt(v.plannedDate||v.date)+'</td><td>'+(v.date?dt(v.date):'—')+'</td><td>'+esc(v.proj)+(v.site?' / '+esc(v.site):'')+'</td><td>'+esc(v.dist||'')+'</td><td>'+esc(v.by)+'</td><td style="font-size:11.5px">'+esc(v.find||'—')+'</td><td>'+fvTarLabel(v)+'</td><td><span class="bdg '+sb+'">'+esc(stage)+'</span></td>';
     c.appendChild(r);
   });
+}
+
+// ============ FIELD VISITS & MONITORING (tabbed) ============
+var mfvTab='overview';
+function setFvTab(tab){
+  mfvTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mfv-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mfv-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderFvOverview();
+  else if(tab==='register')renderFvRegister();
+  else if(tab==='review')renderFvReview();
+  else if(tab==='evidence')renderVisits();
+}
+function renderFieldVisitsTracker(){
+  if($('mfv-planned'))$('mfv-planned').textContent=DB.visits.length;
+  var completed=DB.visits.filter(function(v){var s=visitStage(v);return s==='Report Filed'||s==='Verified';});
+  if($('mfv-completed'))$('mfv-completed').textContent=completed.length;
+  var sitesMonitored=DB.visits.filter(function(v){return visitStage(v)!=='Planned';}).reduce(function(s,v){return s+(v.sites||0);},0);
+  if($('mfv-sites'))$('mfv-sites').textContent=sitesMonitored;
+  if($('mfv-actions'))$('mfv-actions').textContent=DB.visits.filter(function(v){return v.act&&!v.actionResolved;}).length;
+  setFvTab(mfvTab);
+}
+function renderFvOverview(){
+  var stages=['Planned','In Field','Report Filed','Verified'];
+  var colors={Planned:'#cbd5e1','In Field':'#2563eb','Report Filed':'#C8922A',Verified:'#16a34a'};
+  var counts=stages.map(function(s){return DB.visits.filter(function(v){return visitStage(v)===s;}).length;});
+  donut('mfv-ch-stage',stages.map(function(s,i){return {v:counts[i],c:colors[s]};}),18,'Total',DB.visits.length);
+  var leg=$('mfv-ch-stage-leg');
+  if(leg)leg.innerHTML=stages.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+colors[s]+';display:inline-block"></span>'+s+' <b style="margin-left:auto">'+counts[i]+'</b></div>';}).join('');
+
+  var box=$('mfv-byprov');
+  if(box){
+    var byDist={};
+    DB.visits.forEach(function(v){var k=v.dist||'Unspecified';byDist[k]=byDist[k]||{total:0,done:0};byDist[k].total++;if(visitStage(v)!=='Planned')byDist[k].done++;});
+    var keys=Object.keys(byDist);
+    if(!keys.length){box.innerHTML='<div class="empty">No visits logged yet</div>';}
+    else{
+      box.innerHTML='';
+      keys.forEach(function(k){
+        var pct=Math.round(byDist[k].done/byDist[k].total*100);
+        var d=el('div','cbar');
+        d.innerHTML='<div class="cbl">'+esc(k)+'</div><div class="cbt"><div class="cbf" style="width:'+pct+'%;background:#0d9488"></div></div><div class="cbv">'+pct+'%</div>';
+        box.appendChild(d);
+      });
+    }
+  }
+}
+function renderFvRegister(){
+  var c=$('mfv-reg-body');if(!c)return;
+  var search=($('mfv-reg-search')?$('mfv-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mfv-reg-status')?$('mfv-reg-status').value:'all';
+  var rows=DB.visits.filter(function(v){
+    var stage=visitStage(v);
+    if(statusF!=='all'&&stage!==statusF)return false;
+    if(search&&((v.id||'')+' '+v.proj+' '+(v.by||'')+' '+(v.site||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No visits match</div>';return;}
+  var h='<table><thead><tr><th>Visit Reference</th><th>Project / Site</th><th>Monitor</th><th>Planned Date</th><th>TAR Link</th><th>Report / Actions</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(v){
+    var stage=visitStage(v);
+    var sb={Planned:'bY','In Field':'bB','Report Filed':'bO',Verified:'bG'}[stage]||'bY';
+    var reportLabel=stage==='Planned'?'Not started':(v.act&&!v.actionResolved?'1 action open':(v.find?'Evidence filed':'Report pending'));
+    h+='<tr><td>'+esc(v.id)+'</td><td>'+esc(v.proj)+(v.site?' / '+esc(v.site):'')+'</td><td>'+esc(v.by)+'</td><td>'+dt(v.plannedDate||v.date)+'</td><td>'+fvTarLabel(v)+'</td><td>'+esc(reportLabel)+'</td>'+
+      '<td><span class="bdg '+sb+'">'+esc(stage)+'</span></td><td><button class="b bo bs" onclick="setFvTab(\'evidence\')">Open</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderFvReview(){
+  var c=$('mfv-review-body');if(!c)return;
+  var pending=DB.visits.filter(function(v){return v.act&&!v.actionResolved;});
+  if(!pending.length){c.innerHTML='<div class="empty">No open follow-up actions</div>';return;}
+  var h='<table><thead><tr><th>Visit</th><th>Project / Site</th><th>Follow-Up Action</th><th>Monitor</th><th>Action</th></tr></thead><tbody>';
+  pending.forEach(function(v){
+    h+='<tr><td>'+esc(v.id)+'</td><td>'+esc(v.proj)+(v.site?' / '+esc(v.site):'')+'</td><td>'+esc(v.act)+'</td><td>'+esc(v.by)+'</td>'+
+      '<td><button class="b bn bs" onclick="resolveVisitAction(\''+v.id+'\')">Mark Resolved</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function resolveVisitAction(id){
+  var v=DB.visits.find(function(x){return x.id===id;});if(!v)return;
+  v.actionResolved=true;
+  renderFieldVisitsTracker();queueCloudSave();
 }
 
 function renderFindings(){
@@ -8372,13 +8537,25 @@ function saveDist(){
   closeM('m-dist');i.value='';renderDist();queueCloudSave();
 }
 
+function resetVisitModal(){
+  var sel=$('fv-tar');
+  if(sel){
+    sel.innerHTML='<option value="">No travel required</option>'+
+      DB.tars.map(function(t){return '<option value="'+esc(t.id)+'">'+esc(t.id)+' — '+esc(t.purpose)+' ('+esc(t.status)+')</option>';}).join('');
+  }
+  if($('fv-planned')&&!$('fv-planned').value)$('fv-planned').value=today();
+  if($('fv-stage'))$('fv-stage').value='Planned';
+}
+function visitStage(v){ return v.stage||(v.status==='Complete'?'Verified':'Planned'); }
 function saveVisit(){
-  var f=$('fv-find');
-  if(!f||!f.value.trim()){alert('Please enter key findings.');return;}
-  DB.visits.unshift({id:nid('FV'),date:$('fv-date').value||today(),proj:$('fv-proj').value,
-    dist:$('fv-dist').value,sites:parseInt($('fv-sites').value)||0,by:$('fv-by').value||SES.name,
-    type:$('fv-type').value,find:f.value.trim(),act:$('fv-act').value,status:'Complete'});
-  closeM('m-visit');f.value='';renderVisits();queueCloudSave();
+  var planned=$('fv-planned');
+  if(!planned||!planned.value){alert('Please enter the planned visit date.');return;}
+  DB.visits.unshift({id:nid('FV'),plannedDate:planned.value,date:$('fv-date').value||'',proj:$('fv-proj').value,
+    site:$('fv-site').value.trim(),dist:$('fv-dist').value,sites:parseInt($('fv-sites').value)||0,by:$('fv-by').value||SES.name,
+    type:$('fv-type').value,stage:$('fv-stage').value||'Planned',tarId:$('fv-tar').value||'',
+    find:$('fv-find').value.trim(),act:$('fv-act').value.trim(),actionResolved:false,status:'Complete'});
+  closeM('m-visit');['fv-site','fv-find','fv-act'].forEach(function(id){if($(id))$(id).value='';});
+  renderFieldVisitsTracker();queueCloudSave();
 }
 
 // Replaces the old "guess which indicator this hardcoded field means from its English name"
