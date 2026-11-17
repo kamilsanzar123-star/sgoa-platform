@@ -658,28 +658,73 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL HOME -->
 <div class="pg" id="p-meal">
-  <div class="wb" style="background:linear-gradient(135deg,#1A3A6B,#243f7a)"><div><div class="wbt">MEAL Department</div><div class="wbs">Monitoring · Evaluation · Accountability · Learning</div></div><div class="wbi">&#128202;</div></div>
-  <div class="qn">
-    <div class="qi" onclick="go('meal-ind')"><div class="qii">&#128200;</div><div class="qil">Indicators</div></div>
-    <div class="qi" onclick="go('meal-cfrm')"><div class="qii">&#128222;</div><div class="qil">CFRM</div></div>
-    <div class="qi" onclick="go('meal-visits')"><div class="qii">&#128506;</div><div class="qil">Field Visits</div></div>
-    <div class="qi" onclick="go('meal-lf')"><div class="qii">&#128203;</div><div class="qil">Logframe</div></div>
-    <div class="qi" onclick="go('meal-find')"><div class="qii">&#128269;</div><div class="qil">Findings</div></div>
-    <div class="qi" onclick="go('meal-risk')"><div class="qii">&#9888;</div><div class="qil">Risks</div></div>
-    <div class="qi" onclick="go('meal-dqa')"><div class="qii">&#9989;</div><div class="qil">DQA &amp; Evaluations</div></div>
-    <div class="qi" onclick="go('meal-docs')"><div class="qii">&#128193;</div><div class="qil">Documents</div></div>
-    <div class="qi" onclick="go('meal-data')"><div class="qii">&#9999;</div><div class="qil">Data Entry</div></div>
-    <div class="qi" onclick="go('projects');setTimeout(function(){openM('m-project');},150)"><div class="qii">&#127919;</div><div class="qil">Add Project</div></div>
+  <div class="ph"><div><h1>MEAL Dashboard</h1><p>Monitoring, Evaluation, Accountability and Learning</p></div>
+  <div class="pha"><button class="b bo bs" onclick="exportMonthlyReport()">Export Report</button><button class="b bn bs" onclick="go('meal-ind')">Open Indicator Tracker &amp; Logframes</button></div></div>
+
+  <div class="wb" style="background:linear-gradient(135deg,#1A3A6B,#243f7a)">
+    <div>
+      <div style="font-size:10.5px;letter-spacing:.06em;color:#C8922A;font-weight:700;text-transform:uppercase;margin-bottom:5px">MEAL · Management &amp; Action Center</div>
+      <div class="wbt" style="font-size:18px">Enter, verify and report project results every month.</div>
+      <div class="wbs">Projects · people · approvals · evidence · department coordination</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div style="font-size:30px;font-weight:700;color:#fff" id="meal-verified-pct">0%</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.75)">Results Verified</div>
+    </div>
   </div>
-  <div class="stats"><div class="st nv"><div class="stl">Total Indicators</div><div class="stv" id="mi-tot">15</div></div>
-  <div class="st gr"><div class="stl">On Track</div><div class="stv" id="mi-on">11</div></div>
-  <div class="st og"><div class="stl">At Risk</div><div class="stv" id="mi-risk">3</div></div>
-  <div class="st rd"><div class="stl">Off Track</div><div class="stv" id="mi-off">1</div></div></div>
+
+  <div class="fr" style="align-items:flex-end;margin:16px 0 14px">
+    <div class="fg"><label>Project</label><select id="meal-proj-filter" onchange="renderMealHome()"><option value="all">All Projects</option></select></div>
+    <div class="fg"><label>Period</label><input type="month" id="mv-month" onchange="renderMonthlyVerification();renderMonthlyReport();renderMealHome();"></div>
+  </div>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="st nv"><div class="stl">Active Indicators</div><div class="stv" id="mh-active">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-active-sub">—</div></div>
+    <div class="st gr"><div class="stl">Indicators on Track</div><div class="stv" id="mh-ontrack">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-ontrack-sub">—</div></div>
+    <div class="st og"><div class="stl">At Risk / Off Track</div><div class="stv" id="mh-riskoff">0 / 0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Action plans required</div></div>
+    <div class="st nv"><div class="stl">Reports Received</div><div class="stv" id="mh-reports">0 / 0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-reports-sub">—</div></div>
+    <div class="st gr"><div class="stl">Verified Result Records</div><div class="stv" id="mh-verified">0 / 0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-verified-sub">—</div></div>
+    <div class="st rd"><div class="stl">Open CFRM Cases</div><div class="stv" id="mh-cfrm">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-cfrm-sub">—</div></div>
+  </div>
+
   <div class="g2">
-    <div class="cd"><div class="cdh"><div class="cdt">Project Indicators</div><button class="b bo bs" onclick="go('meal-ind')">Full View</button></div><div class="cdb" id="meal-mini-ind"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Indicator Performance Status</div></div>
+      <div class="cdb" style="display:flex;align-items:center;gap:16px">
+        <canvas id="meal-ch-indstatus" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+        <div style="flex:1;font-size:12px" id="meal-ch-indstatus-leg"></div>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Indicator Actual vs Target</div></div>
+      <div class="cdb" style="padding:14px"><canvas id="meal-ch-targetactual" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+  </div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+  <div class="cdb" style="padding:14px 17px 4px">
+    <div class="g2">
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">CFRM Cases by Status</div>
+        <div style="display:flex;align-items:center;gap:14px"><canvas id="meal-ch-cfrmstatus" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="meal-ch-cfrmstatus-leg"></div></div></div>
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Severity</div>
+        <canvas id="meal-ch-sev" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+    </div>
+    <div class="g2" style="margin-top:18px">
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Data Quality Dimensions (% rated "Yes")</div>
+        <canvas id="meal-ch-dq" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Corrective Action Closure</div>
+        <div style="display:flex;align-items:center;gap:14px"><canvas id="meal-ch-corrective" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="meal-ch-corrective-leg"></div></div></div>
+    </div>
+    <div class="g2" style="margin-top:18px;margin-bottom:4px">
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Indicator Achievement Trend (6 mo.)</div>
+        <canvas id="meal-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">CFRM Cases Logged (6 mo.)</div>
+        <canvas id="meal-ch-cfrmmonth" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+    </div>
+  </div></div>
+
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">Indicator Tracker</div><button class="b bo bs" onclick="go('meal-ind')">Full View</button></div><div class="cdb tw" id="meal-mini-ind"></div></div>
     <div>
       <div class="cd"><div class="cdh"><div class="cdt">My Tasks</div><button class="b bn bs" onclick="openM('m-task')">+</button></div><div class="cdb" id="meal-tasks"></div></div>
-      <div class="cd"><div class="cdh"><div class="cdt"><span class="dot"></span>Active Alerts</div></div><div class="cdb" id="meal-alerts"></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt"><span class="dot"></span>Key Challenges &amp; Alerts</div></div><div class="cdb" id="meal-alerts"></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Upcoming Decisions &amp; Deadlines</div></div><div class="cdb" id="meal-deadlines"></div></div>
     </div>
   </div>
   <div class="cd"><div class="cdh"><div class="cdt">Gender &amp; CWD Disaggregation</div>
@@ -687,7 +732,7 @@ tbody tr:hover td{background:var(--g50);}
       <option value="all">All Projects</option></select></div><div class="cdb" id="meal-gender"></div></div>
 
   <div class="cd"><div class="cdh"><div class="cdt">Monthly Verification &amp; Locking</div>
-    <input type="month" id="mv-month" onchange="renderMonthlyVerification();renderMonthlyReport();" style="font-size:12px;padding:5px 9px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
+    <span style="font-size:10.5px;color:var(--g400)">Period set above</span>
   </div>
   <div class="cdb tw"><table><thead><tr><th>Indicator</th><th>Project</th><th>Submitted Result</th><th>Verification Decision</th><th>Correction History</th><th></th></tr></thead><tbody id="mv-body"></tbody></table></div></div>
 
@@ -701,17 +746,104 @@ tbody tr:hover td{background:var(--g50);}
     </div>
   </div></div>
 
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Cross-Department Workflow &amp; Responsibility</div></div>
+  <div class="cdb" style="display:flex;flex-direction:column;gap:9px">
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">1</span><div><b>Field teams collect data</b><div style="font-size:11.5px;color:var(--g500)">Enumerators and field staff submit monthly results via Data Entry, disaggregated by sex where applicable.</div></div></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">2</span><div><b>MEAL verifies and locks</b><div style="font-size:11.5px;color:var(--g500)">MEAL staff check submitted results against source documents, then verify or return them for correction in Monthly Verification &amp; Locking above.</div></div></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">3</span><div><b>Findings &amp; risks are escalated</b><div style="font-size:11.5px;color:var(--g500)">Field visit findings, CFRM cases and risks above threshold are assigned an owner and a due date, visible to the relevant department head.</div></div></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">4</span><div><b>Program &amp; department heads act</b><div style="font-size:11.5px;color:var(--g500)">Assigned owners close corrective actions and update CFRM case status; MEAL tracks closure rates in the charts above.</div></div></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">5</span><div><b>Executive &amp; donor reporting</b><div style="font-size:11.5px;color:var(--g500)">Locked monthly results and DQA/evaluation findings feed the Executive Dashboard and donor reports — no unverified figure is reported upward.</div></div></div>
+  </div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">MEAL Workspaces</div></div>
+  <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px" id="meal-workspaces"></div></div>
+
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bo bs" onclick="go('meal-docs')">Full View</button></div><div class="cdb" id="meal-docs-preview"></div></div>
+  </div>
 </div>
 
 <!-- MEAL INDICATORS -->
 <div class="pg" id="p-meal-ind">
-  <div class="ph"><div><h1>Indicator Tracker</h1><p>All project indicators with live achievement tracking</p></div>
+  <div class="ph"><div><h1>Indicator Tracker &amp; Logframes</h1><p>Baselines, targets, current results and means of verification</p></div>
   <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-ind')">+ Add Indicator</button></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Indicators</div>
-    <select id="if-proj" onchange="renderInd()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
-      <option value="all">All Projects</option><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select>
-  </div><div class="cdb" id="ind-list"></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Active Indicators</div><div class="stv" id="mit-tot">0</div></div>
+    <div class="st gr"><div class="stl">Outcome Indicators</div><div class="stv" id="mit-outcome">0</div></div>
+    <div class="st og"><div class="stl">Output Indicators</div><div class="stv" id="mit-output">0</div></div>
+    <div class="st rd"><div class="stl">Targets Needing Definition</div><div class="stv" id="mit-notarget">0</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mit-tab-overview" onclick="setIndTab('overview')">Overview</button>
+    <button class="b bo bs" id="mit-tab-register" onclick="setIndTab('register')">Record Register</button>
+    <button class="b bo bs" id="mit-tab-entry" onclick="setIndTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mit-tab-review" onclick="setIndTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mit-tab-evidence" onclick="setIndTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mit-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Indicator Definitions by Result Level</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mit-ch-level" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mit-ch-level-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Indicator Achievement Against Target</div></div>
+        <div class="cdb" id="mit-achievement"></div></div>
+    </div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mit-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Indicator Register</div>
+      <select id="mit-reg-proj" onchange="renderIndRegister()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"><option value="all">All Projects</option></select>
+    </div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mit-reg-search" oninput="renderIndRegister()" placeholder="Reference, project or result statement"></div>
+        <div class="fg"><label>Status</label><select id="mit-reg-status" onchange="renderIndRegister()"><option value="all">All States</option><option value="On Track">On Track</option><option value="At Risk">At Risk</option><option value="Off Track">Off Track</option><option value="Pending">Baseline Pending</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mit-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mit-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Record a New Result</div></div>
+      <div class="cdb">
+        <div class="fr">
+          <div class="fg"><label>Project</label><select id="mit-entry-proj" onchange="renderIndEntry()"><option value="all">All Projects</option></select></div>
+          <div class="fg ff"><label>Indicator</label><select id="mit-entry-ind" onchange="renderIndEntry()"></select></div>
+        </div>
+        <div id="mit-entry-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin:10px 0"></div>
+        <button class="b bn bs" id="mit-entry-btn" onclick="mitRecordResult()">Record New Result</button>
+        <button class="b bo bs" onclick="openM('m-ind')">+ Add New Indicator</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How an Indicator Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Define indicator</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Approve baseline / target</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Link means of verification</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Periodic updates</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Verify &amp; lock monthly</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mit-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Targets Needing Definition</div></div><div class="cdb tw" id="mit-review-notarget"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Off-Track Indicators Needing Corrective Action</div></div><div class="cdb tw" id="mit-review-offtrack"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mit-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Means of Verification by Indicator</div></div><div class="cdb tw" id="mit-evidence-mov"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Update History Log</div></div><div class="cdb tw" id="mit-evidence-history"></div></div>
+  </div>
 </div>
 
 <!-- MEAL CFRM -->
@@ -727,19 +859,77 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL VISITS -->
 <div class="pg" id="p-meal-visits">
-  <div class="ph"><div><h1>Field Visits</h1><p>Monitoring visit log with findings</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-visit')">+ Log Visit</button></div></div>
-  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>District</th><th>Sites</th><th>Conducted By</th><th>Key Findings</th><th>Status</th></tr></thead><tbody id="visits-body"></tbody></table></div></div>
+  <div class="ph"><div><h1>Field Visits &amp; Monitoring</h1><p>MEAL · Visit plans, observations, actions and evidence</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Visits Planned</div><div class="stv" id="mfv-planned">0</div></div>
+    <div class="st gr"><div class="stl">Visits Completed</div><div class="stv" id="mfv-completed">0</div></div>
+    <div class="st og"><div class="stl">Sites Monitored</div><div class="stv" id="mfv-sites">0</div></div>
+    <div class="st rd"><div class="stl">Visit Actions Open</div><div class="stv" id="mfv-actions">0</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mfv-tab-overview" onclick="setFvTab('overview')">Overview</button>
+    <button class="b bo bs" id="mfv-tab-register" onclick="setFvTab('register')">Record Register</button>
+    <button class="b bo bs" id="mfv-tab-entry" onclick="setFvTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mfv-tab-review" onclick="setFvTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mfv-tab-evidence" onclick="setFvTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mfv-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Monitoring Visit Stages</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mfv-ch-stage" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mfv-ch-stage-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Visits Completed by District / Province</div></div>
+        <div class="cdb" id="mfv-byprov"></div></div>
+    </div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mfv-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Field Visits &amp; Monitoring — Visit Register</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mfv-reg-search" oninput="renderFvRegister()" placeholder="Reference, project, monitor or site"></div>
+        <div class="fg"><label>Status</label><select id="mfv-reg-status" onchange="renderFvRegister()"><option value="all">All States</option><option value="Planned">Planned</option><option value="In Field">In Field</option><option value="Report Filed">Report Filed</option><option value="Verified">Verified</option></select></div>
+      </div>
+      <button class="b bn bs" onclick="openM('m-visit')" style="margin-bottom:10px">+ New Visit</button>
+    </div>
+    <div class="cdb tw" id="mfv-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mfv-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Log a Field Visit</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Opens the full visit form, including travel request linking.</p>
+        <button class="b bn" onclick="openM('m-visit')">+ New Visit</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Visit Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Plan visit</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Travel approval</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Field monitoring</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Visit report</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Follow-up verification</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mfv-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Open Follow-Up Actions</div></div><div class="cdb tw" id="mfv-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mfv-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Visit History</div></div><div class="cdb tw"><table><thead><tr><th>Planned Date</th><th>Actual Date</th><th>Project / Site</th><th>District</th><th>Monitor</th><th>Key Findings</th><th>TAR</th><th>Stage</th></tr></thead><tbody id="visits-body"></tbody></table></div></div>
+  </div>
 </div>
 
-<!-- MEAL LOGFRAME -->
-<div class="pg" id="p-meal-lf">
-  <div class="ph"><div><h1>Logical Framework</h1><p>Results chain built live from project indicators</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-ind')">+ Add Indicator</button></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Results Chain</div>
-    <select id="lf-proj" onchange="renderLF()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"><option value="all">All Projects</option></select>
-  </div><div class="cdb tw"><table><thead><tr><th>Level</th><th>Statement / Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>MoV</th></tr></thead><tbody id="lf-body"></tbody></table></div></div>
-</div>
 
 <!-- MEAL FINDINGS -->
 <div class="pg" id="p-meal-find">
@@ -798,28 +988,84 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL DATA ENTRY -->
 <div class="pg" id="p-meal-data">
-  <div class="ph"><div><h1>Data Entry</h1><p>Submit monitoring data — goes live to Executive Dashboard</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button></div></div>
-  <div class="cd"><div class="cdb">
-    <div class="fr">
-      <div class="fg"><label>Project</label><select id="de-proj"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
-      <div class="fg"><label>Reporting Period</label><input type="month" id="de-period" value="2026-08"></div>
-      <div class="fg"><label>District</label><select id="de-dist"><option>Mosahi</option><option>Khak-e-Jabbar</option><option>Surobi</option><option>Kandahar</option></select></div>
-      <div class="fg"><label>Data Collector</label><input type="text" id="de-collector" placeholder="Full name"></div>
+  <div class="ph"><div><h1>Monthly Data Entry</h1><p>MEAL · Enter results by project, month, location and indicator</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl" id="mde-period-lbl">This Month's Submissions</div><div class="stv" id="mde-submissions">0</div></div>
+    <div class="st gr"><div class="stl">Expected Project Reports</div><div class="stv" id="mde-expected">0</div></div>
+    <div class="st og"><div class="stl">Missing Submissions</div><div class="stv" id="mde-missing">0</div></div>
+    <div class="st nv"><div class="stl">Result Rows Collected</div><div class="stv" id="mde-rows">0</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mde-tab-overview" onclick="setDeTab('overview')">Overview</button>
+    <button class="b bo bs" id="mde-tab-register" onclick="setDeTab('register')">Record Register</button>
+    <button class="b bo bs" id="mde-tab-entry" onclick="setDeTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mde-tab-review" onclick="setDeTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mde-tab-evidence" onclick="setDeTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mde-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Monthly Results Received vs Expected</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mde-ch-expected" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Data Collection Sources</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mde-ch-source" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mde-ch-source-leg"></div>
+        </div></div>
     </div>
-    <div class="sep"></div>
-    <div class="fr">
-      <div class="fg"><label># Classes Operational</label><input type="number" id="de-classes" placeholder="0"></div>
-      <div class="fg"><label># Teachers Trained</label><input type="number" id="de-teachers" placeholder="0"></div>
-      <div class="fg"><label># Girls Enrolled</label><input type="number" id="de-girls" placeholder="0"></div>
-      <div class="fg"><label># Boys Enrolled</label><input type="number" id="de-boys" placeholder="0"></div>
-      <div class="fg"><label>Girl Attendance %</label><input type="number" id="de-gatt" placeholder="0" max="100"></div>
-      <div class="fg"><label>Boy Attendance %</label><input type="number" id="de-batt" placeholder="0" max="100"></div>
-      <div class="fg ff"><label>Key Observations / Challenges</label><textarea rows="3" id="de-obs" placeholder="Describe findings from this period..."></textarea></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mde-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Monthly Data Entry — Submission Register</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mde-reg-search" oninput="renderDeRegister()" placeholder="Reference, project, owner or period"></div>
+        <div class="fg"><label>Status</label><select id="mde-reg-status" onchange="renderDeRegister()"><option value="all">All States</option><option value="Submitted">Submitted</option><option value="Verified">Verified</option><option value="Approved">Approved</option><option value="Returned">Needs Correction</option><option value="Missing">Not Submitted</option></select></div>
+      </div>
     </div>
-    <button class="b bn" onclick="submitData()">Submit to Executive Dashboard</button>
-  </div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Submission History</div></div><div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>Period</th><th>District</th><th>Collector</th><th>Status</th></tr></thead><tbody id="data-history"></tbody></table></div></div>
+    <div class="cdb tw" id="mde-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mde-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">New Submission — Monthly Data Entry</div></div>
+      <div class="cdb">
+        <div class="fr">
+          <div class="fg"><label>Project</label><select id="de-proj"></select></div>
+          <div class="fg"><label>Reporting Month</label><input type="month" id="de-period"></div>
+          <div class="fg"><label>Province / District</label><select id="de-dist"><option>Mosahi</option><option>Khak-e-Jabbar</option><option>Surobi</option><option>Kandahar</option></select></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label>Collector</label><input type="text" id="de-collector" placeholder="Full name"></div>
+          <div class="fg"><label>Collection Source</label><select id="de-source"><option>Field Register</option><option>Partner Form</option><option>Site Count</option><option>Survey</option></select></div>
+          <div class="fg ff"><label>Collection Observation</label><textarea rows="2" id="de-obs" placeholder="Describe findings from this period..."></textarea></div>
+        </div>
+        <button class="b bn" onclick="submitData()">Save Submission</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Submission Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Collect source result</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Enter period / indicator</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Validate totals</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Submit to MEAL</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Verification queue</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mde-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Submissions Awaiting Review</div></div><div class="cdb tw" id="mde-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mde-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Submission History</div></div><div class="cdb tw"><table><thead><tr><th>Date</th><th>Project</th><th>Period</th><th>District</th><th>Source</th><th>Collector</th><th>Status</th></tr></thead><tbody id="data-history"></tbody></table></div></div>
+  </div>
 </div>
 
 <div class="pg" id="p-finance">
@@ -2340,13 +2586,17 @@ tbody tr:hover td{background:var(--g50);}
 <div class="mb" id="m-visit"><div class="md">
 <div class="mh"><h3>Log Field Visit</h3><button class="mx" onclick="closeM('m-visit')">&times;</button></div>
 <div class="mbd"><div class="fr">
-<div class="fg"><label>Date *</label><input type="date" id="fv-date"></div>
+<div class="fg"><label>Planned Date *</label><input type="date" id="fv-planned"></div>
+<div class="fg"><label>Actual Visit Date</label><input type="date" id="fv-date"></div>
 <div class="fg"><label>Project</label><select id="fv-proj"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
-<div class="fg"><label>District</label><input type="text" id="fv-dist"></div>
-<div class="fg"><label>Sites Visited</label><input type="number" id="fv-sites"></div>
-<div class="fg"><label>Conducted By</label><input type="text" id="fv-by"></div>
+<div class="fg"><label>Site / Location Name</label><input type="text" id="fv-site" placeholder="e.g. School A"></div>
+<div class="fg"><label>District / Province</label><input type="text" id="fv-dist"></div>
+<div class="fg"><label>Sites Visited (count)</label><input type="number" id="fv-sites"></div>
+<div class="fg"><label>Monitor / Conducted By</label><input type="text" id="fv-by"></div>
 <div class="fg"><label>Visit Type</label><select id="fv-type"><option>Routine Monitoring</option><option>Data Collection</option><option>Supervision</option><option>Verification</option><option>Follow-up</option></select></div>
-<div class="fg ff"><label>Key Findings *</label><textarea rows="3" id="fv-find"></textarea></div>
+<div class="fg"><label>Stage</label><select id="fv-stage"><option>Planned</option><option>In Field</option><option>Report Filed</option><option>Verified</option></select></div>
+<div class="fg"><label>Travel Request (TAR)</label><select id="fv-tar"><option value="">No travel required</option></select></div>
+<div class="fg ff"><label>Key Findings</label><textarea rows="3" id="fv-find"></textarea></div>
 <div class="fg ff"><label>Follow-up Actions</label><textarea rows="2" id="fv-act"></textarea></div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-visit')">Cancel</button><button class="b bn" onclick="saveVisit()">Save Visit</button></div>
@@ -2374,10 +2624,10 @@ var DEPTNAME={meal:'MEAL',finance:'Finance',hr:'HR',programs:'Programs',supply:'
 // ============ ACCESS ============
 var ACCESS={
 executive:['exec','projects','project-detail','roadmap','all-tasks','all-challenges','workflow','users','settings','denied','raise-pr','pr-approvals','it-tickets',
-'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
+'meal','meal-ind','meal-cfrm','meal-visits','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
 'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
 'admin','admin-registry','operations','ops-assets','ops-fleet','it','access','deputy','progdeputy','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
-meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
+meal:['meal','meal-ind','meal-cfrm','meal-visits','meal-find','meal-risk','meal-dqa','meal-docs','meal-data','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 finance:['finance','finance-commitments','finance-advances','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 hr:['hr','hr-recruitment','hr-training','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 programs:['programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
@@ -2386,11 +2636,11 @@ admin:['admin','admin-registry','projects','project-detail','roadmap','workflow'
 safeguarding:['safeguarding','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 operations:['operations','ops-assets','ops-fleet','projects','project-detail','roadmap','workflow','all-tasks','denied','raise-pr','pr-approvals','it-tickets','tar-request','leave-request','timesheet','timesheet-approve','my-settings'],
 progdeputy:['progdeputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
-  'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
+  'meal','meal-ind','meal-cfrm','meal-visits','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','admin-registry','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 deputy:['deputy','pr-approvals','projects','project-detail','roadmap','it','access','tar-request','it-tickets',
-  'meal','meal-ind','meal-cfrm','meal-visits','meal-lf','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
+  'meal','meal-ind','meal-cfrm','meal-visits','meal-find','meal-risk','meal-dqa','meal-docs','meal-data',
   'finance','finance-commitments','finance-advances','hr','hr-recruitment','hr-training','programs','prog-activities','prog-benef','prog-analysis','prog-partners','prog-grants','supply','supply-proc','supply-dist','supply-suppliers','supply-po','supply-grn','supply-warehouse',
   'admin','admin-registry','operations','ops-assets','ops-fleet','denied','timesheet','timesheet-approve','my-settings'],
 it:['it','projects','project-detail','all-tasks','workflow','denied','leave-request','timesheet','timesheet-approve','my-settings'],
@@ -2402,7 +2652,7 @@ executive:[
 {l:'MAIN',i:[{p:'exec',n:'Executive Dashboard'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'all-tasks',n:'All Tasks'},{p:'all-challenges',n:'Challenges'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'workflow',n:'Workflows'},{p:'users',n:'User Management'},{p:'settings',n:'Settings'}]},
 {l:'DEPARTMENTS',i:[{p:'meal',n:'MEAL'},{p:'finance',n:'Finance'},{p:'hr',n:'Human Resources'},{p:'programs',n:'Programs'},{p:'supply',n:'Supply Chain'},{p:'admin',n:'Administration'},{p:'operations',n:'Operations'},{p:'it',n:'IT Support'},{p:'access',n:'Access Department'},{p:'deputy',n:'Deputy Director'},{p:'progdeputy',n:'Program Deputy Director'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
-meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-lf',n:'Logframe'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk & Audit Findings'},{p:'meal-dqa',n:'DQA & Evaluations'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
+meal:[{l:'MEAL SYSTEM',i:[{p:'meal',n:'MEAL Home'},{p:'meal-ind',n:'Indicator Tracker & Logframes'},{p:'meal-cfrm',n:'CFRM Register'},{p:'meal-visits',n:'Field Visits'},{p:'meal-find',n:'Findings'},{p:'meal-risk',n:'Risk & Audit Findings'},{p:'meal-dqa',n:'DQA & Evaluations'},{p:'meal-docs',n:'Documents'},{p:'meal-data',n:'Data Entry'}]},
 {l:'CROSS-DEPT',i:[{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
 {l:'ACCOUNT',i:[{p:'my-settings',n:'⚙️ My Settings'}]}],
 finance:[{l:'FINANCE',i:[{p:'finance',n:'Finance Home'},{p:'finance-commitments',n:'Commitments'},{p:'finance-advances',n:'Advances & Reconciliation'},{p:'projects',n:'Projects'},{p:'roadmap',n:'Project Roadmap'},{p:'raise-pr',n:'Raise PR'},{p:'pr-approvals',n:'PR Approvals'},{p:'it-tickets',n:'IT Support'},{p:'tar-request',n:'Raise TAR'},{p:'leave-request',n:'Request Leave'},{p:'timesheet',n:'⏱ My Timesheet'},{p:'timesheet-approve',n:'✓ Approve Timesheets'},{p:'all-tasks',n:'All Tasks'},{p:'workflow',n:'Workflows'}]},
@@ -2622,7 +2872,7 @@ function permissionAllowsPage(pg,perms){
  // to the single-permission department map below.
  var shared={'leave-request':'hr.leave.request','tar-request':'access.requests.create','it-tickets':'it.tickets.create','timesheet':'timesheets.submit','raise-pr':'procurement.pr.create'};
  if(shared[pg] && (perms.indexOf(shared[pg])>-1 || perms.indexOf('*')>-1))return true;
- var map={'exec':['organization.view'],'all-tasks':['tasks.view'],'all-challenges':['audit.view'],'meal':['meal.view'],'meal-ind':['meal.indicators.manage'],'meal-cfrm':['cfrm.view','cfrm.manage','cfrm.assign','cfrm.close'],'meal-visits':['meal.visits.manage'],'meal-lf':['meal.view'],'meal-find':['meal.findings.manage'],'meal-risk':['meal.risks.manage'],'meal-dqa':['meal.dqa.manage','meal.evaluations.manage'],'meal-docs':['documents.view','documents.manage','documents.upload'],'meal-data':['meal.results.create','meal.results.verify','meal.data.export'],'finance':['finance.view'],'finance-commitments':['finance.commitments.manage'],'finance-advances':['finance.advances.manage','finance.reconciliation.manage'],'hr':['hr.view'],'hr-recruitment':['hr.recruitment.manage'],'hr-training':['hr.training.manage'],'programs':['programs.view'],'prog-activities':['programs.activities.manage'],'prog-benef':['programs.beneficiaries.view','programs.beneficiaries.manage'],'prog-analysis':['programs.view'],'prog-partners':['programs.partners.manage'],'prog-grants':['programs.grants.manage'],'supply':['procurement.view'],'supply-proc':['procurement.manage'],'supply-dist':['distribution.manage'],'supply-suppliers':['procurement.suppliers.manage'],'supply-po':['procurement.po.manage'],'supply-grn':['procurement.grn.manage'],'supply-warehouse':['warehouse.view','warehouse.manage'],'admin':['admin.view'],'admin-registry':['documents.view'],'safeguarding':['safeguarding.case.view','safeguarding.case.manage'],'operations':['operations.view'],'ops-assets':['assets.manage'],'ops-fleet':['fleet.manage'],'roadmap':['projects.view'],'projects':['projects.view'],'project-detail':['projects.view'],'raise-pr':['procurement.pr.create'],'pr-approvals':['procurement.pr.approve'],'it':['it.view'],'it-tickets':['it.tickets.manage'],'access':['access.view'],'deputy':['departments.view'],'progdeputy':['programs.view'],'users':['users.view'],'settings':['organization.manage'],'my-settings':['organization.view'],'my-work':['tasks.view'],'workflow':['workflow.view'],'timesheet':['timesheets.view','timesheets.submit'],'timesheet-approve':['timesheets.approve'],'leave-request':['hr.leave.manage'],'tar-request':['travel_authorizations.view']};
+ var map={'exec':['organization.view'],'all-tasks':['tasks.view'],'all-challenges':['audit.view'],'meal':['meal.view'],'meal-ind':['meal.indicators.manage','meal.view'],'meal-cfrm':['cfrm.view','cfrm.manage','cfrm.assign','cfrm.close'],'meal-visits':['meal.visits.manage'],'meal-find':['meal.findings.manage'],'meal-risk':['meal.risks.manage'],'meal-dqa':['meal.dqa.manage','meal.evaluations.manage'],'meal-docs':['documents.view','documents.manage','documents.upload'],'meal-data':['meal.results.create','meal.results.verify','meal.data.export'],'finance':['finance.view'],'finance-commitments':['finance.commitments.manage'],'finance-advances':['finance.advances.manage','finance.reconciliation.manage'],'hr':['hr.view'],'hr-recruitment':['hr.recruitment.manage'],'hr-training':['hr.training.manage'],'programs':['programs.view'],'prog-activities':['programs.activities.manage'],'prog-benef':['programs.beneficiaries.view','programs.beneficiaries.manage'],'prog-analysis':['programs.view'],'prog-partners':['programs.partners.manage'],'prog-grants':['programs.grants.manage'],'supply':['procurement.view'],'supply-proc':['procurement.manage'],'supply-dist':['distribution.manage'],'supply-suppliers':['procurement.suppliers.manage'],'supply-po':['procurement.po.manage'],'supply-grn':['procurement.grn.manage'],'supply-warehouse':['warehouse.view','warehouse.manage'],'admin':['admin.view'],'admin-registry':['documents.view'],'safeguarding':['safeguarding.case.view','safeguarding.case.manage'],'operations':['operations.view'],'ops-assets':['assets.manage'],'ops-fleet':['fleet.manage'],'roadmap':['projects.view'],'projects':['projects.view'],'project-detail':['projects.view'],'raise-pr':['procurement.pr.create'],'pr-approvals':['procurement.pr.approve'],'it':['it.view'],'it-tickets':['it.tickets.manage'],'access':['access.view'],'deputy':['departments.view'],'progdeputy':['programs.view'],'users':['users.view'],'settings':['organization.manage'],'my-settings':['organization.view'],'my-work':['tasks.view'],'workflow':['workflow.view'],'timesheet':['timesheets.view','timesheets.submit'],'timesheet-approve':['timesheets.approve'],'leave-request':['hr.leave.manage'],'tar-request':['travel_authorizations.view']};
  var names=map[pg]||[pg.replace(/-/g,'_')];
  return perms.some(function(p){return p==='*'||p==='all'||names.some(function(n){return p===n;});});
 }
@@ -3471,7 +3721,7 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();if(id==='m-audit-finding')resetAuditFindingModal();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();if(id==='m-audit-finding')resetAuditFindingModal();if(id==='m-visit')resetVisitModal();}
 
 // A department head could previously pick ANY department in the Add Task modal and assign
 // work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
@@ -3604,15 +3854,14 @@ function render(pg){
       else if(pg==='users'){renderUsers();renderUserMgmt();renderLoginActivity();}
       else if(pg==='settings'){renderSettings();}
       else if(pg==='meal'){renderMealHome();renderMonthlyVerification();renderMonthlyReport();}
-      else if(pg==='meal-ind'){renderInd();}
-      else if(pg==='meal-lf'){renderLF();}
+      else if(pg==='meal-ind'){renderIndicatorTracker();}
       else if(pg==='meal-cfrm'){renderCFRM();}
-      else if(pg==='meal-visits'){renderVisits();}
+      else if(pg==='meal-visits'){renderFieldVisitsTracker();}
       else if(pg==='meal-find'){renderFindings();}
       else if(pg==='meal-risk'){renderRisks();renderAuditFindings();}
       else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
-      else if(pg==='meal-data'){renderDataHistory();sgoaResultFields();}
+      else if(pg==='meal-data'){renderDataEntryTracker();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();renderFinanceInvoiceControls();renderBudgetRevisions();renderPayrollPeriods();}
       else if(pg==='finance-commitments'){renderCommitments();}
       else if(pg==='finance-advances'){renderAdvances();renderReconciliations();}
@@ -4607,84 +4856,355 @@ function renderAllChallenges(){
 }
 
 
+function mealLast6Months(){
+  var out=[],base=new Date();base.setDate(1);
+  for(var i=5;i>=0;i--){
+    var dd=new Date(base.getFullYear(),base.getMonth()-i,1);
+    out.push({key:dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0'),label:dd.toLocaleDateString('en',{month:'short'})});
+  }
+  return out;
+}
+
 function renderMealHome(){
-  var inds=DB.indicators; // was hardcoded to a demo project code that never exists in a real deployment
-  var on=0,risk=0,off=0;
-  DB.indicators.forEach(function(i){
-    if(!i.target)return;
+  var pf=$('meal-proj-filter')?$('meal-proj-filter').value:'all';
+  var monthEl=$('mv-month');
+  if(monthEl&&!monthEl.value)monthEl.value=today().slice(0,7);
+  var month=monthEl&&monthEl.value?monthEl.value:today().slice(0,7);
+  var inds=pf==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===pf;});
+  var cfrm=pf==='all'?DB.cfrm:DB.cfrm.filter(function(x){return x.proj===pf;});
+  var findings=pf==='all'?DB.findings:DB.findings.filter(function(f){return f.proj===pf;});
+  var dqas=pf==='all'?DB.dqas:DB.dqas.filter(function(d){return d.project===pf;});
+
+  var on=0,risk=0,off=0,pending=0;
+  inds.forEach(function(i){
+    if(!i.target){pending++;return;}
     var p=i.actual/i.target;
-    if(p>=0.9)on++;else if(p>=0.7)risk++;else if(i.actual>0)off++;
+    if(p>=0.9)on++;else if(p>=0.7)risk++;else if(i.actual>0)off++;else pending++;
   });
-  if($('mi-tot'))$('mi-tot').textContent=DB.indicators.length;
-  if($('mi-on'))$('mi-on').textContent=on;
-  if($('mi-risk'))$('mi-risk').textContent=risk;
-  if($('mi-off'))$('mi-off').textContent=off;
+
+  // ---- Verification/reporting status for the selected period (reuses the Monthly Verification machinery) ----
+  var achieved=0,offtrack=0,outstanding=0,reportingProjSet={},submittedProjSet={};
+  inds.forEach(function(i){
+    reportingProjSet[i.proj]=true;
+    var sub=indicatorMonthSubmission(i,month);
+    var v=sub?getVerification(i,month):null;
+    if(sub)submittedProjSet[i.proj]=true;
+    if(!sub||!v||v.status!=='Verified'){outstanding++;return;}
+    var pct=i.target?v.value/i.target:1;
+    if(pct<0.7)offtrack++;else achieved++;
+  });
+  var totalProjCovered=Object.keys(reportingProjSet).length;
+  var submittedProjCount=Object.keys(submittedProjSet).length;
+  var verifiedTotal=achieved+offtrack;
+
+  if($('meal-verified-pct'))$('meal-verified-pct').textContent=(inds.length?Math.round(verifiedTotal/inds.length*100):0)+'%';
+
+  var distinctLevels=Object.keys(inds.reduce(function(a,i){if(i.level)a[i.level]=1;return a;},{})).length;
+  if($('mh-active'))$('mh-active').textContent=inds.length;
+  if($('mh-active-sub'))$('mh-active-sub').textContent=totalProjCovered+' project'+(totalProjCovered===1?'':'s')+' · '+distinctLevels+' result level'+(distinctLevels===1?'':'s');
+  if($('mh-ontrack'))$('mh-ontrack').textContent=on;
+  if($('mh-ontrack-sub'))$('mh-ontrack-sub').textContent=(inds.length?Math.round(on/inds.length*100):0)+'% of active indicators';
+  if($('mh-riskoff'))$('mh-riskoff').textContent=risk+' / '+off;
+  if($('mh-reports'))$('mh-reports').textContent=submittedProjCount+' / '+totalProjCovered;
+  if($('mh-reports-sub'))$('mh-reports-sub').textContent=(totalProjCovered-submittedProjCount)+' project(s) not submitted';
+  if($('mh-verified'))$('mh-verified').textContent=verifiedTotal+' / '+inds.length;
+  if($('mh-verified-sub'))$('mh-verified-sub').textContent=outstanding+' awaiting verification';
+  var cfOpen=cfrm.filter(function(x){return x.status==='Open';}).length;
+  var cfEsc=cfrm.filter(function(x){return x.status==='Escalated';}).length;
+  var cfRes=cfrm.filter(function(x){return x.status==='Resolved';}).length;
+  if($('mh-cfrm'))$('mh-cfrm').textContent=cfOpen+cfEsc;
+  if($('mh-cfrm-sub'))$('mh-cfrm-sub').textContent=cfEsc+' priority response'+(cfEsc===1?'':'s');
+
+  // ---- Indicator tracker (top 8, real data) ----
   var c=$('meal-mini-ind');
-  if(c){c.innerHTML='';inds.slice(0,6).forEach(function(i){
-    var pct=i.target?Math.round(i.actual/i.target*100):0;
-    var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
-    var r=el('div','mbr');
-    var shortName=i.name.length>38?i.name.slice(0,38)+'…':i.name;
-    r.innerHTML='<div class="mbl" style="font-size:11.5px" title="'+esc(i.name)+'">'+esc(shortName)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
-    c.appendChild(r);
-  });}
+  if(c){
+    if(!inds.length){c.innerHTML='<div class="empty">No indicators yet</div>';}
+    else{
+      var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>%</th><th>Status</th></tr></thead><tbody>';
+      inds.slice(0,8).forEach(function(i){
+        var pct=i.target?Math.round(i.actual/i.target*100):0;
+        var bdg=pct>=90?'<span class="bdg bG">On Track</span>':pct>=70?'<span class="bdg bO">At Risk</span>':pct>0?'<span class="bdg bR">Off Track</span>':'<span class="bdg bY">Pending</span>';
+        h+='<tr><td title="'+esc(i.name)+'">'+esc(i.name.length>42?i.name.slice(0,42)+'…':i.name)+'</td><td>'+esc(i.proj||'-')+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td>'+pct+'%</td><td>'+bdg+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      c.innerHTML=h;
+    }
+  }
   renderDeptTasks('meal-tasks','MEAL');
   renderGenderCWD('meal-gender',$('mg-proj')?$('mg-proj').value:'all');
+
+  // ---- Key challenges & alerts ----
   var a=$('meal-alerts');
   if(a){a.innerHTML='';
-    DB.findings.filter(function(f){return f.dept==='MEAL'&&f.sev!=='positive';}).slice(0,3).forEach(function(f){
+    DB.findings.filter(function(f){return f.dept==='MEAL'&&f.sev!=='positive'&&f.status!=='Resolved';}).slice(0,5).forEach(function(f){
       var d=el('div','al '+(f.sev==='critical'?'alD':'alW'));
       d.innerHTML='<div><b>'+esc(f.title)+'</b><br>'+esc(f.act)+'</div>';
       a.appendChild(d);
     });
     if(!a.innerHTML)a.innerHTML='<div class="empty">No active alerts</div>';
   }
-}
 
-function renderInd(){
-  var c=$('ind-list');if(!c)return;c.innerHTML='';
-  var pf=$('if-proj')?$('if-proj').value:'all';
-  var inds=pf==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===pf;});
-  if(!inds.length){c.innerHTML='<div class="empty">No indicators</div>';return;}
-  inds.forEach(function(i){
-    var pct=i.target?Math.round(i.actual/i.target*100):0;
-    var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
-    var bdg=pct>=90?'<span class="bdg bG">On Track</span>':pct>=70?'<span class="bdg bO">At Risk</span>':pct>0?'<span class="bdg bR">Off Track</span>':'<span class="bdg bY">Baseline Pending</span>';
-    var d=el('div','ind');
-    var sexBreakdown=(i.actualFemale!=null||i.actualMale!=null)?
-      ' <span style="color:var(--g500)">(F: '+fmt(i.actualFemale||0)+' &middot; M: '+fmt(i.actualMale||0)+')</span>':'';
-    d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:5px"><div class="indn">'+i.id+' — '+esc(i.name)+'</div>'+bdg+'</div>'+
-      '<div class="indm"><span><b>Project:</b> '+esc(i.proj)+'</span><span><b>Level:</b> '+esc(i.level)+'</span><span><b>Baseline:</b> '+fmt(i.baseline||0)+'</span><span><b>Target:</b> '+fmt(i.target)+' '+esc(i.unit)+'</span><span><b>Actual:</b> '+(i.actual>0?fmt(i.actual):'Pending')+sexBreakdown+'</span><span><b>MoV:</b> '+esc(i.mov)+'</span><span><b>Frequency:</b> '+esc(i.freq)+'</span></div>'+
-      (i.actual>0?'<div class="indp"><div class="pw" style="flex:1"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><div class="indv" style="color:'+col+'">'+pct+'%</div></div>':'')+
-      '<div style="margin-top:6px"><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button>'+
-      (i.updates&&i.updates.length?' <span style="font-size:10.5px;color:var(--g400)">'+i.updates.length+' update'+(i.updates.length>1?'s':'')+' logged · last: '+dt(i.updates[i.updates.length-1].date)+'</span>':'')+'</div>';
-    c.appendChild(d);
-  });
-}
-
-function renderLF(){
-  var sel=$('lf-proj');
-  if(sel){
-    var cur=sel.value;
-    sel.innerHTML='<option value="all">All Projects</option>';
-    Object.keys(PROJ).forEach(function(k){
-      var o=document.createElement('option');o.value=k;o.textContent=k+' — '+PROJ[k].name;
-      sel.appendChild(o);
+  // ---- Upcoming decisions & deadlines (MEAL tasks + open findings, by due date) ----
+  var dl=$('meal-deadlines');
+  if(dl){
+    var items=[];
+    DB.tasks.filter(function(t){return t.dept==='MEAL'&&!t.done&&t.status!=='completed'&&t.due;}).forEach(function(t){items.push({title:t.title,due:t.due});});
+    DB.findings.filter(function(f){return f.dept==='MEAL'&&f.status!=='Resolved'&&f.due;}).forEach(function(f){items.push({title:f.title,due:f.due});});
+    items.sort(function(x,y){return new Date(x.due)-new Date(y.due);});
+    dl.innerHTML='';
+    items.slice(0,5).forEach(function(it){
+      var od=overdue(it.due);
+      var r=el('div','tk');
+      r.innerHTML='<div style="flex:1"><div class="tkt">'+esc(it.title)+'</div><div class="tkd'+(od?' od':'')+'">Due '+dt(it.due)+(od?' — OVERDUE':'')+'</div></div>';
+      dl.appendChild(r);
     });
-    if(cur&&(cur==='all'||PROJ[cur]))sel.value=cur;
+    if(!dl.innerHTML)dl.innerHTML='<div class="empty">No upcoming deadlines</div>';
   }
-  var c=$('lf-body');if(!c)return;c.innerHTML='';
-  var pf=sel?sel.value:'all';
-  var inds=pf==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===pf;});
-  if(!inds.length){c.innerHTML='<tr><td colspan="6" class="empty">No indicators recorded yet</td></tr>';return;}
-  var order={Impact:0,Outcome:1,Output:2};
-  inds=inds.slice().sort(function(a,b){return (order[a.level]||9)-(order[b.level]||9);});
-  var badge={Impact:'bN',Outcome:'bD',Output:'bB'};
-  inds.forEach(function(i){
-    var r=el('tr');
-    r.innerHTML='<td><span class="bdg '+(badge[i.level]||'bB')+'">'+esc(i.level)+'</span></td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+' '+esc(i.unit)+'</td><td>'+(i.actual>0?fmt(i.actual)+' '+esc(i.unit):'-')+'</td><td>'+esc(i.mov)+'</td>';
-    c.appendChild(r);
+
+  // ---- Charts (all from live DB, scoped to the Project filter above) ----
+  var onS=on,riskS=risk,offS=off,pendS=pending;
+  donut('meal-ch-indstatus',[{v:onS,c:'#16a34a'},{v:riskS,c:'#C8922A'},{v:offS,c:'#dc2626'},{v:pendS,c:'#cbd5e1'}],18);
+  var legHtml=function(rows){return rows.map(function(r){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+esc(r.l)+' — <b>'+r.v+'</b></div>';}).join('');};
+  if($('meal-ch-indstatus-leg'))$('meal-ch-indstatus-leg').innerHTML=legHtml([{l:'On Track',v:onS,c:'#16a34a'},{l:'At Risk',v:riskS,c:'#C8922A'},{l:'Off Track',v:offS,c:'#dc2626'},{l:'Pending Baseline',v:pendS,c:'#cbd5e1'}]);
+
+  var withTarget=inds.filter(function(i){return i.target;}).slice(0,8);
+  if(withTarget.length)bars('meal-ch-targetactual',withTarget.map(function(i){return i.name.length>14?i.name.slice(0,14)+'…':i.name;}),
+    [{d:withTarget.map(function(i){return i.target;}),c:'#C8922A'},{d:withTarget.map(function(i){return i.actual;}),c:'#1A3A6B'}],
+    function(v){return Math.round(v);});
+
+  donut('meal-ch-cfrmstatus',[{v:cfOpen,c:'#C8922A'},{v:cfEsc,c:'#dc2626'},{v:cfRes,c:'#16a34a'}],18);
+  if($('meal-ch-cfrmstatus-leg'))$('meal-ch-cfrmstatus-leg').innerHTML=legHtml([{l:'Open',v:cfOpen,c:'#C8922A'},{l:'Escalated',v:cfEsc,c:'#dc2626'},{l:'Resolved',v:cfRes,c:'#16a34a'}]);
+
+  var sevCounts=['critical','major','minor','positive'].map(function(s){return findings.filter(function(f){return f.sev===s;}).length;});
+  bars('meal-ch-sev',['Critical','Major','Minor','Positive'],[{d:sevCounts,c:['#dc2626','#ea580c','#2563eb','#16a34a']}],function(v){return Math.round(v);});
+
+  var dqDims=[{k:'validity',l:'Validity'},{k:'integrity',l:'Integrity'},{k:'precision',l:'Precision'},{k:'reliability',l:'Reliability'},{k:'timeliness',l:'Timeliness'}];
+  if(dqas.length){
+    var dqPct=dqDims.map(function(d){return Math.round(dqas.filter(function(a){return a[d.k]==='Yes';}).length/dqas.length*100);});
+    bars('meal-ch-dq',dqDims.map(function(d){return d.l;}),[{d:dqPct,c:'#0d9488'}],function(v){return Math.round(v)+'%';});
+  }
+
+  var findResolved=findings.filter(function(f){return f.status==='Resolved';}).length;
+  var findOpenIp=findings.length-findResolved;
+  donut('meal-ch-corrective',[{v:findResolved,c:'#16a34a'},{v:findOpenIp,c:'#ea580c'}],18,'Closed',findings.length?Math.round(findResolved/findings.length*100)+'%':'—');
+  if($('meal-ch-corrective-leg'))$('meal-ch-corrective-leg').innerHTML=legHtml([{l:'Resolved',v:findResolved,c:'#16a34a'},{l:'Open / In Progress',v:findOpenIp,c:'#ea580c'}]);
+
+  var months=mealLast6Months();
+  var trendData=months.map(function(m){
+    var pcts=[];
+    inds.forEach(function(i){
+      if(!i.target||!i.updates)return;
+      var upd=i.updates.filter(function(u){return (u.date||'').slice(0,7)===m.key;});
+      if(upd.length){var last=upd[upd.length-1];pcts.push(Math.min(100,Math.round(last.actual/i.target*100)));}
+    });
+    return pcts.length?Math.round(pcts.reduce(function(s,v){return s+v;},0)/pcts.length):0;
   });
+  line('meal-ch-trend',months.map(function(m){return m.label;}),[{d:trendData,c:'#1A3A6B'}]);
+
+  var cfrmByMonth=months.map(function(m){return cfrm.filter(function(x){return (x.date||'').slice(0,7)===m.key;}).length;});
+  bars('meal-ch-cfrmmonth',months.map(function(m){return m.label;}),[{d:cfrmByMonth,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  // ---- MEAL workspaces (real counts across the whole department, independent of the Project filter) ----
+  var ws=$('meal-workspaces');
+  if(ws){
+    var cfOpenAll=DB.cfrm.filter(function(x){return x.status==='Open';}).length;
+    var cfEscAll=DB.cfrm.filter(function(x){return x.status==='Escalated';}).length;
+    var findOpenAll=DB.findings.filter(function(f){return f.status!=='Resolved';}).length;
+    var items2=[
+      {icon:'📈',label:'Indicators & Logframe',count:DB.indicators.length+' tracked',page:'meal-ind'},
+      {icon:'📞',label:'CFRM',count:cfOpenAll+cfEscAll+' open cases',page:'meal-cfrm'},
+      {icon:'🌍',label:'Field Visits',count:DB.visits.length+' logged',page:'meal-visits'},
+      {icon:'🔍',label:'Findings',count:findOpenAll+' open',page:'meal-find'},
+      {icon:'⚠️',label:'Risks',count:DB.risks.filter(function(r){return r.lvl==='critical'||r.lvl==='high';}).length+' high priority',page:'meal-risk'},
+      {icon:'✅',label:'DQA & Evaluations',count:(DB.dqas.length+DB.evaluations.length)+' records',page:'meal-dqa'},
+      {icon:'📁',label:'Documents',count:DB.docs.filter(function(d){return (d.dept==='MEAL'||d.dept==='All')&&d.status!=='Archived';}).length+' files',page:'meal-docs'},
+      {icon:'✏️',label:'Data Entry',count:DB.dataSub.length+' submissions',page:'meal-data'}
+    ];
+    ws.innerHTML='';
+    items2.forEach(function(it){
+      var card=el('div');
+      card.style.cssText='border:1px solid var(--g100);border-radius:8px;padding:11px 13px;cursor:pointer;transition:border-color .15s';
+      card.onmouseover=function(){this.style.borderColor='var(--navy)';};
+      card.onmouseout=function(){this.style.borderColor='var(--g100)';};
+      card.onclick=function(){go(it.page);};
+      card.innerHTML='<div style="font-size:18px;margin-bottom:4px">'+it.icon+'</div><div style="font-size:12.5px;font-weight:700;color:var(--navy)">'+esc(it.label)+'</div><div style="font-size:11px;color:var(--g500)">'+esc(it.count)+'</div>';
+      ws.appendChild(card);
+    });
+  }
+
+  // ---- Documents & SOPs preview (real DB.docs, top 5 most recent) ----
+  var dp=$('meal-docs-preview');
+  if(dp){
+    var docs=DB.docs.filter(function(d){return (d.dept==='MEAL'||d.dept==='All')&&d.status!=='Archived';}).slice().sort(function(x,y){return new Date(y.date)-new Date(x.date);});
+    if(!docs.length){dp.innerHTML='<div class="empty">No documents uploaded yet</div>';}
+    else{
+      dp.innerHTML='';
+      docs.slice(0,5).forEach(function(d){
+        var r=el('div','tk');
+        r.innerHTML='<div style="flex:1"><div class="tkt">'+esc(d.title)+'</div><div class="tkd">'+esc(d.type)+' · v'+esc(d.ver)+' · '+dt(d.date)+'</div></div>';
+        dp.appendChild(r);
+      });
+    }
+  }
+}
+
+// ============ INDICATOR TRACKER & LOGFRAMES (tabbed) ============
+var mitTab='overview';
+function setIndTab(tab){
+  mitTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mit-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mit-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  renderIndicatorTrackerBody();
+}
+function indStatusOf(i){
+  if(!i.target)return 'Pending';
+  var p=i.actual/i.target;
+  if(p>=0.9)return 'On Track';if(p>=0.7)return 'At Risk';if(i.actual>0)return 'Off Track';return 'Pending';
+}
+function renderIndicatorTracker(){
+  // KPI tiles -- shared across every tab, always real
+  if($('mit-tot'))$('mit-tot').textContent=DB.indicators.length;
+  if($('mit-outcome'))$('mit-outcome').textContent=DB.indicators.filter(function(i){return i.level==='Outcome';}).length;
+  if($('mit-output'))$('mit-output').textContent=DB.indicators.filter(function(i){return i.level==='Output';}).length;
+  if($('mit-notarget'))$('mit-notarget').textContent=DB.indicators.filter(function(i){return !i.target;}).length;
+  setIndTab(mitTab);
+}
+function renderIndicatorTrackerBody(){
+  if(mitTab==='overview')renderIndOverview();
+  else if(mitTab==='register')renderIndRegister();
+  else if(mitTab==='entry')renderIndEntry();
+  else if(mitTab==='review')renderIndReview();
+  else if(mitTab==='evidence')renderIndEvidence();
+}
+
+function renderIndOverview(){
+  var byLevel={Outcome:0,Output:0,Impact:0};
+  DB.indicators.forEach(function(i){if(byLevel[i.level]!==undefined)byLevel[i.level]++;});
+  donut('mit-ch-level',[{v:byLevel.Outcome,c:'#16a34a'},{v:byLevel.Output,c:'#2563eb'},{v:byLevel.Impact,c:'#C8922A'}],18,'Total',DB.indicators.length);
+  var leg=$('mit-ch-level-leg');
+  if(leg)leg.innerHTML=[{l:'Outcome',v:byLevel.Outcome,c:'#16a34a'},{l:'Output',v:byLevel.Output,c:'#2563eb'},{l:'Impact',v:byLevel.Impact,c:'#C8922A'}].map(function(r){
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+r.v+'</b></div>';
+  }).join('');
+  var box=$('mit-achievement');
+  if(box){
+    var withTarget=DB.indicators.filter(function(i){return i.target;}).slice().sort(function(a,b){return (b.actual/b.target)-(a.actual/a.target);});
+    if(!withTarget.length){box.innerHTML='<div class="empty">No indicators with a target yet</div>';}
+    else{
+      box.innerHTML='';
+      withTarget.slice(0,6).forEach(function(i){
+        var pct=Math.round(i.actual/i.target*100);
+        var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
+        var r=el('div','mbr');
+        r.innerHTML='<div class="mbl" style="font-size:11.5px" title="'+esc(i.name)+'">'+esc(i.name.length>36?i.name.slice(0,36)+'…':i.name)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
+        box.appendChild(r);
+      });
+    }
+  }
+}
+
+function renderIndRegister(){
+  var c=$('mit-reg-body');if(!c)return;
+  var pf=$('mit-reg-proj')?$('mit-reg-proj').value:'all';
+  var search=($('mit-reg-search')?$('mit-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mit-reg-status')?$('mit-reg-status').value:'all';
+  var inds=DB.indicators.filter(function(i){
+    if(pf!=='all'&&i.proj!==pf)return false;
+    if(statusF!=='all'&&indStatusOf(i)!==statusF)return false;
+    if(search&&(i.name+' '+i.proj).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!inds.length){c.innerHTML='<div class="empty">No indicators match</div>';return;}
+  var bdgCls={'On Track':'bG','At Risk':'bO','Off Track':'bR','Pending':'bY'};
+  var h='<table><thead><tr><th>Indicator ID</th><th>Result Statement</th><th>Project</th><th>Baseline</th><th>Target</th><th>Unit / Frequency</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  inds.forEach(function(i){
+    var st=indStatusOf(i);
+    h+='<tr><td>'+esc(i.id)+'</td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.baseline||0)+'</td><td>'+fmt(i.target)+'</td><td>'+esc(i.unit)+' / '+esc(i.freq)+'</td><td><span class="bdg '+(bdgCls[st]||'bY')+'">'+st+'</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Open</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+
+function renderIndEntry(){
+  var proj=$('mit-entry-proj')?$('mit-entry-proj').value:'all';
+  var indSel=$('mit-entry-ind');if(!indSel)return;
+  var curId=indSel.value;
+  var inds=proj==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===proj;});
+  indSel.innerHTML=inds.map(function(i){return '<option value="'+i.id+'">'+esc(i.id)+' — '+esc(i.name)+'</option>';}).join('')||'<option value="">No indicators</option>';
+  if(curId&&inds.some(function(i){return i.id===curId;}))indSel.value=curId;
+  var i=DB.indicators.find(function(x){return x.id===indSel.value;});
+  var ctx=$('mit-entry-ctx'),btn=$('mit-entry-btn');
+  if(!i){if(ctx)ctx.innerHTML='<span style="color:var(--g500)">No indicator selected.</span>';if(btn)btn.disabled=true;return;}
+  if(btn)btn.disabled=false;
+  if(ctx)ctx.innerHTML='<b>'+esc(i.name)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
+}
+function mitRecordResult(){
+  var id=$('mit-entry-ind')?$('mit-entry-ind').value:null;
+  if(!id)return;
+  openIndicatorUpdateModal(id);
+}
+
+function renderIndReview(){
+  var noTarget=DB.indicators.filter(function(i){return !i.target;});
+  var ntBox=$('mit-review-notarget');
+  if(ntBox){
+    if(!noTarget.length){ntBox.innerHTML='<div class="empty">Every indicator has a defined target</div>';}
+    else{
+      var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Level</th><th></th></tr></thead><tbody>';
+      noTarget.forEach(function(i){
+        h+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.level)+'</td><td><button class="b bo bs" onclick="setIndTab(\'register\');$(\'mit-reg-search\').value='+esc(JSON.stringify(i.name))+';renderIndRegister();">View in Register</button></td></tr>';
+      });
+      h+='</tbody></table>';
+      ntBox.innerHTML=h;
+    }
+  }
+  var offTrack=DB.indicators.filter(function(i){return i.target&&indStatusOf(i)==='Off Track';});
+  var otBox=$('mit-review-offtrack');
+  if(otBox){
+    if(!offTrack.length){otBox.innerHTML='<div class="empty">No off-track indicators</div>';}
+    else{
+      var h2='<table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>%</th><th></th></tr></thead><tbody>';
+      offTrack.forEach(function(i){
+        var pct=Math.round(i.actual/i.target*100);
+        h2+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td><span class="bdg bR">'+pct+'%</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button></td></tr>';
+      });
+      h2+='</tbody></table>';
+      otBox.innerHTML=h2;
+    }
+  }
+}
+
+function renderIndEvidence(){
+  var movBox=$('mit-evidence-mov');
+  if(movBox){
+    if(!DB.indicators.length){movBox.innerHTML='<div class="empty">No indicators yet</div>';}
+    else{
+      var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Means of Verification</th><th>Frequency</th></tr></thead><tbody>';
+      DB.indicators.forEach(function(i){
+        h+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.mov||'-')+'</td><td>'+esc(i.freq||'-')+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      movBox.innerHTML=h;
+    }
+  }
+  var histBox=$('mit-evidence-history');
+  if(histBox){
+    var rows=[];
+    DB.indicators.forEach(function(i){
+      (i.updates||[]).forEach(function(u){rows.push({ind:i.name,proj:i.proj,date:u.date,actual:u.actual,female:u.female,male:u.male,note:u.note,by:u.by});});
+    });
+    rows.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+    if(!rows.length){histBox.innerHTML='<div class="empty">No progress updates logged yet</div>';}
+    else{
+      var h2='<table><thead><tr><th>Date</th><th>Indicator</th><th>Project</th><th>Actual</th><th>F / M</th><th>Note</th><th>By</th></tr></thead><tbody>';
+      rows.forEach(function(r){
+        h2+='<tr><td>'+dt(r.date)+'</td><td>'+esc(r.ind)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.actual)+'</td><td>'+(r.female!=null||r.male!=null?fmt(r.female||0)+' / '+fmt(r.male||0):'-')+'</td><td>'+esc(r.note||'-')+'</td><td>'+esc(r.by||'-')+'</td></tr>';
+      });
+      h2+='</tbody></table>';
+      histBox.innerHTML=h2;
+    }
+  }
 }
 
 function renderCFRM(){
@@ -4715,15 +5235,110 @@ document.addEventListener('change',function(e){
   }
 });
 
+function fvTarLabel(v){
+  if(!v.tarId)return '<span style="color:var(--g400)">No travel required</span>';
+  var t=DB.tars.find(function(x){return x.id===v.tarId;});
+  if(!t)return '<span style="color:var(--g400)">Not yet approved</span>';
+  var bd=t.status==='Approved'?'bG':t.status==='Rejected'?'bR':'bO';
+  return esc(t.id)+' <span class="bdg '+bd+'" style="margin-left:4px">'+esc(t.status)+'</span>';
+}
 function renderVisits(){
   var c=$('visits-body');if(!c)return;c.innerHTML='';
-  if(!DB.visits.length){c.innerHTML='<tr><td colspan="7" class="empty">No visits logged</td></tr>';return;}
+  if(!DB.visits.length){c.innerHTML='<tr><td colspan="8" class="empty">No visits logged</td></tr>';return;}
   DB.visits.forEach(function(v){
-    var sb=v.status==='Complete'?'bG':v.status==='Action Required'?'bR':'bO';
+    var stage=visitStage(v);
+    var sb={Planned:'bY','In Field':'bB','Report Filed':'bO',Verified:'bG'}[stage]||'bY';
     var r=el('tr');
-    r.innerHTML='<td>'+dt(v.date)+'</td><td>'+esc(v.proj)+'</td><td>'+esc(v.dist)+'</td><td>'+v.sites+'</td><td>'+esc(v.by)+'</td><td style="font-size:11.5px">'+esc(v.find)+'</td><td><span class="bdg '+sb+'">'+esc(v.status)+'</span></td>';
+    r.innerHTML='<td>'+dt(v.plannedDate||v.date)+'</td><td>'+(v.date?dt(v.date):'—')+'</td><td>'+esc(v.proj)+(v.site?' / '+esc(v.site):'')+'</td><td>'+esc(v.dist||'')+'</td><td>'+esc(v.by)+'</td><td style="font-size:11.5px">'+esc(v.find||'—')+'</td><td>'+fvTarLabel(v)+'</td><td><span class="bdg '+sb+'">'+esc(stage)+'</span></td>';
     c.appendChild(r);
   });
+}
+
+// ============ FIELD VISITS & MONITORING (tabbed) ============
+var mfvTab='overview';
+function setFvTab(tab){
+  mfvTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mfv-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mfv-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderFvOverview();
+  else if(tab==='register')renderFvRegister();
+  else if(tab==='review')renderFvReview();
+  else if(tab==='evidence')renderVisits();
+}
+function renderFieldVisitsTracker(){
+  if($('mfv-planned'))$('mfv-planned').textContent=DB.visits.length;
+  var completed=DB.visits.filter(function(v){var s=visitStage(v);return s==='Report Filed'||s==='Verified';});
+  if($('mfv-completed'))$('mfv-completed').textContent=completed.length;
+  var sitesMonitored=DB.visits.filter(function(v){return visitStage(v)!=='Planned';}).reduce(function(s,v){return s+(v.sites||0);},0);
+  if($('mfv-sites'))$('mfv-sites').textContent=sitesMonitored;
+  if($('mfv-actions'))$('mfv-actions').textContent=DB.visits.filter(function(v){return v.act&&!v.actionResolved;}).length;
+  setFvTab(mfvTab);
+}
+function renderFvOverview(){
+  var stages=['Planned','In Field','Report Filed','Verified'];
+  var colors={Planned:'#cbd5e1','In Field':'#2563eb','Report Filed':'#C8922A',Verified:'#16a34a'};
+  var counts=stages.map(function(s){return DB.visits.filter(function(v){return visitStage(v)===s;}).length;});
+  donut('mfv-ch-stage',stages.map(function(s,i){return {v:counts[i],c:colors[s]};}),18,'Total',DB.visits.length);
+  var leg=$('mfv-ch-stage-leg');
+  if(leg)leg.innerHTML=stages.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+colors[s]+';display:inline-block"></span>'+s+' <b style="margin-left:auto">'+counts[i]+'</b></div>';}).join('');
+
+  var box=$('mfv-byprov');
+  if(box){
+    var byDist={};
+    DB.visits.forEach(function(v){var k=v.dist||'Unspecified';byDist[k]=byDist[k]||{total:0,done:0};byDist[k].total++;if(visitStage(v)!=='Planned')byDist[k].done++;});
+    var keys=Object.keys(byDist);
+    if(!keys.length){box.innerHTML='<div class="empty">No visits logged yet</div>';}
+    else{
+      box.innerHTML='';
+      keys.forEach(function(k){
+        var pct=Math.round(byDist[k].done/byDist[k].total*100);
+        var d=el('div','cbar');
+        d.innerHTML='<div class="cbl">'+esc(k)+'</div><div class="cbt"><div class="cbf" style="width:'+pct+'%;background:#0d9488"></div></div><div class="cbv">'+pct+'%</div>';
+        box.appendChild(d);
+      });
+    }
+  }
+}
+function renderFvRegister(){
+  var c=$('mfv-reg-body');if(!c)return;
+  var search=($('mfv-reg-search')?$('mfv-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mfv-reg-status')?$('mfv-reg-status').value:'all';
+  var rows=DB.visits.filter(function(v){
+    var stage=visitStage(v);
+    if(statusF!=='all'&&stage!==statusF)return false;
+    if(search&&((v.id||'')+' '+v.proj+' '+(v.by||'')+' '+(v.site||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No visits match</div>';return;}
+  var h='<table><thead><tr><th>Visit Reference</th><th>Project / Site</th><th>Monitor</th><th>Planned Date</th><th>TAR Link</th><th>Report / Actions</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(v){
+    var stage=visitStage(v);
+    var sb={Planned:'bY','In Field':'bB','Report Filed':'bO',Verified:'bG'}[stage]||'bY';
+    var reportLabel=stage==='Planned'?'Not started':(v.act&&!v.actionResolved?'1 action open':(v.find?'Evidence filed':'Report pending'));
+    h+='<tr><td>'+esc(v.id)+'</td><td>'+esc(v.proj)+(v.site?' / '+esc(v.site):'')+'</td><td>'+esc(v.by)+'</td><td>'+dt(v.plannedDate||v.date)+'</td><td>'+fvTarLabel(v)+'</td><td>'+esc(reportLabel)+'</td>'+
+      '<td><span class="bdg '+sb+'">'+esc(stage)+'</span></td><td><button class="b bo bs" onclick="setFvTab(\'evidence\')">Open</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderFvReview(){
+  var c=$('mfv-review-body');if(!c)return;
+  var pending=DB.visits.filter(function(v){return v.act&&!v.actionResolved;});
+  if(!pending.length){c.innerHTML='<div class="empty">No open follow-up actions</div>';return;}
+  var h='<table><thead><tr><th>Visit</th><th>Project / Site</th><th>Follow-Up Action</th><th>Monitor</th><th>Action</th></tr></thead><tbody>';
+  pending.forEach(function(v){
+    h+='<tr><td>'+esc(v.id)+'</td><td>'+esc(v.proj)+(v.site?' / '+esc(v.site):'')+'</td><td>'+esc(v.act)+'</td><td>'+esc(v.by)+'</td>'+
+      '<td><button class="b bn bs" onclick="resolveVisitAction(\''+v.id+'\')">Mark Resolved</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function resolveVisitAction(id){
+  var v=DB.visits.find(function(x){return x.id===id;});if(!v)return;
+  v.actionResolved=true;
+  renderFieldVisitsTracker();queueCloudSave();
 }
 
 function renderFindings(){
@@ -6171,7 +6786,7 @@ function renderUsers(){
 
 function renderDataHistory(){
   var c=$('data-history');if(!c)return;
-  if(!(DB.dataSub||[]).length){c.innerHTML='<tr><td colspan="6" class="empty">No submissions yet</td></tr>';return;}
+  if(!(DB.dataSub||[]).length){c.innerHTML='<tr><td colspan="7" class="empty">No submissions yet</td></tr>';return;}
   // Nobody can verify or approve their own submission -- the Verify/Approve/Return buttons
   // only ever appear on a record someone ELSE submitted, and only to a person who actually
   // holds the matching permission for whichever step is next.
@@ -6180,11 +6795,122 @@ function renderDataHistory(){
     var canVerify=other && r.status==='Submitted' && (SES.permissions||[]).indexOf('meal.results.verify')>-1;
     var canApprove=other && r.status==='Verified' && SES.role==='executive';
     function button(label,state){return '<button class="b bo bs" data-result-decision="'+state+'" data-result-record="'+esc(r.id)+'">'+label+'</button>';}
-    return '<tr><td>'+dt(r.date)+'</td><td>'+esc(r.proj)+'</td><td>'+esc(r.period)+'</td><td>'+esc(r.dist||'')+'</td><td>'+esc(r.collector||r.by)+'</td>'+
+    return '<tr><td>'+dt(r.date)+'</td><td>'+esc(r.proj)+'</td><td>'+esc(r.period)+'</td><td>'+esc(r.dist||'')+'</td><td>'+esc(r.source||'-')+'</td><td>'+esc(r.collector||r.by)+'</td>'+
       '<td><span class="bdg '+(r.status==='Approved'?'bG':r.status==='Returned'?'bR':'bY')+'">'+esc(r.status||'Legacy submission · unverified')+'</span> '+
       (canVerify?button('Verify','Verified'):'')+(canApprove?button('Approve','Approved'):'')+((canVerify||canApprove)?button('Return','Returned'):'')+'</td></tr>';
   }).join('');
 }
+
+// ============ MONTHLY DATA ENTRY (tabbed) ============
+var mdeTab='overview';
+function setDeTab(tab){
+  mdeTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mde-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mde-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderDeOverview();
+  else if(tab==='register')renderDeRegister();
+  else if(tab==='entry'){ if($('de-period')&&!$('de-period').value)$('de-period').value=today().slice(0,7); sgoaResultFields(); }
+  else if(tab==='review')renderDeReview();
+  else if(tab==='evidence')renderDataHistory();
+}
+function renderDataEntryTracker(){
+  var curMonth=today().slice(0,7);
+  var monthName=new Date(curMonth+'-01').toLocaleDateString('en',{month:'long'});
+  if($('mde-period-lbl'))$('mde-period-lbl').textContent=monthName+"'s Submissions";
+  if($('mde-submissions'))$('mde-submissions').textContent=DB.dataSub.filter(function(r){return r.period===curMonth;}).length;
+  var expectedProjects=Object.keys(PROJ).length;
+  if($('mde-expected'))$('mde-expected').textContent=expectedProjects;
+  var reportedProjSet={};
+  DB.dataSub.forEach(function(r){if(r.period===curMonth)reportedProjSet[r.proj]=true;});
+  if($('mde-missing'))$('mde-missing').textContent=Math.max(0,expectedProjects-Object.keys(reportedProjSet).length);
+  if($('mde-rows'))$('mde-rows').textContent=DB.dataSub.reduce(function(s,r){return s+(r.results||[]).length;},0);
+  setDeTab(mdeTab);
+}
+function renderDeOverview(){
+  var curMonth=today().slice(0,7);
+  var projKeys=Object.keys(PROJ);
+  if(projKeys.length){
+    var expectedArr=projKeys.map(function(k){return DB.indicators.filter(function(i){return i.proj===k;}).length;});
+    var receivedArr=projKeys.map(function(k){
+      return DB.dataSub.filter(function(r){return r.proj===k&&r.period===curMonth;}).reduce(function(s,r){return s+(r.results||[]).length;},0);
+    });
+    bars('mde-ch-expected',projKeys,[{d:expectedArr,c:'#1A3A6B'},{d:receivedArr,c:'#C8922A'}],function(v){return Math.round(v);});
+  }
+  var sourceCats=['Field Register','Partner Form','Site Count','Survey'];
+  var colors=['#16a34a','#2563eb','#C8922A','#dc2626'];
+  var counts=sourceCats.map(function(s){return DB.dataSub.filter(function(r){return r.source===s;}).length;});
+  var unspecified=DB.dataSub.filter(function(r){return !r.source||sourceCats.indexOf(r.source)<0;}).length;
+  var segs=sourceCats.map(function(s,i){return {v:counts[i],c:colors[i]};});
+  if(unspecified)segs.push({v:unspecified,c:'#cbd5e1'});
+  donut('mde-ch-source',segs,18,'Total',DB.dataSub.length);
+  var leg=$('mde-ch-source-leg');
+  if(leg){
+    var rows=sourceCats.map(function(s,i){return {l:s,v:counts[i],c:colors[i]};});
+    if(unspecified)rows.push({l:'Unspecified',v:unspecified,c:'#cbd5e1'});
+    leg.innerHTML=rows.map(function(r){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+esc(r.l)+' <b style="margin-left:auto">'+r.v+'</b></div>';}).join('');
+  }
+}
+function mdeFlattenRows(){
+  var curMonth=today().slice(0,7);
+  var rows=[];
+  var covered={};
+  DB.dataSub.forEach(function(r){
+    (r.results||[]).forEach(function(res){
+      var ind=DB.indicators.find(function(x){return x.id===res.indicatorId;});
+      rows.push({submissionId:r.id,proj:r.proj,period:r.period,indicatorName:ind?ind.name:res.indicatorId,
+        dist:r.dist,actual:res.actual,target:res.target,source:r.source,statusRaw:r.status,date:r.date});
+      if(r.period===curMonth)covered[res.indicatorId]=true;
+    });
+  });
+  DB.indicators.forEach(function(i){
+    if(!covered[i.id]){
+      rows.push({submissionId:null,proj:i.proj,period:curMonth,indicatorName:i.name,dist:'-',actual:null,target:i.target,source:'-',statusRaw:'Missing',date:null});
+    }
+  });
+  return rows;
+}
+function renderDeRegister(){
+  var c=$('mde-reg-body');if(!c)return;
+  var search=($('mde-reg-search')?$('mde-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mde-reg-status')?$('mde-reg-status').value:'all';
+  var statusLabel={Submitted:'Submitted',Verified:'Verified',Approved:'Approved',Returned:'Needs Correction',Missing:'Not Submitted'};
+  var statusBdg={Submitted:'bY',Verified:'bB',Approved:'bG',Returned:'bR',Missing:'bY'};
+  var rows=mdeFlattenRows().filter(function(r){
+    if(statusF!=='all'&&r.statusRaw!==statusF)return false;
+    if(search&&((r.submissionId||'')+' '+r.proj+' '+r.period+' '+r.indicatorName).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No submissions match</div>';return;}
+  var h='<table><thead><tr><th>Submission</th><th>Project / Period</th><th>Indicator</th><th>Location</th><th>Actual / Target</th><th>Source</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    h+='<tr><td>'+esc(r.submissionId||'—')+'</td><td>'+esc(r.proj)+' / '+esc(r.period)+'</td><td>'+esc(r.indicatorName)+'</td><td>'+esc(r.dist||'-')+'</td>'+
+      '<td>'+(r.actual==null?'Not received':fmt(r.actual))+' / '+fmt(r.target)+'</td><td>'+esc(r.source||'-')+'</td>'+
+      '<td><span class="bdg '+(statusBdg[r.statusRaw]||'bY')+'">'+(statusLabel[r.statusRaw]||esc(r.statusRaw))+'</span></td>'+
+      '<td>'+(r.submissionId?'<button class="b bo bs" onclick="setDeTab(\'evidence\')">Open</button>':'')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderDeReview(){
+  var c=$('mde-review-body');if(!c)return;
+  var pending=DB.dataSub.filter(function(r){return r.status==='Submitted'||r.status==='Verified';});
+  if(!pending.length){c.innerHTML='<div class="empty">Nothing awaiting review</div>';return;}
+  var h='<table><thead><tr><th>Date</th><th>Project</th><th>Period</th><th>District</th><th>Collector</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  pending.forEach(function(r){
+    var other=r.actorId!==SES.authUserId;
+    var canVerify=other && r.status==='Submitted' && (SES.permissions||[]).indexOf('meal.results.verify')>-1;
+    var canApprove=other && r.status==='Verified' && SES.role==='executive';
+    function button(label,state){return '<button class="b bo bs" data-result-decision="'+state+'" data-result-record="'+esc(r.id)+'">'+label+'</button>';}
+    h+='<tr><td>'+dt(r.date)+'</td><td>'+esc(r.proj)+'</td><td>'+esc(r.period)+'</td><td>'+esc(r.dist||'')+'</td><td>'+esc(r.collector||r.by)+'</td>'+
+      '<td><span class="bdg bY">'+esc(r.status)+'</span></td>'+
+      '<td>'+(canVerify?button('Verify','Verified'):'')+(canApprove?button('Approve','Approved'):'')+((canVerify||canApprove)?button('Return','Returned'):(other?'<span style="font-size:11px;color:var(--g400)">Awaiting authorized reviewer</span>':'<span style="font-size:11px;color:var(--g400)">Pending another reviewer</span>'))+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+
 async function sgoaDecideResult(id,state){
   var r=DB.dataSub.find(function(x){return x.id===id;});if(!r)return;
   if(r.actorId===SES.authUserId){alert('Another authorized person must review your submission.');return;}
@@ -6194,7 +6920,7 @@ async function sgoaDecideResult(id,state){
   if(state==='Verified'){r.verifiedBy=SES.name;r.verifiedAt=new Date().toISOString();}
   if(state==='Approved'){r.approvedBy=SES.name;r.approvedAt=new Date().toISOString();}
   queueCloudSave();
-  if(await saveToCloud()){renderDataHistory();refreshAll();}
+  if(await saveToCloud()){renderDataEntryTracker();refreshAll();}
 }
 document.addEventListener('click',function(e){
   var b=e.target.closest('[data-result-decision]');
@@ -6348,7 +7074,7 @@ function saveInd(){
   DB.indicators.push({id:nid('I'),name:n.value.trim(),proj:$('i-proj').value,level:$('i-level').value,
     target:parseInt($('i-target').value)||0,baseline:baseline,actual:baseline,
     unit:$('i-unit').value||'#',mov:$('i-mov').value,freq:$('i-freq').value,updates:[]});
-  closeM('m-ind');n.value='';renderInd();queueCloudSave();
+  closeM('m-ind');n.value='';renderIndicatorTracker();queueCloudSave();
 }
 
 // ============ INDICATOR PROGRESS UPDATES (with sex disaggregation) ============
@@ -6382,7 +7108,7 @@ function saveIndicatorUpdate(){
   i.actual=actual;
   if(female!==null)i.actualFemale=female;
   if(male!==null)i.actualMale=male;
-  closeM('m-ind-update');renderInd();queueCloudSave();
+  closeM('m-ind-update');renderIndicatorTracker();queueCloudSave();
 }
 
 // ============ MONTHLY VERIFICATION & LOCKING (MEAL) ============
@@ -6618,7 +7344,9 @@ var PROJECT_SELECT_IDS=[
   {id:'fn-proj',all:false,core:false},
   {id:'r-proj',all:true,core:false},
   {id:'w-proj',all:true,core:false},
-  {id:'if-proj',all:true,core:false},
+  {id:'mit-reg-proj',all:true,core:false},
+  {id:'mit-entry-proj',all:true,core:false},
+  {id:'meal-proj-filter',all:true,core:false},
   {id:'a-proj',all:false,core:true},
   {id:'t-proj',all:false,core:false,none:true},
   {id:'in-proj',all:false,core:false},
@@ -7809,13 +8537,25 @@ function saveDist(){
   closeM('m-dist');i.value='';renderDist();queueCloudSave();
 }
 
+function resetVisitModal(){
+  var sel=$('fv-tar');
+  if(sel){
+    sel.innerHTML='<option value="">No travel required</option>'+
+      DB.tars.map(function(t){return '<option value="'+esc(t.id)+'">'+esc(t.id)+' — '+esc(t.purpose)+' ('+esc(t.status)+')</option>';}).join('');
+  }
+  if($('fv-planned')&&!$('fv-planned').value)$('fv-planned').value=today();
+  if($('fv-stage'))$('fv-stage').value='Planned';
+}
+function visitStage(v){ return v.stage||(v.status==='Complete'?'Verified':'Planned'); }
 function saveVisit(){
-  var f=$('fv-find');
-  if(!f||!f.value.trim()){alert('Please enter key findings.');return;}
-  DB.visits.unshift({id:nid('FV'),date:$('fv-date').value||today(),proj:$('fv-proj').value,
-    dist:$('fv-dist').value,sites:parseInt($('fv-sites').value)||0,by:$('fv-by').value||SES.name,
-    type:$('fv-type').value,find:f.value.trim(),act:$('fv-act').value,status:'Complete'});
-  closeM('m-visit');f.value='';renderVisits();queueCloudSave();
+  var planned=$('fv-planned');
+  if(!planned||!planned.value){alert('Please enter the planned visit date.');return;}
+  DB.visits.unshift({id:nid('FV'),plannedDate:planned.value,date:$('fv-date').value||'',proj:$('fv-proj').value,
+    site:$('fv-site').value.trim(),dist:$('fv-dist').value,sites:parseInt($('fv-sites').value)||0,by:$('fv-by').value||SES.name,
+    type:$('fv-type').value,stage:$('fv-stage').value||'Planned',tarId:$('fv-tar').value||'',
+    find:$('fv-find').value.trim(),act:$('fv-act').value.trim(),actionResolved:false,status:'Complete'});
+  closeM('m-visit');['fv-site','fv-find','fv-act'].forEach(function(id){if($(id))$(id).value='';});
+  renderFieldVisitsTracker();queueCloudSave();
 }
 
 // Replaces the old "guess which indicator this hardcoded field means from its English name"
@@ -7841,6 +8581,7 @@ async function submitData(){
   }
   if(!results.length){alert('Enter at least one indicator result, including zero where appropriate.');return;}
   DB.dataSub.unshift({id:nid('RESULT'),proj:proj,period:period,dist:$('de-dist').value,collector:collector,by:SES.name,
+    source:$('de-source')?$('de-source').value:'',
     actorId:SES.authUserId,date:today(),submittedAt:new Date().toISOString(),status:'Submitted',results:results,
     observations:$('de-obs').value.trim()});
   if($('de-obs').value.trim()){
@@ -7851,7 +8592,7 @@ async function submitData(){
   ['de-obs','de-collector'].forEach(function(id){ if($(id))$(id).value=''; });
   queueCloudSave();
   if(await saveToCloud()){
-    renderDataHistory();sgoaResultFields();refreshAll();
+    renderDataEntryTracker();
     alert('Monthly results saved for verification. The approved chart has not changed yet.');
   }
 }
@@ -7859,9 +8600,6 @@ function sgoaResultFields(){
   var select=$('de-proj');if(!select)return;
   var panel=$('sgoa-result-fields');
   if(!panel){ panel=el('div');panel.id='sgoa-result-fields';select.closest('.fr').insertAdjacentElement('afterend',panel); }
-  ['de-classes','de-teachers','de-girls','de-boys','de-gatt','de-batt'].forEach(function(id){
-    var f=$(id);if(f)f.closest('.fg').hidden=true;
-  });
   var indicators=DB.indicators.filter(function(i){return i.proj===select.value;});
   panel.innerHTML='<h3>Indicator results · exact project definitions</h3>'+
     '<p>Zero and decimal values are supported. Monthly results reach the director chart after independent verification and approval.</p>'+
