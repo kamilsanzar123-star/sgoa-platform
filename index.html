@@ -671,15 +671,49 @@ tbody tr:hover td{background:var(--g50);}
     <div class="qi" onclick="go('meal-data')"><div class="qii">&#9999;</div><div class="qil">Data Entry</div></div>
     <div class="qi" onclick="go('projects');setTimeout(function(){openM('m-project');},150)"><div class="qii">&#127919;</div><div class="qil">Add Project</div></div>
   </div>
-  <div class="stats"><div class="st nv"><div class="stl">Total Indicators</div><div class="stv" id="mi-tot">15</div></div>
-  <div class="st gr"><div class="stl">On Track</div><div class="stv" id="mi-on">11</div></div>
-  <div class="st og"><div class="stl">At Risk</div><div class="stv" id="mi-risk">3</div></div>
-  <div class="st rd"><div class="stl">Off Track</div><div class="stv" id="mi-off">1</div></div></div>
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Indicators</div><div class="stv" id="mi-tot">15</div></div>
+    <div class="st gr"><div class="stl">On Track</div><div class="stv" id="mi-on">11</div></div>
+    <div class="st og"><div class="stl">At Risk</div><div class="stv" id="mi-risk">3</div></div>
+    <div class="st rd"><div class="stl">Off Track</div><div class="stv" id="mi-off">1</div></div>
+    <div class="st og"><div class="stl">Open CFRM Cases</div><div class="stv" id="mi-cfrm-open">0</div></div>
+    <div class="st rd"><div class="stl">Open Findings</div><div class="stv" id="mi-find-open">0</div></div>
+  </div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">MEAL Analytics &amp; Trends</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+  <div class="cdb" style="padding:14px 17px 4px">
+    <div class="g2">
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Indicator Status</div>
+        <div style="display:flex;align-items:center;gap:14px"><canvas id="meal-ch-indstatus" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="meal-ch-indstatus-leg"></div></div></div>
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Indicators by Project</div>
+        <canvas id="meal-ch-indproj" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+    </div>
+    <div class="g2" style="margin-top:18px">
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">CFRM Cases by Status</div>
+        <div style="display:flex;align-items:center;gap:14px"><canvas id="meal-ch-cfrmstatus" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="meal-ch-cfrmstatus-leg"></div></div></div>
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Severity</div>
+        <canvas id="meal-ch-sev" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+    </div>
+    <div class="g2" style="margin-top:18px">
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Data Quality Dimensions (% rated "Yes")</div>
+        <canvas id="meal-ch-dq" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Corrective Action Closure</div>
+        <div style="display:flex;align-items:center;gap:14px"><canvas id="meal-ch-corrective" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="meal-ch-corrective-leg"></div></div></div>
+    </div>
+    <div class="g2" style="margin-top:18px;margin-bottom:4px">
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Indicator Achievement Trend (6 mo.)</div>
+        <canvas id="meal-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">CFRM Cases Logged (6 mo.)</div>
+        <canvas id="meal-ch-cfrmmonth" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+    </div>
+  </div></div>
+
   <div class="g2">
-    <div class="cd"><div class="cdh"><div class="cdt">Project Indicators</div><button class="b bo bs" onclick="go('meal-ind')">Full View</button></div><div class="cdb" id="meal-mini-ind"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Indicator Tracker</div><button class="b bo bs" onclick="go('meal-ind')">Full View</button></div><div class="cdb tw" id="meal-mini-ind"></div></div>
     <div>
       <div class="cd"><div class="cdh"><div class="cdt">My Tasks</div><button class="b bn bs" onclick="openM('m-task')">+</button></div><div class="cdb" id="meal-tasks"></div></div>
-      <div class="cd"><div class="cdh"><div class="cdt"><span class="dot"></span>Active Alerts</div></div><div class="cdb" id="meal-alerts"></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt"><span class="dot"></span>Key Challenges &amp; Alerts</div></div><div class="cdb" id="meal-alerts"></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Upcoming Decisions &amp; Deadlines</div></div><div class="cdb" id="meal-deadlines"></div></div>
     </div>
   </div>
   <div class="cd"><div class="cdh"><div class="cdt">Gender &amp; CWD Disaggregation</div>
@@ -701,7 +735,22 @@ tbody tr:hover td{background:var(--g50);}
     </div>
   </div></div>
 
-  <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
+  <div class="cd"><div class="cdh"><div class="cdt">Cross-Department Workflow &amp; Responsibility</div></div>
+  <div class="cdb" style="display:flex;flex-direction:column;gap:9px">
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">1</span><div><b>Field teams collect data</b><div style="font-size:11.5px;color:var(--g500)">Enumerators and field staff submit monthly results via Data Entry, disaggregated by sex where applicable.</div></div></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">2</span><div><b>MEAL verifies and locks</b><div style="font-size:11.5px;color:var(--g500)">MEAL staff check submitted results against source documents, then verify or return them for correction in Monthly Verification &amp; Locking above.</div></div></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">3</span><div><b>Findings &amp; risks are escalated</b><div style="font-size:11.5px;color:var(--g500)">Field visit findings, CFRM cases and risks above threshold are assigned an owner and a due date, visible to the relevant department head.</div></div></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">4</span><div><b>Program &amp; department heads act</b><div style="font-size:11.5px;color:var(--g500)">Assigned owners close corrective actions and update CFRM case status; MEAL tracks closure rates in the charts above.</div></div></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span class="bdg bN" style="flex-shrink:0">5</span><div><b>Executive &amp; donor reporting</b><div style="font-size:11.5px;color:var(--g500)">Locked monthly results and DQA/evaluation findings feed the Executive Dashboard and donor reports — no unverified figure is reported upward.</div></div></div>
+  </div></div>
+
+  <div class="cd"><div class="cdh"><div class="cdt">MEAL Workspaces</div></div>
+  <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px" id="meal-workspaces"></div></div>
+
+  <div class="g2">
+    <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bo bs" onclick="go('meal-docs')">Full View</button></div><div class="cdb" id="meal-docs-preview"></div></div>
+  </div>
 </div>
 
 <!-- MEAL INDICATORS -->
@@ -4607,37 +4656,161 @@ function renderAllChallenges(){
 }
 
 
+function mealLast6Months(){
+  var out=[],base=new Date();base.setDate(1);
+  for(var i=5;i>=0;i--){
+    var dd=new Date(base.getFullYear(),base.getMonth()-i,1);
+    out.push({key:dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0'),label:dd.toLocaleDateString('en',{month:'short'})});
+  }
+  return out;
+}
+
 function renderMealHome(){
   var inds=DB.indicators; // was hardcoded to a demo project code that never exists in a real deployment
-  var on=0,risk=0,off=0;
+  var on=0,risk=0,off=0,pending=0;
   DB.indicators.forEach(function(i){
-    if(!i.target)return;
+    if(!i.target){pending++;return;}
     var p=i.actual/i.target;
-    if(p>=0.9)on++;else if(p>=0.7)risk++;else if(i.actual>0)off++;
+    if(p>=0.9)on++;else if(p>=0.7)risk++;else if(i.actual>0)off++;else pending++;
   });
   if($('mi-tot'))$('mi-tot').textContent=DB.indicators.length;
   if($('mi-on'))$('mi-on').textContent=on;
   if($('mi-risk'))$('mi-risk').textContent=risk;
   if($('mi-off'))$('mi-off').textContent=off;
+  if($('mi-cfrm-open'))$('mi-cfrm-open').textContent=DB.cfrm.filter(function(x){return x.status!=='Resolved';}).length;
+  if($('mi-find-open'))$('mi-find-open').textContent=DB.findings.filter(function(f){return f.status!=='Resolved';}).length;
+
+  // ---- Indicator tracker (top 8, real data) ----
   var c=$('meal-mini-ind');
-  if(c){c.innerHTML='';inds.slice(0,6).forEach(function(i){
-    var pct=i.target?Math.round(i.actual/i.target*100):0;
-    var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
-    var r=el('div','mbr');
-    var shortName=i.name.length>38?i.name.slice(0,38)+'…':i.name;
-    r.innerHTML='<div class="mbl" style="font-size:11.5px" title="'+esc(i.name)+'">'+esc(shortName)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
-    c.appendChild(r);
-  });}
+  if(c){
+    if(!inds.length){c.innerHTML='<div class="empty">No indicators yet</div>';}
+    else{
+      var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>%</th><th>Status</th></tr></thead><tbody>';
+      inds.slice(0,8).forEach(function(i){
+        var pct=i.target?Math.round(i.actual/i.target*100):0;
+        var bdg=pct>=90?'<span class="bdg bG">On Track</span>':pct>=70?'<span class="bdg bO">At Risk</span>':pct>0?'<span class="bdg bR">Off Track</span>':'<span class="bdg bY">Pending</span>';
+        h+='<tr><td title="'+esc(i.name)+'">'+esc(i.name.length>42?i.name.slice(0,42)+'…':i.name)+'</td><td>'+esc(i.proj||'-')+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td>'+pct+'%</td><td>'+bdg+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      c.innerHTML=h;
+    }
+  }
   renderDeptTasks('meal-tasks','MEAL');
   renderGenderCWD('meal-gender',$('mg-proj')?$('mg-proj').value:'all');
+
+  // ---- Key challenges & alerts ----
   var a=$('meal-alerts');
   if(a){a.innerHTML='';
-    DB.findings.filter(function(f){return f.dept==='MEAL'&&f.sev!=='positive';}).slice(0,3).forEach(function(f){
+    DB.findings.filter(function(f){return f.dept==='MEAL'&&f.sev!=='positive'&&f.status!=='Resolved';}).slice(0,5).forEach(function(f){
       var d=el('div','al '+(f.sev==='critical'?'alD':'alW'));
       d.innerHTML='<div><b>'+esc(f.title)+'</b><br>'+esc(f.act)+'</div>';
       a.appendChild(d);
     });
     if(!a.innerHTML)a.innerHTML='<div class="empty">No active alerts</div>';
+  }
+
+  // ---- Upcoming decisions & deadlines (MEAL tasks + open findings, by due date) ----
+  var dl=$('meal-deadlines');
+  if(dl){
+    var items=[];
+    DB.tasks.filter(function(t){return t.dept==='MEAL'&&!t.done&&t.status!=='completed'&&t.due;}).forEach(function(t){items.push({title:t.title,due:t.due});});
+    DB.findings.filter(function(f){return f.dept==='MEAL'&&f.status!=='Resolved'&&f.due;}).forEach(function(f){items.push({title:f.title,due:f.due});});
+    items.sort(function(x,y){return new Date(x.due)-new Date(y.due);});
+    dl.innerHTML='';
+    items.slice(0,5).forEach(function(it){
+      var od=overdue(it.due);
+      var r=el('div','tk');
+      r.innerHTML='<div style="flex:1"><div class="tkt">'+esc(it.title)+'</div><div class="tkd'+(od?' od':'')+'">Due '+dt(it.due)+(od?' — OVERDUE':'')+'</div></div>';
+      dl.appendChild(r);
+    });
+    if(!dl.innerHTML)dl.innerHTML='<div class="empty">No upcoming deadlines</div>';
+  }
+
+  // ---- Charts (all from live DB) ----
+  var onS=on,riskS=risk,offS=off,pendS=pending;
+  donut('meal-ch-indstatus',[{v:onS,c:'#16a34a'},{v:riskS,c:'#C8922A'},{v:offS,c:'#dc2626'},{v:pendS,c:'#cbd5e1'}],18);
+  var legHtml=function(rows){return rows.map(function(r){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+esc(r.l)+' — <b>'+r.v+'</b></div>';}).join('');};
+  if($('meal-ch-indstatus-leg'))$('meal-ch-indstatus-leg').innerHTML=legHtml([{l:'On Track',v:onS,c:'#16a34a'},{l:'At Risk',v:riskS,c:'#C8922A'},{l:'Off Track',v:offS,c:'#dc2626'},{l:'Pending Baseline',v:pendS,c:'#cbd5e1'}]);
+
+  var byProj={};
+  DB.indicators.forEach(function(i){var k=i.proj||'Unassigned';byProj[k]=(byProj[k]||0)+1;});
+  var projKeys=Object.keys(byProj);
+  if(projKeys.length)bars('meal-ch-indproj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var cfOpen=DB.cfrm.filter(function(x){return x.status==='Open';}).length;
+  var cfEsc=DB.cfrm.filter(function(x){return x.status==='Escalated';}).length;
+  var cfRes=DB.cfrm.filter(function(x){return x.status==='Resolved';}).length;
+  donut('meal-ch-cfrmstatus',[{v:cfOpen,c:'#C8922A'},{v:cfEsc,c:'#dc2626'},{v:cfRes,c:'#16a34a'}],18);
+  if($('meal-ch-cfrmstatus-leg'))$('meal-ch-cfrmstatus-leg').innerHTML=legHtml([{l:'Open',v:cfOpen,c:'#C8922A'},{l:'Escalated',v:cfEsc,c:'#dc2626'},{l:'Resolved',v:cfRes,c:'#16a34a'}]);
+
+  var sevCounts=['critical','major','minor','positive'].map(function(s){return DB.findings.filter(function(f){return f.sev===s;}).length;});
+  bars('meal-ch-sev',['Critical','Major','Minor','Positive'],[{d:sevCounts,c:['#dc2626','#ea580c','#2563eb','#16a34a']}],function(v){return Math.round(v);});
+
+  var dqDims=[{k:'validity',l:'Validity'},{k:'integrity',l:'Integrity'},{k:'precision',l:'Precision'},{k:'reliability',l:'Reliability'},{k:'timeliness',l:'Timeliness'}];
+  if(DB.dqas.length){
+    var dqPct=dqDims.map(function(d){return Math.round(DB.dqas.filter(function(a){return a[d.k]==='Yes';}).length/DB.dqas.length*100);});
+    bars('meal-ch-dq',dqDims.map(function(d){return d.l;}),[{d:dqPct,c:'#0d9488'}],function(v){return Math.round(v)+'%';});
+  }
+
+  var findResolved=DB.findings.filter(function(f){return f.status==='Resolved';}).length;
+  var findOpenIp=DB.findings.length-findResolved;
+  donut('meal-ch-corrective',[{v:findResolved,c:'#16a34a'},{v:findOpenIp,c:'#ea580c'}],18,'Closed',DB.findings.length?Math.round(findResolved/DB.findings.length*100)+'%':'—');
+  if($('meal-ch-corrective-leg'))$('meal-ch-corrective-leg').innerHTML=legHtml([{l:'Resolved',v:findResolved,c:'#16a34a'},{l:'Open / In Progress',v:findOpenIp,c:'#ea580c'}]);
+
+  var months=mealLast6Months();
+  var trendData=months.map(function(m){
+    var pcts=[];
+    DB.indicators.forEach(function(i){
+      if(!i.target||!i.updates)return;
+      var upd=i.updates.filter(function(u){return (u.date||'').slice(0,7)===m.key;});
+      if(upd.length){var last=upd[upd.length-1];pcts.push(Math.min(100,Math.round(last.actual/i.target*100)));}
+    });
+    return pcts.length?Math.round(pcts.reduce(function(s,v){return s+v;},0)/pcts.length):0;
+  });
+  line('meal-ch-trend',months.map(function(m){return m.label;}),[{d:trendData,c:'#1A3A6B'}]);
+
+  var cfrmByMonth=months.map(function(m){return DB.cfrm.filter(function(x){return (x.date||'').slice(0,7)===m.key;}).length;});
+  bars('meal-ch-cfrmmonth',months.map(function(m){return m.label;}),[{d:cfrmByMonth,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  // ---- MEAL workspaces (real counts, same sub-pages as the quick-nav above) ----
+  var ws=$('meal-workspaces');
+  if(ws){
+    var items2=[
+      {icon:'📈',label:'Indicators',count:DB.indicators.length+' tracked',page:'meal-ind'},
+      {icon:'📞',label:'CFRM',count:cfOpen+cfEsc+' open cases',page:'meal-cfrm'},
+      {icon:'🌍',label:'Field Visits',count:DB.visits.length+' logged',page:'meal-visits'},
+      {icon:'📋',label:'Logframe',count:DB.indicators.length+' statements',page:'meal-lf'},
+      {icon:'🔍',label:'Findings',count:findOpenIp+' open',page:'meal-find'},
+      {icon:'⚠️',label:'Risks',count:DB.risks.filter(function(r){return r.lvl==='critical'||r.lvl==='high';}).length+' high priority',page:'meal-risk'},
+      {icon:'✅',label:'DQA & Evaluations',count:(DB.dqas.length+DB.evaluations.length)+' records',page:'meal-dqa'},
+      {icon:'📁',label:'Documents',count:DB.docs.filter(function(d){return (d.dept==='MEAL'||d.dept==='All')&&d.status!=='Archived';}).length+' files',page:'meal-docs'},
+      {icon:'✏️',label:'Data Entry',count:DB.dataSub.length+' submissions',page:'meal-data'}
+    ];
+    ws.innerHTML='';
+    items2.forEach(function(it){
+      var card=el('div');
+      card.style.cssText='border:1px solid var(--g100);border-radius:8px;padding:11px 13px;cursor:pointer;transition:border-color .15s';
+      card.onmouseover=function(){this.style.borderColor='var(--navy)';};
+      card.onmouseout=function(){this.style.borderColor='var(--g100)';};
+      card.onclick=function(){go(it.page);};
+      card.innerHTML='<div style="font-size:18px;margin-bottom:4px">'+it.icon+'</div><div style="font-size:12.5px;font-weight:700;color:var(--navy)">'+esc(it.label)+'</div><div style="font-size:11px;color:var(--g500)">'+esc(it.count)+'</div>';
+      ws.appendChild(card);
+    });
+  }
+
+  // ---- Documents & SOPs preview (real DB.docs, top 5 most recent) ----
+  var dp=$('meal-docs-preview');
+  if(dp){
+    var docs=DB.docs.filter(function(d){return (d.dept==='MEAL'||d.dept==='All')&&d.status!=='Archived';}).slice().sort(function(x,y){return new Date(y.date)-new Date(x.date);});
+    if(!docs.length){dp.innerHTML='<div class="empty">No documents uploaded yet</div>';}
+    else{
+      dp.innerHTML='';
+      docs.slice(0,5).forEach(function(d){
+        var r=el('div','tk');
+        r.innerHTML='<div style="flex:1"><div class="tkt">'+esc(d.title)+'</div><div class="tkd">'+esc(d.type)+' · v'+esc(d.ver)+' · '+dt(d.date)+'</div></div>';
+        dp.appendChild(r);
+      });
+    }
   }
 }
 
