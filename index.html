@@ -1103,21 +1103,114 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL RISKS -->
 <div class="pg" id="p-meal-risk">
-  <div class="ph"><div><h1>Risk &amp; Audit Findings</h1><p>Live risk tracking with automatic scoring, plus internal/external/donor audit findings tracked to closure</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bo bs" onclick="openM('m-risk')">+ Add Risk</button><button class="b bn bs" onclick="openM('m-audit-finding')">+ Add Audit Finding</button></div></div>
-  <div class="stats"><div class="st rd"><div class="stl">Critical (15-25)</div><div class="stv" id="rk-c">0</div></div>
-  <div class="st og"><div class="stl">High (10-14)</div><div class="stv" id="rk-h">0</div></div>
-  <div class="st gd"><div class="stl">Medium (5-9)</div><div class="stv" id="rk-m">0</div></div>
-  <div class="st gr"><div class="stl">Low (1-4)</div><div class="stv" id="rk-l">0</div></div></div>
-  <div id="risk-list"></div>
+  <div class="ph"><div><h1>Risk &amp; Audit Findings</h1><p>MEAL · Live risk scoring plus internal/external/donor audit findings tracked to closure</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bo bs" onclick="openM('m-risk')">+ Add Risk</button><button class="b bn bs" onclick="openM('m-audit-finding')">+ Add Audit Finding</button></div></div>
 
-  <div class="cd"><div class="cdh"><div class="cdt">Audit Findings &amp; Corrective Action Tracker</div></div></div>
   <div class="stats">
-    <div class="st og"><div class="stl">Open Findings</div><div class="stv" id="af-open">0</div></div>
-    <div class="st rd"><div class="stl">Overdue</div><div class="stv" id="af-overdue">0</div></div>
-    <div class="st gr"><div class="stl">Closed</div><div class="stv" id="af-closed">0</div></div>
+    <div class="st nv"><div class="stl">Total Risks</div><div class="stv" id="rk-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="rk-tot-sub">—</div></div>
+    <div class="st rd"><div class="stl">High Priority Risks</div><div class="stv" id="rk-highpri">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Critical + High, need mitigation</div></div>
+    <div class="st og"><div class="stl">Open Audit Findings</div><div class="stv" id="af-open">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="af-open-sub">—</div></div>
+    <div class="st rd"><div class="stl">Overdue Findings</div><div class="stv" id="af-overdue">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Past due date</div></div>
+    <div class="st gr"><div class="stl">Findings Closed</div><div class="stv" id="af-closed">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="af-closed-sub">—</div></div>
+    <div class="st nv"><div class="stl">Avg. Closure Time</div><div class="stv" id="af-avgdays">—</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">days, closed findings</div></div>
   </div>
-  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Source</th><th>Finding</th><th>Project</th><th>Severity</th><th>Responsible</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="audit-findings-body"></tbody></table></div></div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mrk-tab-overview" onclick="setRkTab('overview')">Overview</button>
+    <button class="b bo bs" id="mrk-tab-register" onclick="setRkTab('register')">Record Register</button>
+    <button class="b bo bs" id="mrk-tab-entry" onclick="setRkTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mrk-tab-review" onclick="setRkTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mrk-tab-evidence" onclick="setRkTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mrk-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Risk Matrix (Likelihood × Impact)</div></div>
+        <div class="cdb" id="mrk-matrix"></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Risks by Category</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mrk-ch-cat" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Risks by Status</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mrk-ch-status" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mrk-ch-status-leg"></div></div></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Audit Findings by Severity</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mrk-ch-afsev" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mrk-ch-afsev-leg"></div></div></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Audit Findings by Source</div>
+          <canvas id="mrk-ch-afsrc" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Audit Findings Logged (6 mo.)</div>
+          <canvas id="mrk-ch-aftrend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mrk-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Risk Register</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mrk-reg-search" oninput="renderRkRegister()" placeholder="Risk ID, title, category or project"></div>
+        <div class="fg"><label>Level</label><select id="mrk-reg-level" onchange="renderRkRegister()"><option value="all">All Levels</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mrk-reg-body"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Audit Findings Register</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="maf-reg-search" oninput="renderAfRegister()" placeholder="Finding ID, title, source or project"></div>
+        <div class="fg"><label>Status</label><select id="maf-reg-status" onchange="renderAfRegister()"><option value="all">All States</option><option value="Open">Open</option><option value="Closed">Closed</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="maf-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mrk-panel-entry" style="display:none">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Risk Register</div></div>
+        <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Score = Likelihood × Impact. ≥15 Critical, ≥10 High, ≥5 Medium, else Low.</p>
+          <button class="b bn" onclick="openM('m-risk')">+ Add Risk</button></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Audit Findings</div></div>
+        <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Record internal, external, donor or governance findings with a responsible owner and due date.</p>
+          <button class="b bn" onclick="openM('m-audit-finding')">+ Add Audit Finding</button></div></div>
+    </div>
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">How a Risk Is Handled</div></div>
+        <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:11.5px;margin-top:3px">Identify</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:11.5px;margin-top:3px">Score L×I</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:11.5px;margin-top:3px">Mitigate</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:11.5px;margin-top:3px">Monitor</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:11.5px;margin-top:3px">Close</div></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">How an Audit Finding Is Handled</div></div>
+        <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:11.5px;margin-top:3px">Record finding</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:11.5px;margin-top:3px">Assign owner</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:11.5px;margin-top:3px">Act &amp; respond</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:11.5px;margin-top:3px">Review evidence</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:11.5px;margin-top:3px">Close</div></div>
+        </div></div>
+    </div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mrk-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Risks Needing Mitigation Review</div></div><div class="cdb tw" id="mrk-review-body"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Overdue Audit Findings</div></div><div class="cdb tw" id="maf-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mrk-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Risk Log</div></div><div id="risk-list"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Audit Findings Log</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Source</th><th>Finding</th><th>Project</th><th>Severity</th><th>Responsible</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="audit-findings-body"></tbody></table></div></div>
+  </div>
 </div>
 
 <!-- MEAL DQA & EVALUATIONS -->
@@ -4017,7 +4110,7 @@ function render(pg){
       else if(pg==='meal-cfrm'){renderCfrmTracker();}
       else if(pg==='meal-visits'){renderFieldVisitsTracker();}
       else if(pg==='meal-find'){renderFindingsTracker();}
-      else if(pg==='meal-risk'){renderRisks();renderAuditFindings();}
+      else if(pg==='meal-risk'){renderRiskAuditTracker();}
       else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
       else if(pg==='meal-data'){renderDataEntryTracker();}
@@ -5749,12 +5842,152 @@ function renderFindings(){
   });
 }
 
+// ============ RISK & AUDIT FINDINGS (tabbed) ============
+var mrkTab='overview';
+function setRkTab(tab){
+  mrkTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mrk-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mrk-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderRkOverview();
+  else if(tab==='register'){renderRkRegister();renderAfRegister();}
+  else if(tab==='review')renderRkReview();
+  else if(tab==='evidence'){renderRisks();renderAuditFindings();}
+}
+function renderRiskAuditTracker(){
+  if($('rk-tot'))$('rk-tot').textContent=DB.risks.length;
+  var cats=Object.keys(DB.risks.reduce(function(a,r){if(r.cat)a[r.cat]=1;return a;},{})).length;
+  var rprojs=Object.keys(DB.risks.reduce(function(a,r){if(r.proj)a[r.proj]=1;return a;},{})).length;
+  if($('rk-tot-sub'))$('rk-tot-sub').textContent=cats+' categor'+(cats===1?'y':'ies')+' · '+rprojs+' project'+(rprojs===1?'':'s');
+  if($('rk-highpri'))$('rk-highpri').textContent=DB.risks.filter(function(r){return(r.lvl==='critical'||r.lvl==='high')&&r.status!=='Closed';}).length;
+
+  renderAuditFindings();
+  var closedAF=DB.auditFindings.filter(function(f){return f.status==='Closed';});
+  var afSources=Object.keys(DB.auditFindings.reduce(function(a,f){if(f.source)a[f.source]=1;return a;},{})).length;
+  if($('af-open-sub'))$('af-open-sub').textContent=afSources+' source'+(afSources===1?'':'s')+' tracked';
+  if($('af-closed-sub'))$('af-closed-sub').textContent=(DB.auditFindings.length?Math.round(closedAF.length/DB.auditFindings.length*100):0)+'% closure rate';
+  var withTime=closedAF.filter(function(f){return f.closedDate&&f.created;});
+  var avgDays=withTime.length?Math.round(withTime.reduce(function(s,f){return s+(new Date(f.closedDate)-new Date(f.created))/86400000;},0)/withTime.length):null;
+  if($('af-avgdays'))$('af-avgdays').textContent=avgDays==null?'—':avgDays;
+
+  setRkTab(mrkTab);
+}
+function renderRkOverview(){
+  var box=$('mrk-matrix');
+  if(box){
+    var grid={};
+    DB.risks.forEach(function(r){var k=r.like+'-'+r.imp;grid[k]=(grid[k]||0)+1;});
+    var bandColor=function(score){return score>=15?'#dc2626':score>=10?'#ea580c':score>=5?'#C8922A':'#16a34a';};
+    var h='<div style="display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;font-size:10.5px;max-width:420px">';
+    h+='<div></div>';
+    for(var l=1;l<=5;l++)h+='<div style="text-align:center;font-weight:700;color:var(--g500)">L'+l+'</div>';
+    for(var imp=5;imp>=1;imp--){
+      h+='<div style="font-weight:700;color:var(--g500);display:flex;align-items:center">I'+imp+'</div>';
+      for(var like=1;like<=5;like++){
+        var score=like*imp, cnt=grid[like+'-'+imp]||0;
+        h+='<div style="background:'+bandColor(score)+(cnt?'':'22')+';color:'+(cnt?'#fff':'var(--g400)')+';border-radius:5px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:700">'+(cnt||'')+'</div>';
+      }
+    }
+    h+='</div><div style="font-size:10px;color:var(--g400);margin-top:8px">Rows = Impact (1–5, bottom to top) · Columns = Likelihood (1–5) · cell = risk count at that score</div>';
+    box.innerHTML=h;
+  }
+  var byCat={};
+  DB.risks.forEach(function(r){var k=r.cat||'Other';byCat[k]=(byCat[k]||0)+1;});
+  var catKeys=Object.keys(byCat);
+  if(catKeys.length)bars('mrk-ch-cat',catKeys.map(function(k){return k.length>10?k.slice(0,10)+'…':k;}),[{d:catKeys.map(function(k){return byCat[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var statuses=[{k:'Active Risk',c:'#dc2626'},{k:'Monitoring',c:'#C8922A'},{k:'Controlled',c:'#2563eb'},{k:'Closed',c:'#16a34a'}];
+  var stCounts=statuses.map(function(s){return DB.risks.filter(function(r){return r.status===s.k;}).length;});
+  donut('mrk-ch-status',statuses.map(function(s,i){return {v:stCounts[i],c:s.c};}),18);
+  var stLeg=$('mrk-ch-status-leg');
+  if(stLeg)stLeg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+stCounts[i]+'</b></div>';}).join('');
+
+  var afSevs=[{k:'Critical',c:'#dc2626'},{k:'High',c:'#ea580c'},{k:'Medium',c:'#C8922A'},{k:'Low',c:'#16a34a'}];
+  var afSevCounts=afSevs.map(function(s){return DB.auditFindings.filter(function(f){return f.severity===s.k;}).length;});
+  donut('mrk-ch-afsev',afSevs.map(function(s,i){return {v:afSevCounts[i],c:s.c};}),18);
+  var afLeg=$('mrk-ch-afsev-leg');
+  if(afLeg)afLeg.innerHTML=afSevs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+afSevCounts[i]+'</b></div>';}).join('');
+
+  var afSrcs=['Internal Audit','External Audit','Donor Audit','Board/Governance'];
+  var afSrcCounts=afSrcs.map(function(s){return DB.auditFindings.filter(function(f){return f.source===s;}).length;});
+  bars('mrk-ch-afsrc',afSrcs.map(function(s){return s.length>12?s.slice(0,12)+'…':s;}),[{d:afSrcCounts,c:'#0d9488'}],function(v){return Math.round(v);});
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return DB.auditFindings.filter(function(f){return (f.created||'').slice(0,7)===m.key;}).length;});
+  bars('mrk-ch-aftrend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
+}
+function renderRkRegister(){
+  var c=$('mrk-reg-body');if(!c)return;
+  var search=($('mrk-reg-search')?$('mrk-reg-search').value:'').trim().toLowerCase();
+  var levelF=$('mrk-reg-level')?$('mrk-reg-level').value:'all';
+  var rows=DB.risks.filter(function(r){
+    if(levelF!=='all'&&r.lvl!==levelF)return false;
+    if(search&&((r.id||'')+' '+r.title+' '+(r.cat||'')+' '+(r.proj||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No risks match</div>';return;}
+  var lvlBdg={critical:'bR',high:'bO',medium:'bY',low:'bG'};
+  var h='<table><thead><tr><th>Risk ID</th><th>Title</th><th>Category / Project</th><th>Score</th><th>Level</th><th>Owner</th><th>Status</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    h+='<tr><td>'+esc(r.id)+'</td><td>'+esc(r.title)+'</td><td>'+esc(r.cat)+' / '+esc(r.proj)+'</td><td>'+r.score+'</td><td><span class="bdg '+(lvlBdg[r.lvl]||'bY')+'">'+esc(r.lvl)+'</span></td><td>'+esc(r.owner||'-')+'</td><td>'+esc(r.status)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderAfRegister(){
+  var c=$('maf-reg-body');if(!c)return;
+  var search=($('maf-reg-search')?$('maf-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('maf-reg-status')?$('maf-reg-status').value:'all';
+  var rows=DB.auditFindings.filter(function(f){
+    if(statusF!=='all'&&f.status!==statusF)return false;
+    if(search&&((f.id||'')+' '+f.title+' '+(f.source||'')+' '+(f.project||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No audit findings match</div>';return;}
+  var sevBdg={Critical:'bR',High:'bO',Medium:'bY',Low:'bG'};
+  var h='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Source / Project</th><th>Severity</th><th>Due</th><th>Status</th></tr></thead><tbody>';
+  rows.forEach(function(f){
+    var od=auditFindingOverdue(f);
+    h+='<tr><td>'+esc(f.id)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.source)+' / '+esc(f.project)+'</td><td><span class="bdg '+(sevBdg[f.severity]||'bY')+'">'+esc(f.severity)+'</span></td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+(f.dueDate?dt(f.dueDate):'-')+(od?' — OVERDUE':'')+'</td><td>'+esc(f.status)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderRkReview(){
+  var rbox=$('mrk-review-body');
+  if(rbox){
+    var risky=DB.risks.filter(function(r){return(r.lvl==='critical'||r.lvl==='high')&&r.status!=='Closed';}).slice().sort(function(a,b){return b.score-a.score;});
+    if(!risky.length){rbox.innerHTML='<div class="empty">No critical or high risks need review</div>';}
+    else{
+      var h='<table><thead><tr><th>Risk ID</th><th>Title</th><th>Score</th><th>Owner</th><th>Status</th></tr></thead><tbody>';
+      risky.forEach(function(r){
+        h+='<tr><td>'+esc(r.id)+'</td><td>'+esc(r.title)+'</td><td>'+r.score+'</td><td>'+esc(r.owner||'-')+'</td>'+
+          '<td><select data-riskstatus="'+esc(r.id)+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit">'+
+          ['Active Risk','Monitoring','Controlled','Closed'].map(function(s){return '<option'+(s===r.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td></tr>';
+      });
+      h+='</tbody></table>';
+      rbox.innerHTML=h;
+    }
+  }
+  var abox=$('maf-review-body');
+  if(abox){
+    var ods=DB.auditFindings.filter(auditFindingOverdue);
+    if(!ods.length){abox.innerHTML='<div class="empty">No overdue audit findings</div>';}
+    else{
+      var h2='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Owner</th><th>Due</th><th>Action</th></tr></thead><tbody>';
+      ods.forEach(function(f){
+        h2+='<tr><td>'+esc(f.id)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.owner||'-')+'</td><td style="color:var(--red);font-weight:600">'+dt(f.dueDate)+' — OVERDUE</td>'+
+          '<td><button class="b bo bs" onclick="toggleAuditFindingStatus(\''+esc(f.id)+'\')">Close</button></td></tr>';
+      });
+      h2+='</tbody></table>';
+      abox.innerHTML=h2;
+    }
+  }
+}
 function renderRisks(){
   var c=$('risk-list');if(!c)return;c.innerHTML='';
-  if($('rk-c'))$('rk-c').textContent=DB.risks.filter(function(r){return r.lvl==='critical';}).length;
-  if($('rk-h'))$('rk-h').textContent=DB.risks.filter(function(r){return r.lvl==='high';}).length;
-  if($('rk-m'))$('rk-m').textContent=DB.risks.filter(function(r){return r.lvl==='medium';}).length;
-  if($('rk-l'))$('rk-l').textContent=DB.risks.filter(function(r){return r.lvl==='low';}).length;
   if(!DB.risks.length){c.innerHTML='<div class="empty">No risks</div>';return;}
   DB.risks.forEach(function(r){
     var cls=r.lvl==='critical'?'cr':r.lvl==='high'?'hi':r.lvl==='medium'?'md2':'lo';
@@ -5774,7 +6007,7 @@ document.addEventListener('change',function(e){
   var rid=e.target.getAttribute && e.target.getAttribute('data-riskstatus');
   if(rid){
     var r=DB.risks.find(function(x){return x.id===rid;});
-    if(r){r.status=e.target.value;queueCloudSave();}
+    if(r){r.status=e.target.value;renderRiskAuditTracker();queueCloudSave();}
   }
 });
 
@@ -5887,7 +6120,7 @@ function saveAuditFinding(){
     owner:$('af-owner').value.trim(),dueDate:$('af-due').value,status:'Open',createdBy:SES.name,created:today()});
   closeM('m-audit-finding');
   resetAuditFindingModal();
-  renderAuditFindings();queueCloudSave();
+  renderRiskAuditTracker();queueCloudSave();
 }
 
 function auditFindingOverdue(f){
@@ -5899,7 +6132,7 @@ function toggleAuditFindingStatus(id){
   if(!f)return;
   f.status=f.status==='Open'?'Closed':'Open';
   if(f.status==='Closed')f.closedDate=today();
-  renderAuditFindings();queueCloudSave();
+  renderRiskAuditTracker();queueCloudSave();
 }
 
 function renderAuditFindings(){
@@ -7602,7 +7835,7 @@ function saveRisk(){
     like:l,imp:i,score:s,lvl:lv,desc:$('r-desc').value,mit:$('r-mit').value,
     owner:$('r-owner').value||SES.name,status:$('r-stat').value});
   closeM('m-risk');t.value='';$('r-desc').value='';$('r-mit').value='';
-  renderRisks();queueCloudSave();
+  renderRiskAuditTracker();queueCloudSave();
 }
 
 function saveAsset(){
