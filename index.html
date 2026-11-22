@@ -758,6 +758,9 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">MEAL Workspaces</div></div>
   <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px" id="meal-workspaces"></div></div>
 
+  <div class="cd"><div class="cdh"><div class="cdt">Recent Activity</div><span style="font-size:10.5px;color:var(--g400)">Latest records across all MEAL tools</span></div>
+  <div class="cdb" id="meal-activity"></div></div>
+
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bo bs" onclick="go('meal-docs')">Full View</button></div><div class="cdb" id="meal-docs-preview"></div></div>
@@ -770,7 +773,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-ind')">+ Add Indicator</button></div></div>
 
   <div class="stats">
-    <div class="st nv"><div class="stl">Active Indicators</div><div class="stv" id="mit-tot">0</div></div>
+    <div class="st nv"><div class="stl">Active Indicators</div><div class="stv" id="mit-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mit-tot-sub">—</div></div>
     <div class="st gr"><div class="stl">Outcome Indicators</div><div class="stv" id="mit-outcome">0</div></div>
     <div class="st og"><div class="stl">Output Indicators</div><div class="stv" id="mit-output">0</div></div>
     <div class="st rd"><div class="stl">Targets Needing Definition</div><div class="stv" id="mit-notarget">0</div></div>
@@ -795,12 +798,18 @@ tbody tr:hover td{background:var(--g50);}
       <div class="cd"><div class="cdh"><div class="cdt">Indicator Achievement Against Target</div></div>
         <div class="cdb" id="mit-achievement"></div></div>
     </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Projected Achievement by Project End Date</div><span style="font-size:10.5px;color:var(--g400)">Linear projection from each indicator's own reported trend</span></div>
+      <div class="cdb tw" id="mit-projection"></div></div>
   </div>
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mit-panel-register" style="display:none">
     <div class="cd"><div class="cdh"><div class="cdt">Indicator Register</div>
+      <div style="display:flex;gap:8px;align-items:center">
       <select id="mit-reg-proj" onchange="renderIndRegister()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"><option value="all">All Projects</option></select>
+      <button class="b bo bs" onclick="exportIndRegisterCSV()">Download CSV</button>
+      </div>
     </div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
@@ -899,7 +908,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mcf-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">CFRM Case Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">CFRM Case Register</div><button class="b bo bs" onclick="exportCfRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mcf-reg-search" oninput="renderCfRegister()" placeholder="Case ID, project, district or description"></div>
@@ -943,7 +952,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <div class="stats">
     <div class="st nv"><div class="stl">Visits Planned</div><div class="stv" id="mfv-planned">0</div></div>
-    <div class="st gr"><div class="stl">Visits Completed</div><div class="stv" id="mfv-completed">0</div></div>
+    <div class="st gr"><div class="stl">Visits Completed</div><div class="stv" id="mfv-completed">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mfv-completed-sub">—</div></div>
     <div class="st og"><div class="stl">Sites Monitored</div><div class="stv" id="mfv-sites">0</div></div>
     <div class="st rd"><div class="stl">Visit Actions Open</div><div class="stv" id="mfv-actions">0</div></div>
   </div>
@@ -971,7 +980,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mfv-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">Field Visits &amp; Monitoring — Visit Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Field Visits &amp; Monitoring — Visit Register</div><button class="b bo bs" onclick="exportFvRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mfv-reg-search" oninput="renderFvRegister()" placeholder="Reference, project, monitor or site"></div>
@@ -1001,6 +1010,7 @@ tbody tr:hover td{background:var(--g50);}
   <!-- REVIEW / ACTION -->
   <div class="mitp" id="mfv-panel-review" style="display:none">
     <div class="cd"><div class="cdh"><div class="cdt">Open Follow-Up Actions</div></div><div class="cdb tw" id="mfv-review-body"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Field Findings Awaiting a Linked Finding</div></div><div class="cdb tw" id="mfv-findlink-body"></div></div>
   </div>
 
   <!-- EVIDENCE & HISTORY -->
@@ -1013,7 +1023,7 @@ tbody tr:hover td{background:var(--g50);}
 <!-- MEAL FINDINGS -->
 <div class="pg" id="p-meal-find">
   <div class="ph"><div><h1>Findings &amp; Corrective Actions</h1><p>MEAL · All findings across departments, with owner, action, and verification status</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-finding')">+ Add Finding</button></div></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bn bs" onclick="openNewFinding()">+ Add Finding</button></div></div>
 
   <div class="stats">
     <div class="st nv"><div class="stl">Total Findings</div><div class="stv" id="fd-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="fd-tot-sub">—</div></div>
@@ -1063,7 +1073,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mfd-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">Findings Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Findings Register</div><button class="b bo bs" onclick="exportFdRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mfd-reg-search" oninput="renderFdRegister()" placeholder="Finding ID, title, department or project"></div>
@@ -1077,7 +1087,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="mitp" id="mfd-panel-entry" style="display:none">
     <div class="cd"><div class="cdh"><div class="cdt">Raise a New Finding</div></div>
       <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">The responsible department records the corrective action and submits it for MEAL verification from their own dashboard.</p>
-        <button class="b bn" onclick="openM('m-finding')">+ Add Finding</button>
+        <button class="b bn" onclick="openNewFinding()">+ Add Finding</button>
       </div></div>
     <div class="cd"><div class="cdh"><div class="cdt">How a Finding Is Handled</div></div>
       <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
@@ -1151,7 +1161,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mrk-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">Risk Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Risk Register</div><button class="b bo bs" onclick="exportRkRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mrk-reg-search" oninput="renderRkRegister()" placeholder="Risk ID, title, category or project"></div>
@@ -1159,7 +1169,7 @@ tbody tr:hover td{background:var(--g50);}
       </div>
     </div>
     <div class="cdb tw" id="mrk-reg-body"></div></div>
-    <div class="cd"><div class="cdh"><div class="cdt">Audit Findings Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Audit Findings Register</div><button class="b bo bs" onclick="exportAfRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="maf-reg-search" oninput="renderAfRegister()" placeholder="Finding ID, title, source or project"></div>
@@ -1266,7 +1276,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mdq-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div><button class="b bo bs" onclick="exportDqRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mdq-reg-search" oninput="renderDqRegister()" placeholder="Project or indicator"></div>
@@ -1274,7 +1284,7 @@ tbody tr:hover td{background:var(--g50);}
       </div>
     </div>
     <div class="cdb tw" id="dqa-body-reg"></div></div>
-    <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div><button class="b bo bs" onclick="exportEvRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mev-reg-search" oninput="renderEvRegister()" placeholder="Project or title"></div>
@@ -1382,7 +1392,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mdc-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">Document Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Document Register</div><button class="b bo bs" onclick="exportDcRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mdc-reg-search" oninput="renderDcRegister()" placeholder="Title or type"></div>
@@ -1427,7 +1437,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button></div></div>
 
   <div class="stats">
-    <div class="st nv"><div class="stl" id="mde-period-lbl">This Month's Submissions</div><div class="stv" id="mde-submissions">0</div></div>
+    <div class="st nv"><div class="stl" id="mde-period-lbl">This Month's Submissions</div><div class="stv" id="mde-submissions">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mde-submissions-sub">—</div></div>
     <div class="st gr"><div class="stl">Expected Project Reports</div><div class="stv" id="mde-expected">0</div></div>
     <div class="st og"><div class="stl">Missing Submissions</div><div class="stv" id="mde-missing">0</div></div>
     <div class="st nv"><div class="stl">Result Rows Collected</div><div class="stv" id="mde-rows">0</div></div>
@@ -1456,7 +1466,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mde-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">Monthly Data Entry — Submission Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Monthly Data Entry — Submission Register</div><button class="b bo bs" onclick="exportDeRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mde-reg-search" oninput="renderDeRegister()" placeholder="Reference, project, owner or period"></div>
@@ -5332,6 +5342,13 @@ function renderMealHome(){
   var submittedProjCount=Object.keys(submittedProjSet).length;
   var verifiedTotal=achieved+offtrack;
 
+  var prevMonth=prevMonthKey(month),prevVerifiedTotal=0;
+  inds.forEach(function(i){
+    var sub=indicatorMonthSubmission(i,prevMonth);
+    var v=sub?getVerification(i,prevMonth):null;
+    if(sub&&v&&v.status==='Verified')prevVerifiedTotal++;
+  });
+
   if($('meal-verified-pct'))$('meal-verified-pct').textContent=(inds.length?Math.round(verifiedTotal/inds.length*100):0)+'%';
 
   var distinctLevels=Object.keys(inds.reduce(function(a,i){if(i.level)a[i.level]=1;return a;},{})).length;
@@ -5343,7 +5360,7 @@ function renderMealHome(){
   if($('mh-reports'))$('mh-reports').textContent=submittedProjCount+' / '+totalProjCovered;
   if($('mh-reports-sub'))$('mh-reports-sub').textContent=(totalProjCovered-submittedProjCount)+' project(s) not submitted';
   if($('mh-verified'))$('mh-verified').textContent=verifiedTotal+' / '+inds.length;
-  if($('mh-verified-sub'))$('mh-verified-sub').textContent=outstanding+' awaiting verification';
+  if($('mh-verified-sub'))$('mh-verified-sub').innerHTML=outstanding+' awaiting verification'+trendBadge(verifiedTotal,prevVerifiedTotal);
   var cfOpen=cfrm.filter(function(x){return x.status==='Open';}).length;
   var cfEsc=cfrm.filter(function(x){return x.status==='Escalated';}).length;
   var cfRes=cfrm.filter(function(x){return x.status==='Resolved';}).length;
@@ -5467,6 +5484,8 @@ function renderMealHome(){
     });
   }
 
+  renderMealActivity(pf);
+
   // ---- Documents & SOPs preview (real DB.docs, top 5 most recent) ----
   var dp=$('meal-docs-preview');
   if(dp){
@@ -5481,6 +5500,55 @@ function renderMealHome(){
       });
     }
   }
+}
+
+function renderMealActivity(pf){
+  var c=$('meal-activity');if(!c)return;
+  var items=[];
+  (pf==='all'?DB.cfrm:DB.cfrm.filter(function(x){return x.proj===pf;})).forEach(function(x){
+    items.push({date:x.date,icon:'📞',text:'CFRM case '+x.id+' logged — '+(x.type||'Feedback'),page:'meal-cfrm',setter:'setCfTab'});
+  });
+  DB.findings.filter(function(f){return f.dept==='MEAL'&&(pf==='all'||f.proj===pf);}).forEach(function(f){
+    items.push({date:f.date,icon:'🔍',text:'Finding logged — '+f.title,page:'meal-find',setter:'setFdTab'});
+  });
+  (pf==='all'?DB.risks:DB.risks.filter(function(r){return r.proj===pf;})).filter(function(r){return r.created;}).forEach(function(r){
+    items.push({date:r.created,icon:'⚠️',text:'Risk logged — '+r.title,page:'meal-risk',setter:'setRkTab'});
+  });
+  DB.auditFindings.filter(function(f){return pf==='all'||f.project===pf||f.project==='All Projects';}).forEach(function(f){
+    items.push({date:f.created,icon:'📋',text:'Audit finding logged — '+f.title,page:'meal-risk',setter:'setRkTab'});
+  });
+  (pf==='all'?DB.dqas:DB.dqas.filter(function(d){return d.project===pf;})).forEach(function(d){
+    items.push({date:d.date,icon:'✅',text:'DQA assessment — '+d.indicator,page:'meal-dqa',setter:'setDqTab'});
+  });
+  (pf==='all'?DB.evaluations:DB.evaluations.filter(function(e){return e.project===pf;})).forEach(function(e){
+    items.push({date:e.start,icon:'📊',text:'Evaluation — '+e.title,page:'meal-dqa',setter:'setDqTab'});
+  });
+  DB.docs.filter(function(d){return d.dept==='MEAL'||d.dept==='All';}).forEach(function(d){
+    items.push({date:d.date,icon:'📁',text:'Document uploaded — '+d.title,page:'meal-docs',setter:'setDcTab'});
+  });
+  (pf==='all'?DB.visits:DB.visits.filter(function(v){return v.proj===pf;})).forEach(function(v){
+    items.push({date:v.date||v.plannedDate,icon:'🌍',text:'Field visit — '+v.proj+(v.site?' / '+v.site:''),page:'meal-visits',setter:'setFvTab'});
+  });
+  (pf==='all'?DB.dataSub:DB.dataSub.filter(function(r){return r.proj===pf;})).forEach(function(r){
+    items.push({date:r.date,icon:'✏️',text:'Data submitted — '+r.proj+' / '+r.period,page:'meal-data',setter:'setDeTab'});
+  });
+  items=items.filter(function(it){return it.date;});
+  items.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  items=items.slice(0,15);
+  if(!items.length){c.innerHTML='<div class="empty">No activity recorded yet</div>';return;}
+  c.innerHTML='';
+  items.forEach(function(it){
+    var r=el('div','tk');
+    r.style.cursor='pointer';
+    r.innerHTML='<div style="flex:1"><div class="tkt">'+it.icon+' '+esc(it.text)+'</div><div class="tkd">'+dt(it.date)+'</div></div>';
+    r.onclick=function(){mealActivityOpen(it.page,it.setter);};
+    c.appendChild(r);
+  });
+}
+function mealActivityOpen(page,setter){
+  go(page);
+  var fn=window[setter];
+  if(typeof fn==='function')fn('register');
 }
 
 // ============ INDICATOR TRACKER & LOGFRAMES (tabbed) ============
@@ -5498,9 +5566,21 @@ function indStatusOf(i){
   var p=i.actual/i.target;
   if(p>=0.9)return 'On Track';if(p>=0.7)return 'At Risk';if(i.actual>0)return 'Off Track';return 'Pending';
 }
+function indAvgAchievementForMonth(m){
+  var pcts=[];
+  DB.indicators.forEach(function(i){
+    if(!i.target||!i.updates)return;
+    var upd=i.updates.filter(function(u){return (u.date||'').slice(0,7)===m;});
+    if(upd.length){var last=upd[upd.length-1];pcts.push(Math.min(100,Math.round(last.actual/i.target*100)));}
+  });
+  return pcts.length?Math.round(pcts.reduce(function(s,v){return s+v;},0)/pcts.length):null;
+}
 function renderIndicatorTracker(){
   // KPI tiles -- shared across every tab, always real
   if($('mit-tot'))$('mit-tot').textContent=DB.indicators.length;
+  var mitCurM=today().slice(0,7),mitPrevM=prevMonthKey(mitCurM);
+  var mitCurAvg=indAvgAchievementForMonth(mitCurM),mitPrevAvg=indAvgAchievementForMonth(mitPrevM);
+  if($('mit-tot-sub'))$('mit-tot-sub').innerHTML=mitCurAvg==null?'No results logged this month':('Avg. achievement '+mitCurAvg+'%'+trendBadge(mitCurAvg,mitPrevAvg));
   if($('mit-outcome'))$('mit-outcome').textContent=DB.indicators.filter(function(i){return i.level==='Outcome';}).length;
   if($('mit-output'))$('mit-output').textContent=DB.indicators.filter(function(i){return i.level==='Output';}).length;
   if($('mit-notarget'))$('mit-notarget').textContent=DB.indicators.filter(function(i){return !i.target;}).length;
@@ -5514,6 +5594,44 @@ function renderIndicatorTrackerBody(){
   else if(mitTab==='evidence')renderIndEvidence();
 }
 
+function monthsBetweenDates(a,b){
+  var da=new Date(a),db=new Date(b);
+  return (db.getFullYear()-da.getFullYear())*12+(db.getMonth()-da.getMonth())+(db.getDate()-da.getDate())/30;
+}
+function indicatorProjection(i){
+  if(!i.target||!i.updates||i.updates.length<2)return null;
+  var sorted=i.updates.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var first=sorted[0],last=sorted[sorted.length-1];
+  var monthsSpan=monthsBetweenDates(first.date,last.date);
+  if(monthsSpan<=0)return null;
+  var endDate=(PROJ[i.proj]&&PROJ[i.proj].end)?PROJ[i.proj].end:null;
+  if(!endDate)return null;
+  var monthsRemaining=monthsBetweenDates(today(),endDate);
+  if(monthsRemaining<0)monthsRemaining=0;
+  var rate=(last.actual-first.actual)/monthsSpan;
+  var projectedActual=Math.max(0,last.actual+rate*monthsRemaining);
+  return {
+    currentPct:Math.round(last.actual/i.target*100),
+    projectedPct:Math.round(projectedActual/i.target*100),
+    rate:rate,
+    monthsRemaining:Math.round(monthsRemaining)
+  };
+}
+function renderIndProjection(){
+  var c=$('mit-projection');if(!c)return;
+  var rows=DB.indicators.map(function(i){return {i:i,p:indicatorProjection(i)};}).filter(function(r){return r.p;});
+  if(!rows.length){c.innerHTML='<div class="empty">Not enough reporting history yet — need at least two dated results plus a project end date per indicator</div>';return;}
+  var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Current Achievement</th><th>Trend / Month</th><th>Months to Project End</th><th>Projected Achievement</th><th>Outlook</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var i=r.i,p=r.p;
+    var outlook=p.projectedPct>=100?{l:'On Track',c:'bG'}:p.projectedPct>=70?{l:'At Risk',c:'bO'}:{l:'Off Track',c:'bR'};
+    h+='<tr><td title="'+esc(i.name)+'">'+esc(i.name.length>40?i.name.slice(0,40)+'…':i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+p.currentPct+'%</td>'+
+      '<td>'+(p.rate>=0?'+':'')+fmt(Math.round(p.rate*10)/10)+' '+esc(i.unit||'units')+'/mo</td><td>'+p.monthsRemaining+'</td>'+
+      '<td style="font-weight:700">'+p.projectedPct+'%</td><td><span class="bdg '+outlook.c+'">'+outlook.l+'</span></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
 function renderIndOverview(){
   var byLevel={Outcome:0,Output:0,Impact:0};
   DB.indicators.forEach(function(i){if(byLevel[i.level]!==undefined)byLevel[i.level]++;});
@@ -5537,19 +5655,23 @@ function renderIndOverview(){
       });
     }
   }
+  renderIndProjection();
 }
 
-function renderIndRegister(){
-  var c=$('mit-reg-body');if(!c)return;
+function indRegisterFilteredRows(){
   var pf=$('mit-reg-proj')?$('mit-reg-proj').value:'all';
   var search=($('mit-reg-search')?$('mit-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mit-reg-status')?$('mit-reg-status').value:'all';
-  var inds=DB.indicators.filter(function(i){
+  return DB.indicators.filter(function(i){
     if(pf!=='all'&&i.proj!==pf)return false;
     if(statusF!=='all'&&indStatusOf(i)!==statusF)return false;
     if(search&&(i.name+' '+i.proj).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function renderIndRegister(){
+  var c=$('mit-reg-body');if(!c)return;
+  var inds=indRegisterFilteredRows();
   if(!inds.length){c.innerHTML='<div class="empty">No indicators match</div>';return;}
   var bdgCls={'On Track':'bG','At Risk':'bO','Off Track':'bR','Pending':'bY'};
   var h='<table><thead><tr><th>Indicator ID</th><th>Result Statement</th><th>Project</th><th>Baseline</th><th>Target</th><th>Unit / Frequency</th><th>Status</th><th>Action</th></tr></thead><tbody>';
@@ -5559,6 +5681,13 @@ function renderIndRegister(){
   });
   h+='</tbody></table>';
   c.innerHTML=h;
+}
+function exportIndRegisterCSV(){
+  var rows=[['Indicator ID','Result Statement','Project','Baseline','Target','Unit','Frequency','Status']];
+  indRegisterFilteredRows().forEach(function(i){
+    rows.push([i.id,i.name,i.proj,i.baseline||0,i.target,i.unit,i.freq,indStatusOf(i)]);
+  });
+  downloadCSV(rows,'indicator-register-'+today()+'.csv');
 }
 
 function renderIndEntry(){
@@ -5673,7 +5802,11 @@ function renderCfrmTracker(){
   if($('cf-res'))$('cf-res').textContent=res.length;
   var channels=Object.keys(DB.cfrm.reduce(function(a,x){if(x.chan)a[x.chan]=1;return a;},{})).length;
   var projs=Object.keys(DB.cfrm.reduce(function(a,x){if(x.proj)a[x.proj]=1;return a;},{})).length;
-  if($('cf-tot-sub'))$('cf-tot-sub').textContent=channels+' channel'+(channels===1?'':'s')+' · '+projs+' project'+(projs===1?'':'s');
+  var cfCurM=today().slice(0,7),cfPrevM=prevMonthKey(cfCurM);
+  var cfCurCount=DB.cfrm.filter(function(x){return (x.date||'').slice(0,7)===cfCurM;}).length;
+  var cfPrevCount=DB.cfrm.filter(function(x){return (x.date||'').slice(0,7)===cfPrevM;}).length;
+  if($('cf-tot-sub'))$('cf-tot-sub').innerHTML=channels+' channel'+(channels===1?'':'s')+' · '+projs+' project'+(projs===1?'':'s')+trendBadge(cfCurCount,cfPrevCount);
+  notifyOverdueOnce(DB.cfrm,cfrmOverdue,function(x){return x.assign;},function(x){return 'CFRM case '+x.id+' is overdue for response (due '+dt(cfrmDueDate(x))+').';},'meal-cfrm');
   if($('cf-open-sub'))$('cf-open-sub').textContent=(DB.cfrm.length?Math.round(open.length/DB.cfrm.length*100):0)+'% of total';
   if($('cf-res-sub'))$('cf-res-sub').textContent=(DB.cfrm.length?Math.round(res.length/DB.cfrm.length*100):0)+'% resolution rate';
   if($('cf-overdue'))$('cf-overdue').textContent=DB.cfrm.filter(cfrmOverdue).length;
@@ -5714,15 +5847,25 @@ function renderCfOverview(){
   var projKeys=Object.keys(byProj);
   if(projKeys.length)bars('mcf-ch-proj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
 }
-function renderCfRegister(){
-  var c=$('mcf-reg-body');if(!c)return;
+function cfRegisterFilteredRows(){
   var search=($('mcf-reg-search')?$('mcf-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mcf-reg-status')?$('mcf-reg-status').value:'all';
-  var rows=DB.cfrm.filter(function(x){
+  return DB.cfrm.filter(function(x){
     if(statusF!=='all'&&x.status!==statusF)return false;
     if(search&&((x.id||'')+' '+x.proj+' '+(x.dist||'')+' '+(x.desc||'')).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportCfRegisterCSV(){
+  var rows=[['Case ID','Date','Project','District','Channel','Type','Priority','Due Date','Status','Assigned','Description']];
+  cfRegisterFilteredRows().forEach(function(x){
+    rows.push([x.id,x.date,x.proj,x.dist||'',x.chan,x.type,x.prio,cfrmDueDate(x),x.status,x.assign||'',x.desc||'']);
+  });
+  downloadCSV(rows,'cfrm-register-'+today()+'.csv');
+}
+function renderCfRegister(){
+  var c=$('mcf-reg-body');if(!c)return;
+  var rows=cfRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No cases match</div>';return;}
   var h='<table><thead><tr><th>Case ID</th><th>Project / District</th><th>Channel</th><th>Type</th><th>Priority</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   rows.forEach(function(x){
@@ -5738,13 +5881,14 @@ function renderCfReview(){
   var c=$('mcf-review-body');if(!c)return;
   var pending=DB.cfrm.filter(function(x){return x.status!=='Resolved';}).slice().sort(function(a,b){return new Date(cfrmDueDate(a))-new Date(cfrmDueDate(b));});
   if(!pending.length){c.innerHTML='<div class="empty">No open or escalated cases</div>';return;}
-  var h='<table><thead><tr><th>Case ID</th><th>Project / District</th><th>Description</th><th>Assigned</th><th>Due</th><th>Status</th></tr></thead><tbody>';
+  var h='<table><thead><tr><th>Case ID</th><th>Project / District</th><th>Description</th><th>Assigned</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   pending.forEach(function(x){
     var od=cfrmOverdue(x);
     h+='<tr><td>'+esc(x.id)+'</td><td>'+esc(x.proj)+' / '+esc(x.dist||'-')+'</td><td style="font-size:11.5px">'+esc(x.desc)+'</td><td>'+esc(x.assign||'-')+'</td>'+
       '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(cfrmDueDate(x))+(od?' — OVERDUE':'')+'</td>'+
       '<td><select data-cfrmstatus="'+esc(x.id)+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit">'+
-      ['Open','Escalated','Resolved'].map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td></tr>';
+      ['Open','Escalated','Resolved'].map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td>'+
+      '<td>'+(x.status==='Escalated'?(x.linkedFindingId?'<span class="bdg bG">Finding '+esc(x.linkedFindingId)+'</span>':'<button class="b bo bs" onclick="escalateCfrmToFinding(\''+x.id+'\')">Escalate to Finding</button>'):'')+'</td></tr>';
   });
   h+='</tbody></table>';
   c.innerHTML=h;
@@ -5812,6 +5956,10 @@ function renderFieldVisitsTracker(){
   if($('mfv-planned'))$('mfv-planned').textContent=DB.visits.length;
   var completed=DB.visits.filter(function(v){var s=visitStage(v);return s==='Report Filed'||s==='Verified';});
   if($('mfv-completed'))$('mfv-completed').textContent=completed.length;
+  var fvCurM=today().slice(0,7),fvPrevM=prevMonthKey(fvCurM);
+  var fvCurCount=completed.filter(function(v){return (v.date||v.plannedDate||'').slice(0,7)===fvCurM;}).length;
+  var fvPrevCount=completed.filter(function(v){return (v.date||v.plannedDate||'').slice(0,7)===fvPrevM;}).length;
+  if($('mfv-completed-sub'))$('mfv-completed-sub').innerHTML=fvCurCount+' this month'+trendBadge(fvCurCount,fvPrevCount);
   var sitesMonitored=DB.visits.filter(function(v){return visitStage(v)!=='Planned';}).reduce(function(s,v){return s+(v.sites||0);},0);
   if($('mfv-sites'))$('mfv-sites').textContent=sitesMonitored;
   if($('mfv-actions'))$('mfv-actions').textContent=DB.visits.filter(function(v){return v.act&&!v.actionResolved;}).length;
@@ -5842,16 +5990,26 @@ function renderFvOverview(){
     }
   }
 }
-function renderFvRegister(){
-  var c=$('mfv-reg-body');if(!c)return;
+function fvRegisterFilteredRows(){
   var search=($('mfv-reg-search')?$('mfv-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mfv-reg-status')?$('mfv-reg-status').value:'all';
-  var rows=DB.visits.filter(function(v){
+  return DB.visits.filter(function(v){
     var stage=visitStage(v);
     if(statusF!=='all'&&stage!==statusF)return false;
     if(search&&((v.id||'')+' '+v.proj+' '+(v.by||'')+' '+(v.site||'')).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportFvRegisterCSV(){
+  var rows=[['Visit Reference','Project','Site','Monitor','Planned Date','Status','TAR ID']];
+  fvRegisterFilteredRows().forEach(function(v){
+    rows.push([v.id,v.proj,v.site||'',v.by,dt(v.plannedDate||v.date),visitStage(v),v.tarId||'']);
+  });
+  downloadCSV(rows,'field-visits-'+today()+'.csv');
+}
+function renderFvRegister(){
+  var c=$('mfv-reg-body');if(!c)return;
+  var rows=fvRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No visits match</div>';return;}
   var h='<table><thead><tr><th>Visit Reference</th><th>Project / Site</th><th>Monitor</th><th>Planned Date</th><th>TAR Link</th><th>Report / Actions</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   rows.forEach(function(v){
@@ -5875,6 +6033,21 @@ function renderFvReview(){
   });
   h+='</tbody></table>';
   c.innerHTML=h;
+
+  var fc=$('mfv-findlink-body');
+  if(fc){
+    var withFind=DB.visits.filter(function(v){return v.find&&v.find.trim()&&!v.linkedFindingId;});
+    if(!withFind.length){fc.innerHTML='<div class="empty">No field findings awaiting a linked Finding record</div>';}
+    else{
+      var fh='<table><thead><tr><th>Visit</th><th>Project / Site</th><th>Field Finding</th><th>Monitor</th><th>Action</th></tr></thead><tbody>';
+      withFind.forEach(function(v){
+        fh+='<tr><td>'+esc(v.id)+'</td><td>'+esc(v.proj)+(v.site?' / '+esc(v.site):'')+'</td><td style="font-size:11.5px">'+esc(v.find)+'</td><td>'+esc(v.by)+'</td>'+
+          '<td><button class="b bo bs" onclick="createFindingFromVisit(\''+v.id+'\')">Create Finding</button></td></tr>';
+      });
+      fh+='</tbody></table>';
+      fc.innerHTML=fh;
+    }
+  }
 }
 function resolveVisitAction(id){
   var v=DB.visits.find(function(x){return x.id===id;});if(!v)return;
@@ -5883,6 +6056,40 @@ function resolveVisitAction(id){
 }
 
 // ============ FINDINGS & CORRECTIVE ACTIONS (tabbed) ============
+var findingSourceCfrmId=null, findingSourceVisitId=null;
+function openNewFinding(){
+  findingSourceCfrmId=null;findingSourceVisitId=null;
+  openM('m-finding');
+}
+function escalateCfrmToFinding(id){
+  var x=DB.cfrm.find(function(c){return c.id===id;});
+  if(!x)return;
+  findingSourceCfrmId=id;findingSourceVisitId=null;
+  openM('m-finding');
+  if($('fn-title'))$('fn-title').value='CFRM Escalation — '+x.id+' ('+(x.type||'Case')+')';
+  if($('fn-sev'))$('fn-sev').value=x.prio==='escalate'?'critical':'major';
+  if($('fn-proj'))$('fn-proj').value=x.proj||'';
+  if($('fn-dept'))$('fn-dept').value='MEAL';
+  if($('fn-loc'))$('fn-loc').value=x.dist||'';
+  if($('fn-date'))$('fn-date').value=today();
+  if($('fn-src'))$('fn-src').value='CFRM';
+  if($('fn-desc'))$('fn-desc').value=x.desc||'';
+}
+function createFindingFromVisit(id){
+  var v=DB.visits.find(function(x){return x.id===id;});
+  if(!v)return;
+  findingSourceCfrmId=null;findingSourceVisitId=id;
+  openM('m-finding');
+  if($('fn-title'))$('fn-title').value='Field Visit Finding — '+v.id+' ('+(v.proj||'')+')';
+  if($('fn-sev'))$('fn-sev').value='major';
+  if($('fn-proj'))$('fn-proj').value=v.proj||'';
+  if($('fn-dept'))$('fn-dept').value='MEAL';
+  if($('fn-loc'))$('fn-loc').value=v.site||v.dist||'';
+  if($('fn-date'))$('fn-date').value=today();
+  if($('fn-src'))$('fn-src').value='Monitoring Visit';
+  if($('fn-desc'))$('fn-desc').value=v.find||'';
+  if($('fn-act'))$('fn-act').value=v.act||'';
+}
 var mfdTab='overview';
 function setFdTab(tab){
   mfdTab=tab;
@@ -5901,9 +6108,13 @@ function renderFindingsTracker(){
   if($('fd-tot'))$('fd-tot').textContent=DB.findings.length;
   var depts=Object.keys(DB.findings.reduce(function(a,f){if(f.dept)a[f.dept]=1;return a;},{})).length;
   var projs=Object.keys(DB.findings.reduce(function(a,f){if(f.proj)a[f.proj]=1;return a;},{})).length;
-  if($('fd-tot-sub'))$('fd-tot-sub').textContent=depts+' department'+(depts===1?'':'s')+' · '+projs+' project'+(projs===1?'':'s');
+  var fdCurM=today().slice(0,7),fdPrevM=prevMonthKey(fdCurM);
+  var fdCurCount=DB.findings.filter(function(f){return (f.date||'').slice(0,7)===fdCurM;}).length;
+  var fdPrevCount=DB.findings.filter(function(f){return (f.date||'').slice(0,7)===fdPrevM;}).length;
+  if($('fd-tot-sub'))$('fd-tot-sub').innerHTML=depts+' department'+(depts===1?'':'s')+' · '+projs+' project'+(projs===1?'':'s')+trendBadge(fdCurCount,fdPrevCount);
   if($('fd-c'))$('fd-c').textContent=DB.findings.filter(function(f){return f.sev==='critical';}).length;
   if($('fd-active'))$('fd-active').textContent=active.length;
+  notifyOverdueOnce(DB.findings,function(f){return f.status!=='Resolved'&&overdue(f.due);},function(f){return f.assign;},function(f){return 'Finding "'+f.title+'" is overdue (due '+dt(f.due)+').';},'meal-find');
   var overdueActive=active.filter(function(f){return overdue(f.due);}).length;
   if($('fd-overdue-sub'))$('fd-overdue-sub').textContent=overdueActive+' overdue';
   if($('fd-resolved'))$('fd-resolved').textContent=resolved.length;
@@ -5945,15 +6156,25 @@ function renderFdOverview(){
   var projKeys=Object.keys(byProj);
   if(projKeys.length)bars('mfd-ch-proj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
 }
-function renderFdRegister(){
-  var c=$('mfd-reg-body');if(!c)return;
+function fdRegisterFilteredRows(){
   var search=($('mfd-reg-search')?$('mfd-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mfd-reg-status')?$('mfd-reg-status').value:'all';
-  var rows=DB.findings.filter(function(f){
+  return DB.findings.filter(function(f){
     if(statusF!=='all'&&f.status!==statusF)return false;
     if(search&&((f.id||'')+' '+f.title+' '+(f.dept||'')+' '+(f.proj||'')).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportFdRegisterCSV(){
+  var rows=[['Finding ID','Title','Department','Project','Severity','Source','Due Date','Status','Assigned']];
+  fdRegisterFilteredRows().forEach(function(f){
+    rows.push([f.id,f.title,f.dept,f.proj,f.sev,f.src||'',f.due,f.status,f.assign||'']);
+  });
+  downloadCSV(rows,'findings-register-'+today()+'.csv');
+}
+function renderFdRegister(){
+  var c=$('mfd-reg-body');if(!c)return;
+  var rows=fdRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No findings match</div>';return;}
   var sevBdg={critical:'bR',major:'bO',minor:'bB',positive:'bG'};
   var h='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Dept / Project</th><th>Severity</th><th>Source</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
@@ -6042,13 +6263,17 @@ function renderRiskAuditTracker(){
   if($('rk-tot'))$('rk-tot').textContent=DB.risks.length;
   var cats=Object.keys(DB.risks.reduce(function(a,r){if(r.cat)a[r.cat]=1;return a;},{})).length;
   var rprojs=Object.keys(DB.risks.reduce(function(a,r){if(r.proj)a[r.proj]=1;return a;},{})).length;
-  if($('rk-tot-sub'))$('rk-tot-sub').textContent=cats+' categor'+(cats===1?'y':'ies')+' · '+rprojs+' project'+(rprojs===1?'':'s');
+  var rkCurM=today().slice(0,7),rkPrevM=prevMonthKey(rkCurM);
+  var rkCurCount=DB.risks.filter(function(r){return (r.created||'').slice(0,7)===rkCurM;}).length;
+  var rkPrevCount=DB.risks.filter(function(r){return (r.created||'').slice(0,7)===rkPrevM;}).length;
+  if($('rk-tot-sub'))$('rk-tot-sub').innerHTML=cats+' categor'+(cats===1?'y':'ies')+' · '+rprojs+' project'+(rprojs===1?'':'s')+trendBadge(rkCurCount,rkPrevCount);
   if($('rk-highpri'))$('rk-highpri').textContent=DB.risks.filter(function(r){return(r.lvl==='critical'||r.lvl==='high')&&r.status!=='Closed';}).length;
 
   renderAuditFindings();
   var closedAF=DB.auditFindings.filter(function(f){return f.status==='Closed';});
   var afSources=Object.keys(DB.auditFindings.reduce(function(a,f){if(f.source)a[f.source]=1;return a;},{})).length;
   if($('af-open-sub'))$('af-open-sub').textContent=afSources+' source'+(afSources===1?'':'s')+' tracked';
+  notifyOverdueOnce(DB.auditFindings,auditFindingOverdue,function(f){return f.owner;},function(f){return 'Audit finding "'+f.title+'" is overdue (due '+dt(f.dueDate)+').';},'meal-risk');
   if($('af-closed-sub'))$('af-closed-sub').textContent=(DB.auditFindings.length?Math.round(closedAF.length/DB.auditFindings.length*100):0)+'% closure rate';
   var withTime=closedAF.filter(function(f){return f.closedDate&&f.created;});
   var avgDays=withTime.length?Math.round(withTime.reduce(function(s,f){return s+(new Date(f.closedDate)-new Date(f.created))/86400000;},0)/withTime.length):null;
@@ -6100,15 +6325,25 @@ function renderRkOverview(){
   var trend=months.map(function(m){return DB.auditFindings.filter(function(f){return (f.created||'').slice(0,7)===m.key;}).length;});
   bars('mrk-ch-aftrend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
 }
-function renderRkRegister(){
-  var c=$('mrk-reg-body');if(!c)return;
+function rkRegisterFilteredRows(){
   var search=($('mrk-reg-search')?$('mrk-reg-search').value:'').trim().toLowerCase();
   var levelF=$('mrk-reg-level')?$('mrk-reg-level').value:'all';
-  var rows=DB.risks.filter(function(r){
+  return DB.risks.filter(function(r){
     if(levelF!=='all'&&r.lvl!==levelF)return false;
     if(search&&((r.id||'')+' '+r.title+' '+(r.cat||'')+' '+(r.proj||'')).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportRkRegisterCSV(){
+  var rows=[['Risk ID','Title','Category','Project','Likelihood','Impact','Score','Level','Owner','Status']];
+  rkRegisterFilteredRows().forEach(function(r){
+    rows.push([r.id,r.title,r.cat,r.proj,r.like,r.imp,r.score,r.lvl,r.owner||'',r.status]);
+  });
+  downloadCSV(rows,'risk-register-'+today()+'.csv');
+}
+function renderRkRegister(){
+  var c=$('mrk-reg-body');if(!c)return;
+  var rows=rkRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No risks match</div>';return;}
   var lvlBdg={critical:'bR',high:'bO',medium:'bY',low:'bG'};
   var h='<table><thead><tr><th>Risk ID</th><th>Title</th><th>Category / Project</th><th>Score</th><th>Level</th><th>Owner</th><th>Status</th></tr></thead><tbody>';
@@ -6118,15 +6353,25 @@ function renderRkRegister(){
   h+='</tbody></table>';
   c.innerHTML=h;
 }
-function renderAfRegister(){
-  var c=$('maf-reg-body');if(!c)return;
+function afRegisterFilteredRows(){
   var search=($('maf-reg-search')?$('maf-reg-search').value:'').trim().toLowerCase();
   var statusF=$('maf-reg-status')?$('maf-reg-status').value:'all';
-  var rows=DB.auditFindings.filter(function(f){
+  return DB.auditFindings.filter(function(f){
     if(statusF!=='all'&&f.status!==statusF)return false;
     if(search&&((f.id||'')+' '+f.title+' '+(f.source||'')+' '+(f.project||'')).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportAfRegisterCSV(){
+  var rows=[['Finding ID','Source','Title','Project','Severity','Owner','Due Date','Status']];
+  afRegisterFilteredRows().forEach(function(f){
+    rows.push([f.id,f.source,f.title,f.project,f.severity,f.owner||'',f.dueDate||'',f.status]);
+  });
+  downloadCSV(rows,'audit-findings-register-'+today()+'.csv');
+}
+function renderAfRegister(){
+  var c=$('maf-reg-body');if(!c)return;
+  var rows=afRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No audit findings match</div>';return;}
   var sevBdg={Critical:'bR',High:'bO',Medium:'bY',Low:'bG'};
   var h='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Source / Project</th><th>Severity</th><th>Due</th><th>Status</th></tr></thead><tbody>';
@@ -6219,7 +6464,10 @@ function renderDqaTracker(){
   var good=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Good';});
   var poor=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Needs Improvement';});
   var dqaProjs=Object.keys(DB.dqas.reduce(function(a,d){if(d.project)a[d.project]=1;return a;},{})).length;
-  if($('dqa-tot-sub'))$('dqa-tot-sub').textContent=dqaProjs+' project'+(dqaProjs===1?'':'s');
+  var dqCurM=today().slice(0,7),dqPrevM=prevMonthKey(dqCurM);
+  var dqCurCount=DB.dqas.filter(function(d){return (d.date||'').slice(0,7)===dqCurM;}).length;
+  var dqPrevCount=DB.dqas.filter(function(d){return (d.date||'').slice(0,7)===dqPrevM;}).length;
+  if($('dqa-tot-sub'))$('dqa-tot-sub').innerHTML=dqaProjs+' project'+(dqaProjs===1?'':'s')+trendBadge(dqCurCount,dqPrevCount);
   if($('dqa-poor-sub'))$('dqa-poor-sub').textContent=(DB.dqas.length?Math.round(poor.length/DB.dqas.length*100):0)+'% of DQAs';
   if($('dqa-good'))$('dqa-good').textContent=good.length;
   if($('dqa-good-sub'))$('dqa-good-sub').textContent=(DB.dqas.length?Math.round(good.length/DB.dqas.length*100):0)+'% of DQAs';
@@ -6267,15 +6515,25 @@ function renderDqOverview(){
   var trend=months.map(function(m){return DB.dqas.filter(function(d){return (d.date||'').slice(0,7)===m.key;}).length;});
   bars('mdq-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#C8922A'}],function(v){return Math.round(v);});
 }
-function renderDqRegister(){
-  var c=$('dqa-body-reg');if(!c)return;
+function dqRegisterFilteredRows(){
   var search=($('mdq-reg-search')?$('mdq-reg-search').value:'').trim().toLowerCase();
   var ratingF=$('mdq-reg-rating')?$('mdq-reg-rating').value:'all';
-  var rows=DB.dqas.filter(function(d){
+  return DB.dqas.filter(function(d){
     if(ratingF!=='all'&&dqaOverallRating(d).label!==ratingF)return false;
     if(search&&((d.project||'')+' '+d.indicator).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportDqRegisterCSV(){
+  var rows=[['Project','Indicator','Date','Validity','Integrity','Precision','Reliability','Timeliness','Overall']];
+  dqRegisterFilteredRows().forEach(function(d){
+    rows.push([d.project,d.indicator,d.date,d.validity,d.integrity,d.precision,d.reliability,d.timeliness,dqaOverallRating(d).label]);
+  });
+  downloadCSV(rows,'dqa-register-'+today()+'.csv');
+}
+function renderDqRegister(){
+  var c=$('dqa-body-reg');if(!c)return;
+  var rows=dqRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No assessments match</div>';return;}
   var dimBdg=function(v){return '<span class="bdg '+(v==='Yes'?'bG':v==='Partial'?'bO':'bR')+'" style="padding:1px 5px;font-size:9.5px">'+v[0]+'</span>';};
   var h='<table><thead><tr><th>Project</th><th>Indicator</th><th>Date</th><th>Dimensions (V/I/P/R/T)</th><th>Overall</th></tr></thead><tbody>';
@@ -6286,15 +6544,25 @@ function renderDqRegister(){
   h+='</tbody></table>';
   c.innerHTML=h;
 }
-function renderEvRegister(){
-  var c=$('mev-reg-body');if(!c)return;
+function evRegisterFilteredRows(){
   var search=($('mev-reg-search')?$('mev-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mev-reg-status')?$('mev-reg-status').value:'all';
-  var rows=DB.evaluations.filter(function(e){
+  return DB.evaluations.filter(function(e){
     if(statusF!=='all'&&e.status!==statusF)return false;
     if(search&&((e.project||'')+' '+e.title).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportEvRegisterCSV(){
+  var rows=[['Project','Type','Title','Start','End','Lead','Status']];
+  evRegisterFilteredRows().forEach(function(e){
+    rows.push([e.project,e.type,e.title,e.start||'',e.end||'',e.lead||'',e.status]);
+  });
+  downloadCSV(rows,'evaluations-register-'+today()+'.csv');
+}
+function renderEvRegister(){
+  var c=$('mev-reg-body');if(!c)return;
+  var rows=evRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No evaluations match</div>';return;}
   var sb={Completed:'bG',Ongoing:'bO',Planned:'bY'};
   var h='<table><thead><tr><th>Project</th><th>Type</th><th>Title</th><th>Period</th><th>Lead</th><th>Status</th></tr></thead><tbody>';
@@ -6495,10 +6763,14 @@ function renderDocsTracker(){
   var archived=docs.filter(function(d){return d.status==='Archived';});
   if($('mdc-tot'))$('mdc-tot').textContent=docs.length;
   var types=Object.keys(docs.reduce(function(a,d){if(d.type)a[d.type]=1;return a;},{})).length;
-  if($('mdc-tot-sub'))$('mdc-tot-sub').textContent=types+' type'+(types===1?'':'s');
+  var dcCurM=today().slice(0,7),dcPrevM=prevMonthKey(dcCurM);
+  var dcCurCount=docs.filter(function(d){return (d.date||'').slice(0,7)===dcCurM;}).length;
+  var dcPrevCount=docs.filter(function(d){return (d.date||'').slice(0,7)===dcPrevM;}).length;
+  if($('mdc-tot-sub'))$('mdc-tot-sub').innerHTML=types+' type'+(types===1?'':'s')+trendBadge(dcCurCount,dcPrevCount);
   if($('mdc-active'))$('mdc-active').textContent=active.length;
   if($('mdc-active-sub'))$('mdc-active-sub').textContent=(docs.length?Math.round(active.length/docs.length*100):0)+'% of total';
   if($('mdc-review'))$('mdc-review').textContent=docs.filter(docReviewOverdue).length;
+  notifyOverdueOnce(docs,docReviewOverdue,function(d){return d.by;},function(d){return 'Document "'+d.title+'" is overdue for review (due '+dt(d.reviewDue)+').';},'meal-docs');
   if($('mdc-conf'))$('mdc-conf').textContent=docs.filter(function(d){return d.confidentiality==='Confidential';}).length;
   var withFile=docs.filter(function(d){return !!d.fileUrl;});
   if($('mdc-files'))$('mdc-files').textContent=withFile.length;
@@ -6539,15 +6811,25 @@ function renderDcOverview(){
   var deptKeys=Object.keys(byDept);
   if(deptKeys.length)bars('mdc-ch-dept',deptKeys,[{d:deptKeys.map(function(k){return byDept[k];}),c:'#0d9488'}],function(v){return Math.round(v);});
 }
-function renderDcRegister(){
-  var c=$('mdc-reg-body');if(!c)return;
+function dcRegisterFilteredRows(){
   var search=($('mdc-reg-search')?$('mdc-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mdc-reg-status')?$('mdc-reg-status').value:'all';
-  var rows=mealDocs().filter(function(d){
+  return mealDocs().filter(function(d){
     if(statusF!=='all'&&(d.status||'Active')!==statusF)return false;
     if(search&&(d.title+' '+d.type).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportDcRegisterCSV(){
+  var rows=[['Title','Type','Version','Date','Confidentiality','Review Due','Status']];
+  dcRegisterFilteredRows().forEach(function(d){
+    rows.push([d.title,d.type,d.ver,dt(d.date),d.confidentiality||'Internal',d.reviewDue?dt(d.reviewDue):'',d.status||'Active']);
+  });
+  downloadCSV(rows,'meal-documents-'+today()+'.csv');
+}
+function renderDcRegister(){
+  var c=$('mdc-reg-body');if(!c)return;
+  var rows=dcRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No documents match</div>';return;}
   var h='<table><thead><tr><th>Title</th><th>Type</th><th>Version</th><th>Date</th><th>Confidentiality</th><th>Review Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   rows.forEach(function(d){
@@ -7839,7 +8121,11 @@ function renderDataEntryTracker(){
   var curMonth=today().slice(0,7);
   var monthName=new Date(curMonth+'-01').toLocaleDateString('en',{month:'long'});
   if($('mde-period-lbl'))$('mde-period-lbl').textContent=monthName+"'s Submissions";
-  if($('mde-submissions'))$('mde-submissions').textContent=DB.dataSub.filter(function(r){return r.period===curMonth;}).length;
+  var mdeCurCount=DB.dataSub.filter(function(r){return r.period===curMonth;}).length;
+  if($('mde-submissions'))$('mde-submissions').textContent=mdeCurCount;
+  var mdePrevMonth=prevMonthKey(curMonth);
+  var mdePrevCount=DB.dataSub.filter(function(r){return r.period===mdePrevMonth;}).length;
+  if($('mde-submissions-sub'))$('mde-submissions-sub').innerHTML='vs '+mdePrevCount+' last month'+trendBadge(mdeCurCount,mdePrevCount,new Date(mdePrevMonth+'-01').toLocaleDateString('en',{month:'long'}));
   var expectedProjects=Object.keys(PROJ).length;
   if($('mde-expected'))$('mde-expected').textContent=expectedProjects;
   var reportedProjSet={};
@@ -7891,17 +8177,28 @@ function mdeFlattenRows(){
   });
   return rows;
 }
-function renderDeRegister(){
-  var c=$('mde-reg-body');if(!c)return;
+var mdeStatusLabel={Submitted:'Submitted',Verified:'Verified',Approved:'Approved',Returned:'Needs Correction',Missing:'Not Submitted'};
+function deRegisterFilteredRows(){
   var search=($('mde-reg-search')?$('mde-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mde-reg-status')?$('mde-reg-status').value:'all';
-  var statusLabel={Submitted:'Submitted',Verified:'Verified',Approved:'Approved',Returned:'Needs Correction',Missing:'Not Submitted'};
-  var statusBdg={Submitted:'bY',Verified:'bB',Approved:'bG',Returned:'bR',Missing:'bY'};
-  var rows=mdeFlattenRows().filter(function(r){
+  return mdeFlattenRows().filter(function(r){
     if(statusF!=='all'&&r.statusRaw!==statusF)return false;
     if(search&&((r.submissionId||'')+' '+r.proj+' '+r.period+' '+r.indicatorName).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportDeRegisterCSV(){
+  var rows=[['Submission','Project','Period','Indicator','Location','Actual','Target','Source','Status']];
+  deRegisterFilteredRows().forEach(function(r){
+    rows.push([r.submissionId||'',r.proj,r.period,r.indicatorName,r.dist||'',r.actual==null?'':r.actual,r.target,r.source||'',mdeStatusLabel[r.statusRaw]||r.statusRaw]);
+  });
+  downloadCSV(rows,'monthly-data-entry-'+today()+'.csv');
+}
+function renderDeRegister(){
+  var c=$('mde-reg-body');if(!c)return;
+  var statusLabel=mdeStatusLabel;
+  var statusBdg={Submitted:'bY',Verified:'bB',Approved:'bG',Returned:'bR',Missing:'bY'};
+  var rows=deRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No submissions match</div>';return;}
   var h='<table><thead><tr><th>Submission</th><th>Project / Period</th><th>Indicator</th><th>Location</th><th>Actual / Target</th><th>Source</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   rows.forEach(function(r){
@@ -7984,6 +8281,19 @@ function notify(userName,category,message,link){
   if(userName===SES.name)renderNotifBell();
 }
 
+function notifyOverdueOnce(records,isOverdueFn,userFn,msgFn,link){
+  records.forEach(function(r){
+    if(isOverdueFn(r)){
+      if(!r._overdueNotified){
+        r._overdueNotified=true;
+        var who=userFn(r);
+        if(who)notify(who,'meal',msgFn(r),link);
+      }
+    }else if(r._overdueNotified){
+      r._overdueNotified=false;
+    }
+  });
+}
 function renderNotifBell(){
   var badge=$('notif-badge');if(!badge)return;
   var unread=DB.notifications.filter(function(n){return n.user===SES.name && !n.read;}).length;
@@ -8201,6 +8511,25 @@ function renderMonthlyReport(){
   if($('mr-offtrack'))$('mr-offtrack').textContent=offtrack;
   if($('mr-outstanding'))$('mr-outstanding').textContent=outstanding;
 }
+function prevMonthKey(m){
+  var d=new Date(m+'-01T00:00:00');
+  d.setMonth(d.getMonth()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function trendBadge(curr,prev,periodLabel){
+  if(prev==null)return '';
+  var arrow,pct;
+  if(curr===prev){arrow='▬';pct=null;}
+  else{arrow=curr>prev?'▲':'▼';pct=prev?Math.round(Math.abs(curr-prev)/Math.abs(prev)*100):100;}
+  return ' · <span style="color:var(--navy);font-weight:700">'+arrow+(pct!=null?' '+pct+'%':'')+'</span> vs '+(periodLabel||'last month');
+}
+function downloadCSV(rows,filename){
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 function exportMonthlyReport(){
   var monthEl=$('mv-month');
   var month=monthEl&&monthEl.value?monthEl.value:today().slice(0,7);
@@ -8230,12 +8559,26 @@ function saveCFRM(){
 function saveFinding(){
   var t=$('fn-title');
   if(!t||!t.value.trim()){alert('Please enter finding title.');return;}
-  DB.findings.push({id:nid('F'),title:t.value.trim(),sev:$('fn-sev').value,
+  var f={id:nid('F'),title:t.value.trim(),sev:$('fn-sev').value,
     proj:$('fn-proj').value,dept:$('fn-dept').value,loc:$('fn-loc').value,date:$('fn-date').value||today(),
     src:$('fn-src').value,desc:$('fn-desc').value,act:$('fn-act').value,
-    assign:$('fn-assign').value||SES.name,due:$('fn-due').value||today(),status:'Open',progress:0});
+    assign:$('fn-assign').value||SES.name,due:$('fn-due').value||today(),status:'Open',progress:0};
+  if(findingSourceCfrmId)f.sourceCfrmId=findingSourceCfrmId;
+  if(findingSourceVisitId)f.sourceVisitId=findingSourceVisitId;
+  DB.findings.push(f);
+  if(findingSourceCfrmId){
+    var cx=DB.cfrm.find(function(c){return c.id===findingSourceCfrmId;});
+    if(cx)cx.linkedFindingId=f.id;
+  }
+  if(findingSourceVisitId){
+    var vx=DB.visits.find(function(v){return v.id===findingSourceVisitId;});
+    if(vx)vx.linkedFindingId=f.id;
+  }
+  findingSourceCfrmId=null;findingSourceVisitId=null;
   closeM('m-finding');t.value='';$('fn-desc').value='';$('fn-act').value='';
   renderFindingsTracker();refreshAll();queueCloudSave();
+  if(typeof renderCfrmTracker==='function')renderCfrmTracker();
+  if(typeof renderFieldVisitsTracker==='function')renderFieldVisitsTracker();
 }
 
 function saveRisk(){
@@ -8245,7 +8588,7 @@ function saveRisk(){
   var lv=s>=15?'critical':s>=10?'high':s>=5?'medium':'low';
   DB.risks.push({id:nid('R'),title:t.value.trim(),cat:$('r-cat').value,proj:$('r-proj').value,
     like:l,imp:i,score:s,lvl:lv,desc:$('r-desc').value,mit:$('r-mit').value,
-    owner:$('r-owner').value||SES.name,status:$('r-stat').value});
+    owner:$('r-owner').value||SES.name,status:$('r-stat').value,created:today()});
   closeM('m-risk');t.value='';$('r-desc').value='';$('r-mit').value='';
   renderRiskAuditTracker();queueCloudSave();
 }
