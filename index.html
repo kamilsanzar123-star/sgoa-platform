@@ -848,13 +848,92 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL CFRM -->
 <div class="pg" id="p-meal-cfrm">
-  <div class="ph"><div><h1>CFRM Register</h1><p>Community Feedback and Response Mechanism — live cases</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-cfrm')">+ Register Case</button></div></div>
-  <div class="stats"><div class="st rd"><div class="stl">Escalated</div><div class="stv" id="cf-esc">0</div></div>
-  <div class="st og"><div class="stl">Open</div><div class="stv" id="cf-open">0</div></div>
-  <div class="st gr"><div class="stl">Resolved</div><div class="stv" id="cf-res">0</div></div>
-  <div class="st nv"><div class="stl">Total Cases</div><div class="stv" id="cf-tot">0</div></div></div>
-  <div class="cd"><div class="cdb" id="cfrm-list"></div></div>
+  <div class="ph"><div><h1>CFRM &amp; Feedback</h1><p>MEAL · Community Feedback and Response Mechanism — cases, triage, resolution and evidence</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-cfrm')">+ Register Case</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Cases</div><div class="stv" id="cf-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="cf-tot-sub">—</div></div>
+    <div class="st og"><div class="stl">Open</div><div class="stv" id="cf-open">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="cf-open-sub">—</div></div>
+    <div class="st rd"><div class="stl">Escalated</div><div class="stv" id="cf-esc">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Priority response</div></div>
+    <div class="st gr"><div class="stl">Resolved</div><div class="stv" id="cf-res">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="cf-res-sub">—</div></div>
+    <div class="st rd"><div class="stl">Overdue Response</div><div class="stv" id="cf-overdue">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Past SLA due date</div></div>
+    <div class="st nv"><div class="stl">Avg. Resolution Time</div><div class="stv" id="cf-avgdays">—</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">days, resolved cases</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mcf-tab-overview" onclick="setCfTab('overview')">Overview</button>
+    <button class="b bo bs" id="mcf-tab-register" onclick="setCfTab('register')">Record Register</button>
+    <button class="b bo bs" id="mcf-tab-entry" onclick="setCfTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mcf-tab-review" onclick="setCfTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mcf-tab-evidence" onclick="setCfTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mcf-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Case Status Breakdown</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mcf-ch-status" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mcf-ch-status-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Cases by Channel</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mcf-ch-channel" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Cases by Type</div>
+          <canvas id="mcf-ch-type" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Cases by Priority</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mcf-ch-prio" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mcf-ch-prio-leg"></div></div></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Cases Logged (6 mo.)</div>
+          <canvas id="mcf-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Cases by Project</div>
+          <canvas id="mcf-ch-proj" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mcf-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">CFRM Case Register</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mcf-reg-search" oninput="renderCfRegister()" placeholder="Case ID, project, district or description"></div>
+        <div class="fg"><label>Status</label><select id="mcf-reg-status" onchange="renderCfRegister()"><option value="all">All States</option><option value="Open">Open</option><option value="Escalated">Escalated</option><option value="Resolved">Resolved</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mcf-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mcf-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Register a New Case</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">A response due date is set automatically from the case priority: Escalate &amp; Safeguarding — 1 day, Urgent — 3 days, Normal — 14 days.</p>
+        <button class="b bn" onclick="openM('m-cfrm')">+ Register Case</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Case Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Register case</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Triage &amp; assign</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Investigate</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Respond &amp; resolve</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Verify &amp; close</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mcf-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Open &amp; Escalated Cases Needing Action</div></div><div class="cdb tw" id="mcf-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mcf-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Case History</div></div><div class="cdb tw" id="cfrm-list"></div></div>
+  </div>
 </div>
 
 <!-- MEAL VISITS -->
@@ -3855,7 +3934,7 @@ function render(pg){
       else if(pg==='settings'){renderSettings();}
       else if(pg==='meal'){renderMealHome();renderMonthlyVerification();renderMonthlyReport();}
       else if(pg==='meal-ind'){renderIndicatorTracker();}
-      else if(pg==='meal-cfrm'){renderCFRM();}
+      else if(pg==='meal-cfrm'){renderCfrmTracker();}
       else if(pg==='meal-visits'){renderFieldVisitsTracker();}
       else if(pg==='meal-find'){renderFindings();}
       else if(pg==='meal-risk'){renderRisks();renderAuditFindings();}
@@ -5207,31 +5286,137 @@ function renderIndEvidence(){
   }
 }
 
-function renderCFRM(){
-  var c=$('cfrm-list');if(!c)return;c.innerHTML='';
-  if($('cf-esc'))$('cf-esc').textContent=DB.cfrm.filter(function(x){return x.status==='Escalated';}).length;
-  if($('cf-open'))$('cf-open').textContent=DB.cfrm.filter(function(x){return x.status==='Open';}).length;
-  if($('cf-res'))$('cf-res').textContent=DB.cfrm.filter(function(x){return x.status==='Resolved';}).length;
-  if($('cf-tot'))$('cf-tot').textContent=DB.cfrm.length;
-  if(!DB.cfrm.length){c.innerHTML='<div class="empty">No cases registered</div>';return;}
-  DB.cfrm.forEach(function(x){
-    var cls=x.status==='Escalated'?'es':x.status==='Resolved'?'cl':'op';
-    var bd=x.status==='Escalated'?'bR':x.status==='Resolved'?'bG':'bO';
-    var d=el('div','cf '+cls);
-    d.innerHTML='<div style="display:flex;justify-content:space-between;gap:9px"><div><b style="font-size:12.5px">'+x.id+'</b><div style="font-size:12px;color:var(--g600);margin-top:3px">'+esc(x.desc)+'</div></div>'+
-      '<select data-cfrmstatus="'+x.id+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit;height:fit-content">'+
-      ['Open','Escalated','Resolved'].map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+
-      '</select></div>'+
-      '<div style="font-size:10.5px;color:var(--g400);margin-top:6px">'+dt(x.date)+' · '+esc(x.dist)+' · '+esc(x.chan)+' · '+esc(x.type)+' · Assigned: '+esc(x.assign)+' · '+esc(x.proj)+'</div>';
-    c.appendChild(d);
+// ============ CFRM & FEEDBACK (tabbed) ============
+function cfrmSlaDays(x){ return (x.type==='Safeguarding'||x.prio==='escalate')?1:x.prio==='urgent'?3:14; }
+function cfrmDueDate(x){
+  var d=new Date(x.date||today()); d.setDate(d.getDate()+cfrmSlaDays(x));
+  return d.toISOString().slice(0,10);
+}
+function cfrmOverdue(x){ return x.status!=='Resolved' && overdue(cfrmDueDate(x)); }
+function cfrmStatusBdg(s){ return s==='Escalated'?'bR':s==='Resolved'?'bG':'bO'; }
+
+var mcfTab='overview';
+function setCfTab(tab){
+  mcfTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mcf-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mcf-panel-'+t);if(p)p.style.display=t===tab?'':'none';
   });
+  if(tab==='overview')renderCfOverview();
+  else if(tab==='register')renderCfRegister();
+  else if(tab==='review')renderCfReview();
+  else if(tab==='evidence')renderCFRM();
+}
+function renderCfrmTracker(){
+  var open=DB.cfrm.filter(function(x){return x.status==='Open';});
+  var esc=DB.cfrm.filter(function(x){return x.status==='Escalated';});
+  var res=DB.cfrm.filter(function(x){return x.status==='Resolved';});
+  if($('cf-tot'))$('cf-tot').textContent=DB.cfrm.length;
+  if($('cf-open'))$('cf-open').textContent=open.length;
+  if($('cf-esc'))$('cf-esc').textContent=esc.length;
+  if($('cf-res'))$('cf-res').textContent=res.length;
+  var channels=Object.keys(DB.cfrm.reduce(function(a,x){if(x.chan)a[x.chan]=1;return a;},{})).length;
+  var projs=Object.keys(DB.cfrm.reduce(function(a,x){if(x.proj)a[x.proj]=1;return a;},{})).length;
+  if($('cf-tot-sub'))$('cf-tot-sub').textContent=channels+' channel'+(channels===1?'':'s')+' · '+projs+' project'+(projs===1?'':'s');
+  if($('cf-open-sub'))$('cf-open-sub').textContent=(DB.cfrm.length?Math.round(open.length/DB.cfrm.length*100):0)+'% of total';
+  if($('cf-res-sub'))$('cf-res-sub').textContent=(DB.cfrm.length?Math.round(res.length/DB.cfrm.length*100):0)+'% resolution rate';
+  if($('cf-overdue'))$('cf-overdue').textContent=DB.cfrm.filter(cfrmOverdue).length;
+  var resolvedWithTime=res.filter(function(x){return x.resolvedOn;});
+  var avgDays=resolvedWithTime.length?Math.round(resolvedWithTime.reduce(function(s,x){return s+(new Date(x.resolvedOn)-new Date(x.date))/86400000;},0)/resolvedWithTime.length):null;
+  if($('cf-avgdays'))$('cf-avgdays').textContent=avgDays==null?'—':avgDays;
+  setCfTab(mcfTab);
+}
+function renderCfOverview(){
+  var statuses=['Open','Escalated','Resolved'];
+  var colors={Open:'#C8922A',Escalated:'#dc2626',Resolved:'#16a34a'};
+  var counts=statuses.map(function(s){return DB.cfrm.filter(function(x){return x.status===s;}).length;});
+  donut('mcf-ch-status',statuses.map(function(s,i){return {v:counts[i],c:colors[s]};}),18,'Total',DB.cfrm.length);
+  var leg=$('mcf-ch-status-leg');
+  if(leg)leg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+colors[s]+';display:inline-block"></span>'+s+' <b style="margin-left:auto">'+counts[i]+'</b></div>';}).join('');
+
+  var channels=['Hotline','Suggestion Box','Community Focal Point','Walk-in','Field Staff'];
+  var chanCounts=channels.map(function(c){return DB.cfrm.filter(function(x){return x.chan===c;}).length;});
+  bars('mcf-ch-channel',channels.map(function(c){return c.length>12?c.slice(0,12)+'…':c;}),[{d:chanCounts,c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var byType={};
+  DB.cfrm.forEach(function(x){var k=x.type||'Other';byType[k]=(byType[k]||0)+1;});
+  var typeKeys=Object.keys(byType);
+  if(typeKeys.length)bars('mcf-ch-type',typeKeys.map(function(k){return k.length>12?k.slice(0,12)+'…':k;}),[{d:typeKeys.map(function(k){return byType[k];}),c:'#0d9488'}],function(v){return Math.round(v);});
+
+  var prios=[{k:'normal',l:'Normal',c:'#2563eb'},{k:'urgent',l:'Urgent',c:'#C8922A'},{k:'escalate',l:'Escalate',c:'#dc2626'}];
+  var prioCounts=prios.map(function(p){return DB.cfrm.filter(function(x){return x.prio===p.k;}).length;});
+  donut('mcf-ch-prio',prios.map(function(p,i){return {v:prioCounts[i],c:p.c};}),18);
+  var prioLeg=$('mcf-ch-prio-leg');
+  if(prioLeg)prioLeg.innerHTML=prios.map(function(p,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+p.c+';display:inline-block"></span>'+p.l+' <b style="margin-left:auto">'+prioCounts[i]+'</b></div>';}).join('');
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return DB.cfrm.filter(function(x){return (x.date||'').slice(0,7)===m.key;}).length;});
+  bars('mcf-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  var byProj={};
+  DB.cfrm.forEach(function(x){var k=x.proj||'Unassigned';byProj[k]=(byProj[k]||0)+1;});
+  var projKeys=Object.keys(byProj);
+  if(projKeys.length)bars('mcf-ch-proj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+}
+function renderCfRegister(){
+  var c=$('mcf-reg-body');if(!c)return;
+  var search=($('mcf-reg-search')?$('mcf-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mcf-reg-status')?$('mcf-reg-status').value:'all';
+  var rows=DB.cfrm.filter(function(x){
+    if(statusF!=='all'&&x.status!==statusF)return false;
+    if(search&&((x.id||'')+' '+x.proj+' '+(x.dist||'')+' '+(x.desc||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No cases match</div>';return;}
+  var h='<table><thead><tr><th>Case ID</th><th>Project / District</th><th>Channel</th><th>Type</th><th>Priority</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(x){
+    var od=cfrmOverdue(x);
+    h+='<tr><td>'+esc(x.id)+'</td><td>'+esc(x.proj)+' / '+esc(x.dist||'-')+'</td><td>'+esc(x.chan)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.prio)+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(cfrmDueDate(x))+(od?' — OVERDUE':'')+'</td>'+
+      '<td><span class="bdg '+cfrmStatusBdg(x.status)+'">'+esc(x.status)+'</span></td><td><button class="b bo bs" onclick="setCfTab(\'evidence\')">Open</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderCfReview(){
+  var c=$('mcf-review-body');if(!c)return;
+  var pending=DB.cfrm.filter(function(x){return x.status!=='Resolved';}).slice().sort(function(a,b){return new Date(cfrmDueDate(a))-new Date(cfrmDueDate(b));});
+  if(!pending.length){c.innerHTML='<div class="empty">No open or escalated cases</div>';return;}
+  var h='<table><thead><tr><th>Case ID</th><th>Project / District</th><th>Description</th><th>Assigned</th><th>Due</th><th>Status</th></tr></thead><tbody>';
+  pending.forEach(function(x){
+    var od=cfrmOverdue(x);
+    h+='<tr><td>'+esc(x.id)+'</td><td>'+esc(x.proj)+' / '+esc(x.dist||'-')+'</td><td style="font-size:11.5px">'+esc(x.desc)+'</td><td>'+esc(x.assign||'-')+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(cfrmDueDate(x))+(od?' — OVERDUE':'')+'</td>'+
+      '<td><select data-cfrmstatus="'+esc(x.id)+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit">'+
+      ['Open','Escalated','Resolved'].map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderCFRM(){
+  var c=$('cfrm-list');if(!c)return;
+  if(!DB.cfrm.length){c.innerHTML='<div class="empty">No cases registered</div>';return;}
+  var h='<table><thead><tr><th>Case ID</th><th>Date</th><th>Project / District</th><th>Channel</th><th>Type</th><th>Assigned</th><th>Status</th><th>Resolved On</th><th>Resolution Note</th></tr></thead><tbody>';
+  DB.cfrm.forEach(function(x){
+    h+='<tr><td>'+esc(x.id)+'</td><td>'+dt(x.date)+'</td><td>'+esc(x.proj)+' / '+esc(x.dist||'-')+'</td><td>'+esc(x.chan)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.assign||'-')+'</td>'+
+      '<td><span class="bdg '+cfrmStatusBdg(x.status)+'">'+esc(x.status)+'</span></td><td>'+(x.resolvedOn?dt(x.resolvedOn):'-')+'</td><td style="font-size:11.5px">'+esc(x.resolutionNote||'-')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
 }
 
 document.addEventListener('change',function(e){
   var cid=e.target.getAttribute && e.target.getAttribute('data-cfrmstatus');
   if(cid){
     var x=DB.cfrm.find(function(r){return r.id===cid;});
-    if(x){x.status=e.target.value;renderCFRM();queueCloudSave();}
+    if(x){
+      var newStatus=e.target.value;
+      if(newStatus==='Resolved'&&x.status!=='Resolved'){
+        var note=prompt('Resolution note for '+x.id+':','')||'';
+        x.resolutionNote=note;x.resolvedOn=today();
+      }
+      x.status=newStatus;renderCfrmTracker();queueCloudSave();
+    }
   }
 });
 
@@ -7203,7 +7388,7 @@ function saveCFRM(){
     dist:$('c-dist').value,proj:$('c-proj').value,type:$('c-type').value,desc:d.value.trim(),
     prio:$('c-prio').value,assign:$('c-assign').value||SES.name,
     status:$('c-prio').value==='escalate'?'Escalated':'Open'});
-  closeM('m-cfrm');d.value='';renderCFRM();refreshAll();queueCloudSave();
+  closeM('m-cfrm');d.value='';renderCfrmTracker();refreshAll();queueCloudSave();
 }
 
 function saveFinding(){
