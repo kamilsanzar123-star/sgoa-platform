@@ -1215,18 +1215,118 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL DQA & EVALUATIONS -->
 <div class="pg" id="p-meal-dqa">
-  <div class="ph"><div><h1>DQA &amp; Evaluations</h1><p>Data Quality Assessments against the standard validity/integrity/precision/reliability/timeliness dimensions, and formal Baseline/Midline/Endline evaluations</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bo bs" onclick="openM('m-dqa')">+ New DQA</button><button class="b bn bs" onclick="openM('m-evaluation')">+ New Evaluation</button></div></div>
+  <div class="ph"><div><h1>DQA &amp; Evaluations</h1><p>MEAL · Data Quality Assessments (validity/integrity/precision/reliability/timeliness) and formal Baseline/Midline/Endline evaluations</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bo bs" onclick="openM('m-dqa')">+ New DQA</button><button class="b bn bs" onclick="openM('m-evaluation')">+ New Evaluation</button></div></div>
+
   <div class="stats">
-    <div class="st nv"><div class="stl">DQAs Conducted</div><div class="stv" id="dqa-tot">0</div></div>
-    <div class="st rd"><div class="stl">Needing Improvement</div><div class="stv" id="dqa-poor">0</div></div>
-    <div class="st gr"><div class="stl">Evaluations Completed</div><div class="stv" id="ev-done">0</div></div>
-    <div class="st og"><div class="stl">Evaluations Ongoing/Planned</div><div class="stv" id="ev-pending">0</div></div>
+    <div class="st nv"><div class="stl">DQAs Conducted</div><div class="stv" id="dqa-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="dqa-tot-sub">—</div></div>
+    <div class="st rd"><div class="stl">Needing Improvement</div><div class="stv" id="dqa-poor">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="dqa-poor-sub">—</div></div>
+    <div class="st gr"><div class="stl">Good Quality</div><div class="stv" id="dqa-good">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="dqa-good-sub">—</div></div>
+    <div class="st nv"><div class="stl">Avg. Quality Score</div><div class="stv" id="dqa-avgscore">—</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">across all dimensions</div></div>
+    <div class="st gr"><div class="stl">Evaluations Completed</div><div class="stv" id="ev-done">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="ev-done-sub">—</div></div>
+    <div class="st og"><div class="stl">Ongoing / Planned</div><div class="stv" id="ev-pending">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="ev-pending-sub">—</div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div></div>
-    <div class="cdb tw"><table><thead><tr><th>Project</th><th>Data / Indicator Assessed</th><th>Date</th><th>Assessed By</th><th>Dimensions (V / I / P / R / T)</th><th>Overall</th></tr></thead><tbody id="dqa-body"></tbody></table></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div></div>
-    <div class="cdb tw"><table><thead><tr><th>Project</th><th>Type</th><th>Title</th><th>Period</th><th>Lead</th><th>Status</th></tr></thead><tbody id="evaluations-body"></tbody></table></div></div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mdq-tab-overview" onclick="setDqTab('overview')">Overview</button>
+    <button class="b bo bs" id="mdq-tab-register" onclick="setDqTab('register')">Record Register</button>
+    <button class="b bo bs" id="mdq-tab-entry" onclick="setDqTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mdq-tab-review" onclick="setDqTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mdq-tab-evidence" onclick="setDqTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mdq-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Data Quality Dimensions (% rated "Yes")</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mdq-ch-dims" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Overall DQA Rating</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mdq-ch-rating" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mdq-ch-rating-leg"></div>
+        </div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">DQAs by Project</div>
+          <canvas id="mdq-ch-proj" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Evaluations by Type</div>
+          <canvas id="mdq-ch-evtype" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Evaluations by Status</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mdq-ch-evstatus" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mdq-ch-evstatus-leg"></div></div></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">DQAs Conducted (6 mo.)</div>
+          <canvas id="mdq-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mdq-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mdq-reg-search" oninput="renderDqRegister()" placeholder="Project or indicator"></div>
+        <div class="fg"><label>Rating</label><select id="mdq-reg-rating" onchange="renderDqRegister()"><option value="all">All Ratings</option><option value="Good">Good</option><option value="Acceptable">Acceptable</option><option value="Needs Improvement">Needs Improvement</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="dqa-body-reg"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mev-reg-search" oninput="renderEvRegister()" placeholder="Project or title"></div>
+        <div class="fg"><label>Status</label><select id="mev-reg-status" onchange="renderEvRegister()"><option value="all">All States</option><option value="Planned">Planned</option><option value="Ongoing">Ongoing</option><option value="Completed">Completed</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mev-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mdq-panel-entry" style="display:none">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessment</div></div>
+        <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Score each of the 5 standard dimensions Yes / Partial / No.</p>
+          <button class="b bn" onclick="openM('m-dqa')">+ New DQA</button></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Evaluation / Assessment</div></div>
+        <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Baseline, Midline, Endline or Real-Time Evaluation with findings and management response.</p>
+          <button class="b bn" onclick="openM('m-evaluation')">+ New Evaluation</button></div></div>
+    </div>
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">How a DQA Is Handled</div></div>
+        <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:11.5px;margin-top:3px">Select indicator</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:11.5px;margin-top:3px">Score 5 dimensions</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:11.5px;margin-top:3px">Record issues</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:11.5px;margin-top:3px">Share recommendations</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:11.5px;margin-top:3px">Re-assess next cycle</div></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">How an Evaluation Is Handled</div></div>
+        <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:11.5px;margin-top:3px">Plan</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:11.5px;margin-top:3px">Collect data</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:11.5px;margin-top:3px">Analyze</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:11.5px;margin-top:3px">Report findings</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:11.5px;margin-top:3px">Management response</div></div>
+        </div></div>
+    </div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mdq-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">DQAs Needing Improvement</div></div><div class="cdb tw" id="mdq-review-body"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Evaluations Past Expected End Date</div></div><div class="cdb tw" id="mev-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mdq-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div></div>
+      <div class="cdb tw"><table><thead><tr><th>Project</th><th>Data / Indicator Assessed</th><th>Date</th><th>Assessed By</th><th>Dimensions (V / I / P / R / T)</th><th>Overall</th></tr></thead><tbody id="dqa-body"></tbody></table></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div></div>
+      <div class="cdb tw"><table><thead><tr><th>Project</th><th>Type</th><th>Title</th><th>Period</th><th>Lead</th><th>Status</th></tr></thead><tbody id="evaluations-body"></tbody></table></div></div>
+  </div>
 </div>
 
 <!-- MEAL DOCUMENTS -->
@@ -4111,7 +4211,7 @@ function render(pg){
       else if(pg==='meal-visits'){renderFieldVisitsTracker();}
       else if(pg==='meal-find'){renderFindingsTracker();}
       else if(pg==='meal-risk'){renderRiskAuditTracker();}
-      else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
+      else if(pg==='meal-dqa'){renderDqaTracker();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
       else if(pg==='meal-data'){renderDataEntryTracker();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();renderFinanceInvoiceControls();renderBudgetRevisions();renderPayrollPeriods();}
@@ -6018,6 +6118,137 @@ document.addEventListener('change',function(e){
 DB.dqas=[];
 DB.evaluations=[];
 
+// ============ DQA & EVALUATIONS (tabbed) ============
+var mdqTab='overview';
+function setDqTab(tab){
+  mdqTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mdq-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mdq-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderDqOverview();
+  else if(tab==='register'){renderDqRegister();renderEvRegister();}
+  else if(tab==='review')renderDqReview();
+  else if(tab==='evidence'){renderDQAs();renderEvaluations();}
+}
+function renderDqaTracker(){
+  renderDQAs();renderEvaluations();
+  var good=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Good';});
+  var poor=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Needs Improvement';});
+  var dqaProjs=Object.keys(DB.dqas.reduce(function(a,d){if(d.project)a[d.project]=1;return a;},{})).length;
+  if($('dqa-tot-sub'))$('dqa-tot-sub').textContent=dqaProjs+' project'+(dqaProjs===1?'':'s');
+  if($('dqa-poor-sub'))$('dqa-poor-sub').textContent=(DB.dqas.length?Math.round(poor.length/DB.dqas.length*100):0)+'% of DQAs';
+  if($('dqa-good'))$('dqa-good').textContent=good.length;
+  if($('dqa-good-sub'))$('dqa-good-sub').textContent=(DB.dqas.length?Math.round(good.length/DB.dqas.length*100):0)+'% of DQAs';
+  var dims=['validity','integrity','precision','reliability','timeliness'];
+  var score=function(v){return v==='Yes'?100:v==='Partial'?50:0;};
+  var avgScore=DB.dqas.length?Math.round(DB.dqas.reduce(function(s,d){return s+dims.reduce(function(s2,k){return s2+score(d[k]);},0)/dims.length;},0)/DB.dqas.length):null;
+  if($('dqa-avgscore'))$('dqa-avgscore').textContent=avgScore==null?'—':avgScore+'%';
+
+  var completed=DB.evaluations.filter(function(e){return e.status==='Completed';});
+  var pending=DB.evaluations.filter(function(e){return e.status!=='Completed';});
+  if($('ev-done-sub'))$('ev-done-sub').textContent=(DB.evaluations.length?Math.round(completed.length/DB.evaluations.length*100):0)+'% of total';
+  var overdueEv=DB.evaluations.filter(function(e){return e.status==='Ongoing'&&e.end&&overdue(e.end);}).length;
+  if($('ev-pending-sub'))$('ev-pending-sub').textContent=overdueEv+' past expected end';
+
+  setDqTab(mdqTab);
+}
+function renderDqOverview(){
+  var dims=[{k:'validity',l:'Validity'},{k:'integrity',l:'Integrity'},{k:'precision',l:'Precision'},{k:'reliability',l:'Reliability'},{k:'timeliness',l:'Timeliness'}];
+  if(DB.dqas.length){
+    var pct=dims.map(function(d){return Math.round(DB.dqas.filter(function(a){return a[d.k]==='Yes';}).length/DB.dqas.length*100);});
+    bars('mdq-ch-dims',dims.map(function(d){return d.l;}),[{d:pct,c:'#0d9488'}],function(v){return Math.round(v)+'%';});
+  }
+  var ratings=[{l:'Good',c:'#16a34a'},{l:'Acceptable',c:'#C8922A'},{l:'Needs Improvement',c:'#dc2626'}];
+  var rCounts=ratings.map(function(r){return DB.dqas.filter(function(d){return dqaOverallRating(d).label===r.l;}).length;});
+  donut('mdq-ch-rating',ratings.map(function(r,i){return {v:rCounts[i],c:r.c};}),18,'Total',DB.dqas.length);
+  var leg=$('mdq-ch-rating-leg');
+  if(leg)leg.innerHTML=ratings.map(function(r,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+rCounts[i]+'</b></div>';}).join('');
+
+  var byProj={};
+  DB.dqas.forEach(function(d){var k=d.project||'Unassigned';byProj[k]=(byProj[k]||0)+1;});
+  var projKeys=Object.keys(byProj);
+  if(projKeys.length)bars('mdq-ch-proj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var types=['Baseline','Midline','Endline','Real-Time Evaluation','Other'];
+  var typeCounts=types.map(function(t){return DB.evaluations.filter(function(e){return e.type===t;}).length;});
+  bars('mdq-ch-evtype',types.map(function(t){return t.length>12?t.slice(0,12)+'…':t;}),[{d:typeCounts,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  var statuses=[{k:'Planned',c:'#C8922A'},{k:'Ongoing',c:'#2563eb'},{k:'Completed',c:'#16a34a'}];
+  var stCounts=statuses.map(function(s){return DB.evaluations.filter(function(e){return e.status===s.k;}).length;});
+  donut('mdq-ch-evstatus',statuses.map(function(s,i){return {v:stCounts[i],c:s.c};}),18);
+  var stLeg=$('mdq-ch-evstatus-leg');
+  if(stLeg)stLeg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+stCounts[i]+'</b></div>';}).join('');
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return DB.dqas.filter(function(d){return (d.date||'').slice(0,7)===m.key;}).length;});
+  bars('mdq-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#C8922A'}],function(v){return Math.round(v);});
+}
+function renderDqRegister(){
+  var c=$('dqa-body-reg');if(!c)return;
+  var search=($('mdq-reg-search')?$('mdq-reg-search').value:'').trim().toLowerCase();
+  var ratingF=$('mdq-reg-rating')?$('mdq-reg-rating').value:'all';
+  var rows=DB.dqas.filter(function(d){
+    if(ratingF!=='all'&&dqaOverallRating(d).label!==ratingF)return false;
+    if(search&&((d.project||'')+' '+d.indicator).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No assessments match</div>';return;}
+  var dimBdg=function(v){return '<span class="bdg '+(v==='Yes'?'bG':v==='Partial'?'bO':'bR')+'" style="padding:1px 5px;font-size:9.5px">'+v[0]+'</span>';};
+  var h='<table><thead><tr><th>Project</th><th>Indicator</th><th>Date</th><th>Dimensions (V/I/P/R/T)</th><th>Overall</th></tr></thead><tbody>';
+  rows.forEach(function(d){
+    var overall=dqaOverallRating(d);
+    h+='<tr><td>'+esc(d.project)+'</td><td>'+esc(d.indicator)+'</td><td>'+dt(d.date)+'</td><td>'+[d.validity,d.integrity,d.precision,d.reliability,d.timeliness].map(dimBdg).join(' ')+'</td><td><span class="bdg '+overall.cls+'">'+overall.label+'</span></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderEvRegister(){
+  var c=$('mev-reg-body');if(!c)return;
+  var search=($('mev-reg-search')?$('mev-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mev-reg-status')?$('mev-reg-status').value:'all';
+  var rows=DB.evaluations.filter(function(e){
+    if(statusF!=='all'&&e.status!==statusF)return false;
+    if(search&&((e.project||'')+' '+e.title).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No evaluations match</div>';return;}
+  var sb={Completed:'bG',Ongoing:'bO',Planned:'bY'};
+  var h='<table><thead><tr><th>Project</th><th>Type</th><th>Title</th><th>Period</th><th>Lead</th><th>Status</th></tr></thead><tbody>';
+  rows.forEach(function(e){
+    h+='<tr><td>'+esc(e.project)+'</td><td>'+esc(e.type)+'</td><td>'+esc(e.title)+'</td><td>'+(e.start?dt(e.start):'-')+' – '+(e.end?dt(e.end):'-')+'</td><td>'+esc(e.lead||'-')+'</td><td><span class="bdg '+(sb[e.status]||'bY')+'">'+esc(e.status)+'</span></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderDqReview(){
+  var dbox=$('mdq-review-body');
+  if(dbox){
+    var poor=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Needs Improvement';});
+    if(!poor.length){dbox.innerHTML='<div class="empty">No DQAs currently need improvement</div>';}
+    else{
+      var h='<table><thead><tr><th>Project</th><th>Indicator</th><th>Date</th><th>Issues</th><th>Recommendations</th></tr></thead><tbody>';
+      poor.forEach(function(d){
+        h+='<tr><td>'+esc(d.project)+'</td><td>'+esc(d.indicator)+'</td><td>'+dt(d.date)+'</td><td style="font-size:11.5px">'+esc(d.issues||'-')+'</td><td style="font-size:11.5px">'+esc(d.recommendations||'-')+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      dbox.innerHTML=h;
+    }
+  }
+  var ebox=$('mev-review-body');
+  if(ebox){
+    var ods=DB.evaluations.filter(function(e){return e.status==='Ongoing'&&e.end&&overdue(e.end);});
+    if(!ods.length){ebox.innerHTML='<div class="empty">No evaluations are past their expected end date</div>';}
+    else{
+      var h2='<table><thead><tr><th>Project</th><th>Title</th><th>Lead</th><th>Expected End</th></tr></thead><tbody>';
+      ods.forEach(function(e){
+        h2+='<tr><td>'+esc(e.project)+'</td><td>'+esc(e.title)+'</td><td>'+esc(e.lead||'-')+'</td><td style="color:var(--red);font-weight:600">'+dt(e.end)+' — OVERDUE</td></tr>';
+      });
+      h2+='</tbody></table>';
+      ebox.innerHTML=h2;
+    }
+  }
+}
 function dqaOverallRating(d){
   var vals=[d.validity,d.integrity,d.precision,d.reliability,d.timeliness];
   if(vals.indexOf('No')!==-1)return {label:'Needs Improvement',cls:'bR'};
@@ -6042,7 +6273,7 @@ function saveDQA(){
     issues:$('dqa-issues').value.trim(),recommendations:$('dqa-recs').value.trim()});
   closeM('m-dqa');
   resetDQAModal();
-  renderDQAs();queueCloudSave();
+  renderDqaTracker();queueCloudSave();
 }
 
 function renderDQAs(){
@@ -6078,7 +6309,7 @@ function saveEvaluation(){
     findings:$('ev-findings').value.trim(),recommendations:$('ev-recs').value.trim(),response:$('ev-response').value.trim()});
   closeM('m-evaluation');
   resetEvaluationModal();
-  renderEvaluations();queueCloudSave();
+  renderDqaTracker();queueCloudSave();
 }
 
 function renderEvaluations(){
