@@ -1012,13 +1012,93 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL FINDINGS -->
 <div class="pg" id="p-meal-find">
-  <div class="ph"><div><h1>Findings Tracker</h1><p>All findings with owner, action, and resolution status</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-finding')">+ Add Finding</button></div></div>
-  <div class="stats"><div class="st rd"><div class="stl">Critical</div><div class="stv" id="fd-c">0</div></div>
-  <div class="st og"><div class="stl">Major</div><div class="stv" id="fd-m">0</div></div>
-  <div class="st bl"><div class="stl">Minor</div><div class="stv" id="fd-n">0</div></div>
-  <div class="st gr"><div class="stl">Positive</div><div class="stv" id="fd-p">0</div></div></div>
-  <div class="cd"><div class="cdb" id="find-list"></div></div>
+  <div class="ph"><div><h1>Findings &amp; Corrective Actions</h1><p>MEAL · All findings across departments, with owner, action, and verification status</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-finding')">+ Add Finding</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Findings</div><div class="stv" id="fd-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="fd-tot-sub">—</div></div>
+    <div class="st rd"><div class="stl">Critical</div><div class="stv" id="fd-c">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Needs urgent action</div></div>
+    <div class="st og"><div class="stl">Active (Open / In Progress)</div><div class="stv" id="fd-active">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="fd-overdue-sub">—</div></div>
+    <div class="st gr"><div class="stl">Verified &amp; Resolved</div><div class="stv" id="fd-resolved">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="fd-resolved-sub">—</div></div>
+    <div class="st og"><div class="stl">Pending MEAL Verification</div><div class="stv" id="fd-pending">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Awaiting review</div></div>
+    <div class="st nv"><div class="stl">Avg. Resolution Time</div><div class="stv" id="fd-avgdays">—</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">days, verified findings</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mfd-tab-overview" onclick="setFdTab('overview')">Overview</button>
+    <button class="b bo bs" id="mfd-tab-register" onclick="setFdTab('register')">Record Register</button>
+    <button class="b bo bs" id="mfd-tab-entry" onclick="setFdTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mfd-tab-review" onclick="setFdTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mfd-tab-evidence" onclick="setFdTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mfd-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Findings by Severity</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mfd-ch-sev" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mfd-ch-sev-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Findings by Department</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mfd-ch-dept" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Status</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mfd-ch-status" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mfd-ch-status-leg"></div></div></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Source</div>
+          <canvas id="mfd-ch-src" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings Logged (6 mo.)</div>
+          <canvas id="mfd-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Project</div>
+          <canvas id="mfd-ch-proj" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mfd-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Findings Register</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mfd-reg-search" oninput="renderFdRegister()" placeholder="Finding ID, title, department or project"></div>
+        <div class="fg"><label>Status</label><select id="mfd-reg-status" onchange="renderFdRegister()"><option value="all">All States</option><option value="Open">Open</option><option value="In Progress">In Progress</option><option value="Resolved">Resolved</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mfd-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mfd-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Raise a New Finding</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">The responsible department records the corrective action and submits it for MEAL verification from their own dashboard.</p>
+        <button class="b bn" onclick="openM('m-finding')">+ Add Finding</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Finding Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Raise finding</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Department assigns &amp; acts</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Submit for verification</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">MEAL verifies</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Close, or return for more work</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mfd-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Pending MEAL Verification</div></div><div class="cdb" id="mfd-review-pending"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Overdue &amp; Not Yet Actioned</div></div><div class="cdb tw" id="mfd-review-overdue"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mfd-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdb" id="find-list"></div></div>
+  </div>
 </div>
 
 <!-- MEAL RISKS -->
@@ -3936,7 +4016,7 @@ function render(pg){
       else if(pg==='meal-ind'){renderIndicatorTracker();}
       else if(pg==='meal-cfrm'){renderCfrmTracker();}
       else if(pg==='meal-visits'){renderFieldVisitsTracker();}
-      else if(pg==='meal-find'){renderFindings();}
+      else if(pg==='meal-find'){renderFindingsTracker();}
       else if(pg==='meal-risk'){renderRisks();renderAuditFindings();}
       else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
       else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
@@ -5526,12 +5606,122 @@ function resolveVisitAction(id){
   renderFieldVisitsTracker();queueCloudSave();
 }
 
+// ============ FINDINGS & CORRECTIVE ACTIONS (tabbed) ============
+var mfdTab='overview';
+function setFdTab(tab){
+  mfdTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mfd-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mfd-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderFdOverview();
+  else if(tab==='register')renderFdRegister();
+  else if(tab==='review')renderFdReview();
+  else if(tab==='evidence')renderFindings();
+}
+function renderFindingsTracker(){
+  var active=DB.findings.filter(function(f){return f.status!=='Resolved';});
+  var resolved=DB.findings.filter(function(f){return f.status==='Resolved';});
+  if($('fd-tot'))$('fd-tot').textContent=DB.findings.length;
+  var depts=Object.keys(DB.findings.reduce(function(a,f){if(f.dept)a[f.dept]=1;return a;},{})).length;
+  var projs=Object.keys(DB.findings.reduce(function(a,f){if(f.proj)a[f.proj]=1;return a;},{})).length;
+  if($('fd-tot-sub'))$('fd-tot-sub').textContent=depts+' department'+(depts===1?'':'s')+' · '+projs+' project'+(projs===1?'':'s');
+  if($('fd-c'))$('fd-c').textContent=DB.findings.filter(function(f){return f.sev==='critical';}).length;
+  if($('fd-active'))$('fd-active').textContent=active.length;
+  var overdueActive=active.filter(function(f){return overdue(f.due);}).length;
+  if($('fd-overdue-sub'))$('fd-overdue-sub').textContent=overdueActive+' overdue';
+  if($('fd-resolved'))$('fd-resolved').textContent=resolved.length;
+  if($('fd-resolved-sub'))$('fd-resolved-sub').textContent=(DB.findings.length?Math.round(resolved.length/DB.findings.length*100):0)+'% resolution rate';
+  if($('fd-pending'))$('fd-pending').textContent=DB.findings.filter(function(f){return f.verifyStatus==='pending';}).length;
+  var withTime=resolved.filter(function(f){return f.verifiedOn;});
+  var avgDays=withTime.length?Math.round(withTime.reduce(function(s,f){return s+(new Date(f.verifiedOn)-new Date(f.date))/86400000;},0)/withTime.length):null;
+  if($('fd-avgdays'))$('fd-avgdays').textContent=avgDays==null?'—':avgDays;
+  setFdTab(mfdTab);
+}
+function renderFdOverview(){
+  var sevs=[{k:'critical',l:'Critical',c:'#dc2626'},{k:'major',l:'Major',c:'#ea580c'},{k:'minor',l:'Minor',c:'#2563eb'},{k:'positive',l:'Positive',c:'#16a34a'}];
+  var sevCounts=sevs.map(function(s){return DB.findings.filter(function(f){return f.sev===s.k;}).length;});
+  donut('mfd-ch-sev',sevs.map(function(s,i){return {v:sevCounts[i],c:s.c};}),18,'Total',DB.findings.length);
+  var leg=$('mfd-ch-sev-leg');
+  if(leg)leg.innerHTML=sevs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.l+' <b style="margin-left:auto">'+sevCounts[i]+'</b></div>';}).join('');
+
+  var byDept={};
+  DB.findings.forEach(function(f){var k=f.dept||'Unassigned';byDept[k]=(byDept[k]||0)+1;});
+  var deptKeys=Object.keys(byDept);
+  if(deptKeys.length)bars('mfd-ch-dept',deptKeys.map(function(k){return k.length>10?k.slice(0,10)+'…':k;}),[{d:deptKeys.map(function(k){return byDept[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var statuses=[{k:'Open',c:'#C8922A'},{k:'In Progress',c:'#2563eb'},{k:'Resolved',c:'#16a34a'}];
+  var stCounts=statuses.map(function(s){return DB.findings.filter(function(f){return f.status===s.k;}).length;});
+  donut('mfd-ch-status',statuses.map(function(s,i){return {v:stCounts[i],c:s.c};}),18);
+  var stLeg=$('mfd-ch-status-leg');
+  if(stLeg)stLeg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+stCounts[i]+'</b></div>';}).join('');
+
+  var srcs=['Monitoring Visit','Data Quality Check','CFRM','PDM','Audit'];
+  var srcCounts=srcs.map(function(s){return DB.findings.filter(function(f){return f.src===s;}).length;});
+  bars('mfd-ch-src',srcs.map(function(s){return s.length>12?s.slice(0,12)+'…':s;}),[{d:srcCounts,c:'#0d9488'}],function(v){return Math.round(v);});
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return DB.findings.filter(function(f){return (f.date||'').slice(0,7)===m.key;}).length;});
+  bars('mfd-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  var byProj={};
+  DB.findings.forEach(function(f){var k=f.proj||'Unassigned';byProj[k]=(byProj[k]||0)+1;});
+  var projKeys=Object.keys(byProj);
+  if(projKeys.length)bars('mfd-ch-proj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+}
+function renderFdRegister(){
+  var c=$('mfd-reg-body');if(!c)return;
+  var search=($('mfd-reg-search')?$('mfd-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mfd-reg-status')?$('mfd-reg-status').value:'all';
+  var rows=DB.findings.filter(function(f){
+    if(statusF!=='all'&&f.status!==statusF)return false;
+    if(search&&((f.id||'')+' '+f.title+' '+(f.dept||'')+' '+(f.proj||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No findings match</div>';return;}
+  var sevBdg={critical:'bR',major:'bO',minor:'bB',positive:'bG'};
+  var h='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Dept / Project</th><th>Severity</th><th>Source</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(f){
+    var od=f.status!=='Resolved'&&overdue(f.due);
+    h+='<tr><td>'+esc(f.id)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.dept)+' / '+esc(f.proj)+'</td><td><span class="bdg '+(sevBdg[f.sev]||'bY')+'">'+esc(f.sev)+'</span></td><td>'+esc(f.src||'-')+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(f.due)+(od?' — OVERDUE':'')+'</td><td>'+esc(f.status)+'</td><td><button class="b bo bs" onclick="setFdTab(\'evidence\')">Open</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderFdReview(){
+  var pendBox=$('mfd-review-pending');
+  if(pendBox){
+    var pending=DB.findings.filter(function(f){return f.verifyStatus==='pending';});
+    if(!pending.length){pendBox.innerHTML='<div class="empty">Nothing awaiting verification</div>';}
+    else{
+      pendBox.innerHTML='';
+      pending.forEach(function(f){
+        var lastNote=(f.feedback&&f.feedback.length)?f.feedback[f.feedback.length-1]:null;
+        var d=el('div','al alW');
+        d.innerHTML='<div><b>'+esc(f.id)+' — '+esc(f.title)+'</b><div style="font-size:11px;color:var(--g500);margin:3px 0">'+esc(f.dept)+' · '+esc(f.proj)+'</div>'+
+          (lastNote?'<div style="font-size:11.5px;color:var(--g600)">'+esc(lastNote.note)+'</div>':'')+
+          '<div style="margin-top:7px"><button class="b bn bs" data-verifyfinding="'+esc(f.id)+'">Verify &amp; Close</button> <button class="b bo bs" data-rejectverify="'+esc(f.id)+'">Send Back</button></div></div>';
+        pendBox.appendChild(d);
+      });
+    }
+  }
+  var odBox=$('mfd-review-overdue');
+  if(odBox){
+    var ods=DB.findings.filter(function(f){return f.status!=='Resolved'&&f.verifyStatus!=='pending'&&overdue(f.due);});
+    if(!ods.length){odBox.innerHTML='<div class="empty">No overdue, unactioned findings</div>';}
+    else{
+      var h='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Dept / Project</th><th>Assigned</th><th>Due</th></tr></thead><tbody>';
+      ods.forEach(function(f){
+        h+='<tr><td>'+esc(f.id)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.dept)+' / '+esc(f.proj)+'</td><td>'+esc(f.assign||'-')+'</td><td style="color:var(--red);font-weight:600">'+dt(f.due)+' — OVERDUE</td></tr>';
+      });
+      h+='</tbody></table>';
+      odBox.innerHTML=h;
+    }
+  }
+}
 function renderFindings(){
   var c=$('find-list');if(!c)return;c.innerHTML='';
-  if($('fd-c'))$('fd-c').textContent=DB.findings.filter(function(f){return f.sev==='critical';}).length;
-  if($('fd-m'))$('fd-m').textContent=DB.findings.filter(function(f){return f.sev==='major';}).length;
-  if($('fd-n'))$('fd-n').textContent=DB.findings.filter(function(f){return f.sev==='minor';}).length;
-  if($('fd-p'))$('fd-p').textContent=DB.findings.filter(function(f){return f.sev==='positive';}).length;
   if(!DB.findings.length){c.innerHTML='<div class="empty">No findings</div>';return;}
   DB.findings.forEach(function(f){
     var cls=f.sev==='critical'?'cr':f.sev==='major'?'mj':f.sev==='positive'?'ps':'mn';
@@ -6196,9 +6386,10 @@ function verifyFinding(id){
   f.verifyStatus='verified';
   f.status='Resolved';
   f.progress=100;
+  f.verifiedOn=today();
   if(!f.feedback)f.feedback=[];
   f.feedback.push({by:SES.name,note:'Verified and closed by MEAL.',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
-  renderFindings();
+  if(typeof renderFindingsTracker==='function')renderFindingsTracker();else renderFindings();
   refreshCurrentDeptView();
   queueCloudSave();
   alert('Finding '+f.id+' verified and marked resolved. The responsible department has been notified.');
@@ -6212,7 +6403,7 @@ function rejectFindingVerification(id){
   f.verifyStatus='rejected';
   if(!f.feedback)f.feedback=[];
   f.feedback.push({by:SES.name,note:'Needs more work: '+reason,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
-  renderFindings();
+  if(typeof renderFindingsTracker==='function')renderFindingsTracker();else renderFindings();
   refreshCurrentDeptView();
   queueCloudSave();
   alert('Sent back to '+f.dept+' with your comment.');
@@ -7399,7 +7590,7 @@ function saveFinding(){
     src:$('fn-src').value,desc:$('fn-desc').value,act:$('fn-act').value,
     assign:$('fn-assign').value||SES.name,due:$('fn-due').value||today(),status:'Open',progress:0});
   closeM('m-finding');t.value='';$('fn-desc').value='';$('fn-act').value='';
-  renderFindings();refreshAll();queueCloudSave();
+  renderFindingsTracker();refreshAll();queueCloudSave();
 }
 
 function saveRisk(){
