@@ -1331,11 +1331,94 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL DOCUMENTS -->
 <div class="pg" id="p-meal-docs">
-  <div class="ph"><div><h1>Documents, SOPs &amp; Policies</h1><p>Upload and manage MEAL documentation</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-doc')">Upload Document</button></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">MEAL Documents</div><span class="bdg bN" id="doc-cnt-meal">0 files</span></div>
-  <div class="cdb"><div id="docs-meal"></div>
-  <div class="up" onclick="openM('m-doc')"><div style="font-size:30px">&#128193;</div><p><b>Click to upload document</b><br>PDF, Word, Excel supported</p></div></div></div>
+  <div class="ph"><div><h1>MEAL Documents, SOPs &amp; Policies</h1><p>MEAL · Document register, versioning, confidentiality and scheduled review</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-doc')">Upload Document</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Documents</div><div class="stv" id="mdc-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mdc-tot-sub">—</div></div>
+    <div class="st gr"><div class="stl">Active</div><div class="stv" id="mdc-active">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mdc-active-sub">—</div></div>
+    <div class="st og"><div class="stl">Needing Review</div><div class="stv" id="mdc-review">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Past review due date</div></div>
+    <div class="st rd"><div class="stl">Confidential</div><div class="stv" id="mdc-conf">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Restricted access</div></div>
+    <div class="st nv"><div class="stl">With Attached File</div><div class="stv" id="mdc-files">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mdc-files-sub">—</div></div>
+    <div class="st og"><div class="stl">Archived</div><div class="stv" id="mdc-archived">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Excluded from active register</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mdc-tab-overview" onclick="setDcTab('overview')">Overview</button>
+    <button class="b bo bs" id="mdc-tab-register" onclick="setDcTab('register')">Record Register</button>
+    <button class="b bo bs" id="mdc-tab-entry" onclick="setDcTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mdc-tab-review" onclick="setDcTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mdc-tab-evidence" onclick="setDcTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mdc-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Documents by Type</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mdc-ch-type" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Documents by Confidentiality</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mdc-ch-conf" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mdc-ch-conf-leg"></div>
+        </div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Documents by Status</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mdc-ch-status" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mdc-ch-status-leg"></div></div></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">With Attached File vs Text-Only</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mdc-ch-hasfile" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mdc-ch-hasfile-leg"></div></div></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Uploads Logged (6 mo.)</div>
+          <canvas id="mdc-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Applies To</div>
+          <canvas id="mdc-ch-dept" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mdc-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Document Register</div></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mdc-reg-search" oninput="renderDcRegister()" placeholder="Title or type"></div>
+        <div class="fg"><label>Status</label><select id="mdc-reg-status" onchange="renderDcRegister()"><option value="all">All States</option><option value="Active">Active</option><option value="Archived">Archived</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mdc-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mdc-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Upload a New Document</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Set a Review Due Date on policies and SOPs so they surface automatically in Review / Action once due.</p>
+        <button class="b bn" onclick="openM('m-doc')">Upload Document</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Document Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Draft</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Classify confidentiality</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Upload &amp; version</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Set review date</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Publish &amp; re-review</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mdc-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Documents Past Their Review Due Date</div></div><div class="cdb tw" id="mdc-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mdc-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">MEAL Documents</div><span class="bdg bN" id="doc-cnt-meal">0 files</span></div>
+    <div class="cdb"><div id="docs-meal"></div>
+    <div class="up" onclick="openM('m-doc')"><div style="font-size:30px">&#128193;</div><p><b>Click to upload document</b><br>PDF, Word, Excel supported</p></div></div></div>
+  </div>
 </div>
 
 <!-- MEAL DATA ENTRY -->
@@ -4212,7 +4295,7 @@ function render(pg){
       else if(pg==='meal-find'){renderFindingsTracker();}
       else if(pg==='meal-risk'){renderRiskAuditTracker();}
       else if(pg==='meal-dqa'){renderDqaTracker();}
-      else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
+      else if(pg==='meal-docs'){renderDocsTracker();}
       else if(pg==='meal-data'){renderDataEntryTracker();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();renderFinanceInvoiceControls();renderBudgetRevisions();renderPayrollPeriods();}
       else if(pg==='finance-commitments'){renderCommitments();}
@@ -6391,6 +6474,103 @@ function renderAuditFindings(){
 }
 
 // ============ DOCUMENTS ============
+// ============ MEAL DOCUMENTS (tabbed) ============
+var mdcTab='overview';
+function setDcTab(tab){
+  mdcTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mdc-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mdc-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderDcOverview();
+  else if(tab==='register')renderDcRegister();
+  else if(tab==='review')renderDcReview();
+  else if(tab==='evidence')renderDocs('meal','MEAL');
+}
+function mealDocs(){ return DB.docs.filter(function(d){return d.dept==='MEAL'||d.dept==='All';}); }
+function docReviewOverdue(d){ return !!d.reviewDue && d.status!=='Archived' && overdue(d.reviewDue); }
+function renderDocsTracker(){
+  var docs=mealDocs();
+  var active=docs.filter(function(d){return d.status!=='Archived';});
+  var archived=docs.filter(function(d){return d.status==='Archived';});
+  if($('mdc-tot'))$('mdc-tot').textContent=docs.length;
+  var types=Object.keys(docs.reduce(function(a,d){if(d.type)a[d.type]=1;return a;},{})).length;
+  if($('mdc-tot-sub'))$('mdc-tot-sub').textContent=types+' type'+(types===1?'':'s');
+  if($('mdc-active'))$('mdc-active').textContent=active.length;
+  if($('mdc-active-sub'))$('mdc-active-sub').textContent=(docs.length?Math.round(active.length/docs.length*100):0)+'% of total';
+  if($('mdc-review'))$('mdc-review').textContent=docs.filter(docReviewOverdue).length;
+  if($('mdc-conf'))$('mdc-conf').textContent=docs.filter(function(d){return d.confidentiality==='Confidential';}).length;
+  var withFile=docs.filter(function(d){return !!d.fileUrl;});
+  if($('mdc-files'))$('mdc-files').textContent=withFile.length;
+  if($('mdc-files-sub'))$('mdc-files-sub').textContent=(docs.length?Math.round(withFile.length/docs.length*100):0)+'% of total';
+  if($('mdc-archived'))$('mdc-archived').textContent=archived.length;
+  setDcTab(mdcTab);
+}
+function renderDcOverview(){
+  var docs=mealDocs();
+  var types=['SOP','Policy','Guideline','Template','Report','Beneficiary List','Selection Criteria'];
+  var typeCounts=types.map(function(t){return docs.filter(function(d){return d.type===t;}).length;});
+  bars('mdc-ch-type',types.map(function(t){return t.length>12?t.slice(0,12)+'…':t;}),[{d:typeCounts,c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var confs=[{k:'Public',c:'#16a34a'},{k:'Internal',c:'#2563eb'},{k:'Confidential',c:'#dc2626'}];
+  var confCounts=confs.map(function(c){return docs.filter(function(d){return d.confidentiality===c.k;}).length;});
+  donut('mdc-ch-conf',confs.map(function(c,i){return {v:confCounts[i],c:c.c};}),18,'Total',docs.length);
+  var leg=$('mdc-ch-conf-leg');
+  if(leg)leg.innerHTML=confs.map(function(c,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+c.c+';display:inline-block"></span>'+c.k+' <b style="margin-left:auto">'+confCounts[i]+'</b></div>';}).join('');
+
+  var statuses=[{k:'Active',c:'#16a34a'},{k:'Archived',c:'#94a3b8'}];
+  var stCounts=statuses.map(function(s){return docs.filter(function(d){return (d.status||'Active')===s.k;}).length;});
+  donut('mdc-ch-status',statuses.map(function(s,i){return {v:stCounts[i],c:s.c};}),18);
+  var stLeg=$('mdc-ch-status-leg');
+  if(stLeg)stLeg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+stCounts[i]+'</b></div>';}).join('');
+
+  var withFile=docs.filter(function(d){return !!d.fileUrl;}).length;
+  var textOnly=docs.length-withFile;
+  donut('mdc-ch-hasfile',[{v:withFile,c:'#1A3A6B'},{v:textOnly,c:'#C8922A'}],18);
+  var hfLeg=$('mdc-ch-hasfile-leg');
+  if(hfLeg)hfLeg.innerHTML=[{l:'With File',v:withFile,c:'#1A3A6B'},{l:'Text-Only',v:textOnly,c:'#C8922A'}].map(function(r){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+r.v+'</b></div>';}).join('');
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return docs.filter(function(d){return (d.date||'').slice(0,7)===m.key;}).length;});
+  bars('mdc-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  var byDept={};
+  docs.forEach(function(d){var k=d.dept||'Unspecified';byDept[k]=(byDept[k]||0)+1;});
+  var deptKeys=Object.keys(byDept);
+  if(deptKeys.length)bars('mdc-ch-dept',deptKeys,[{d:deptKeys.map(function(k){return byDept[k];}),c:'#0d9488'}],function(v){return Math.round(v);});
+}
+function renderDcRegister(){
+  var c=$('mdc-reg-body');if(!c)return;
+  var search=($('mdc-reg-search')?$('mdc-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mdc-reg-status')?$('mdc-reg-status').value:'all';
+  var rows=mealDocs().filter(function(d){
+    if(statusF!=='all'&&(d.status||'Active')!==statusF)return false;
+    if(search&&(d.title+' '+d.type).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+  if(!rows.length){c.innerHTML='<div class="empty">No documents match</div>';return;}
+  var h='<table><thead><tr><th>Title</th><th>Type</th><th>Version</th><th>Date</th><th>Confidentiality</th><th>Review Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(d){
+    var od=docReviewOverdue(d);
+    h+='<tr><td>'+esc(d.title)+'</td><td>'+esc(d.type)+'</td><td>'+esc(d.ver)+'</td><td>'+dt(d.date)+'</td><td>'+esc(d.confidentiality||'Internal')+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+(d.reviewDue?dt(d.reviewDue):'-')+(od?' — OVERDUE':'')+'</td>'+
+      '<td>'+esc(d.status||'Active')+'</td><td><button class="b bo bs" data-doc="'+esc(d.id)+'">View</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderDcReview(){
+  var c=$('mdc-review-body');if(!c)return;
+  var rows=mealDocs().filter(docReviewOverdue);
+  if(!rows.length){c.innerHTML='<div class="empty">No documents are past their review due date</div>';return;}
+  var h='<table><thead><tr><th>Title</th><th>Type</th><th>Confidentiality</th><th>Review Due</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(d){
+    h+='<tr><td>'+esc(d.title)+'</td><td>'+esc(d.type)+'</td><td>'+esc(d.confidentiality||'Internal')+'</td><td style="color:var(--red);font-weight:600">'+dt(d.reviewDue)+' — OVERDUE</td>'+
+      '<td><button class="b bo bs" data-doc="'+esc(d.id)+'">View</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
 function renderDocs(cid,dept){
   var c=$('docs-'+cid);if(!c)return;c.innerHTML='';
   var ds=DB.docs.filter(function(d){return (d.dept===dept||d.dept==='All')&&d.status!=='Archived';});
@@ -7900,6 +8080,7 @@ async function saveDoc(){
   if($('d-conf'))$('d-conf').value='Internal';if($('d-review'))$('d-review').value='';
   refreshAll();
   renderDocRegistry();
+  renderDocsTracker();
   queueCloudSave();
   if(fileInfo)alert('Document and file uploaded successfully.');
 }
