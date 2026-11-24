@@ -2749,10 +2749,11 @@ tbody tr:hover td{background:var(--g50);}
     <div class="fg"><label>Female <span style="font-weight:400;color:var(--g500)">(optional breakdown)</span></label><input type="number" id="iu-female" placeholder="e.g. 60"></div>
     <div class="fg"><label>Male <span style="font-weight:400;color:var(--g500)">(optional breakdown)</span></label><input type="number" id="iu-male" placeholder="e.g. 55"></div>
     <div class="fg ff"><label>Note</label><input type="text" id="iu-note" placeholder="e.g. Term 2 attendance registers"></div>
+    <div class="fg ff"><label>Means of Verification (attach evidence)</label><input type="file" id="iu-file"><div style="font-size:10px;color:var(--g500);margin-top:3px">Upload the actual attendance register, report, photo or other document that proves this result — visible to anyone who checks this indicator, and in MEAL Documents. Max 10 MB.</div></div>
   </div>
   <div style="font-size:10.5px;color:var(--g500);margin-top:2px">If both Female and Male are entered, they must add up to the New Actual Value — this is how progress gets reported disaggregated by sex, matching donor reporting requirements, instead of one undifferentiated total.</div>
 </div>
-<div class="mf"><button class="b bo" onclick="closeM('m-ind-update')">Cancel</button><button class="b bn" onclick="saveIndicatorUpdate()">Save Update</button></div>
+<div class="mf"><button class="b bo" onclick="closeM('m-ind-update')">Cancel</button><button class="b bn" id="iu-save-btn" onclick="saveIndicatorUpdate()">Save Update</button></div>
 </div></div>
 <div class="mb" id="m-cfrm"><div class="md">
 <div class="mh"><h3>Register CFRM Case</h3><button class="mx" onclick="closeM('m-cfrm')">&times;</button></div>
@@ -5955,9 +5956,11 @@ function renderIndEvidence(){
   if(movBox){
     if(!DB.indicators.length){movBox.innerHTML='<div class="empty">No indicators yet</div>';}
     else{
-      var h='<table><thead><tr><th>Code</th><th>Indicator</th><th>Project</th><th>Means of Verification</th><th>Frequency</th></tr></thead><tbody>';
+      var h='<table><thead><tr><th>Code</th><th>Indicator</th><th>Project</th><th>Means of Verification</th><th>Frequency</th><th>Attached Evidence</th></tr></thead><tbody>';
       DB.indicators.forEach(function(i){
-        h+='<tr><td>'+(i.code?esc(i.code):'-')+'</td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.mov||'-')+'</td><td>'+esc(i.freq||'-')+'</td></tr>';
+        var withDocs=(i.updates||[]).filter(function(u){return u.docId;});
+        var evCell=withDocs.length?('<button class="b bo bs" data-private-file="'+esc(withDocs[withDocs.length-1].docId)+'">View Latest ('+withDocs.length+')</button>'):'<span style="color:var(--g400)">None uploaded</span>';
+        h+='<tr><td>'+(i.code?esc(i.code):'-')+'</td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.mov||'-')+'</td><td>'+esc(i.freq||'-')+'</td><td>'+evCell+'</td></tr>';
       });
       h+='</tbody></table>';
       movBox.innerHTML=h;
@@ -5967,14 +5970,15 @@ function renderIndEvidence(){
   if(histBox){
     var rows=[];
     DB.indicators.forEach(function(i){
-      (i.updates||[]).forEach(function(u){rows.push({ind:i.name,proj:i.proj,date:u.date,actual:u.actual,female:u.female,male:u.male,note:u.note,by:u.by});});
+      (i.updates||[]).forEach(function(u){rows.push({ind:i.name,proj:i.proj,date:u.date,actual:u.actual,female:u.female,male:u.male,note:u.note,by:u.by,docId:u.docId,fileName:u.fileName});});
     });
     rows.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
     if(!rows.length){histBox.innerHTML='<div class="empty">No progress updates logged yet</div>';}
     else{
-      var h2='<table><thead><tr><th>Date</th><th>Indicator</th><th>Project</th><th>Actual</th><th>F / M</th><th>Note</th><th>By</th></tr></thead><tbody>';
+      var h2='<table><thead><tr><th>Date</th><th>Indicator</th><th>Project</th><th>Actual</th><th>F / M</th><th>Note</th><th>By</th><th>Evidence</th></tr></thead><tbody>';
       rows.forEach(function(r){
-        h2+='<tr><td>'+dt(r.date)+'</td><td>'+esc(r.ind)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.actual)+'</td><td>'+(r.female!=null||r.male!=null?fmt(r.female||0)+' / '+fmt(r.male||0):'-')+'</td><td>'+esc(r.note||'-')+'</td><td>'+esc(r.by||'-')+'</td></tr>';
+        var evCell=r.docId?('<button class="b bo bs" data-private-file="'+esc(r.docId)+'" title="'+esc(r.fileName||'')+'">View File</button>'):'<span style="color:var(--g400)">-</span>';
+        h2+='<tr><td>'+dt(r.date)+'</td><td>'+esc(r.ind)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.actual)+'</td><td>'+(r.female!=null||r.male!=null?fmt(r.female||0)+' / '+fmt(r.male||0):'-')+'</td><td>'+esc(r.note||'-')+'</td><td>'+esc(r.by||'-')+'</td><td>'+evCell+'</td></tr>';
       });
       h2+='</tbody></table>';
       histBox.innerHTML=h2;
@@ -9027,9 +9031,10 @@ function openIndicatorUpdateModal(id){
   _indUpdateId=id;
   $('iu-ctx').innerHTML='<b>'+esc(indLabel(i))+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
   $('iu-actual').value=i.actual;$('iu-date').value=today();$('iu-female').value='';$('iu-male').value='';$('iu-note').value='';
+  if($('iu-file'))$('iu-file').value='';
   openM('m-ind-update');
 }
-function saveIndicatorUpdate(){
+async function saveIndicatorUpdate(){
   if(!_indUpdateId)return;
   var i=DB.indicators.find(function(x){return x.id===_indUpdateId;});if(!i)return;
   var updateDate=$('iu-date').value||today();
@@ -9046,8 +9051,23 @@ function saveIndicatorUpdate(){
     alert('Female ('+female+') + Male ('+male+') = '+(female+male)+', which does not match the New Actual Value ('+actual+'). Please correct the breakdown or the total.');
     return;
   }
+  var fileInput=$('iu-file'),docId=null,fileName=null;
+  if(fileInput && fileInput.files.length){
+    var btn=$('iu-save-btn');
+    if(btn){btn.disabled=true;btn.textContent='Uploading...';}
+    var fileInfo=await uploadFileToStorage(fileInput.files[0],'indicator-evidence');
+    if(btn){btn.disabled=false;btn.textContent='Save Update';}
+    if(!fileInfo)return;
+    docId=nid('D');
+    DB.docs.push({id:docId,title:'MOV: '+indLabel(i)+' — '+updateDate,dept:'MEAL',type:'Evidence',ver:'1.0',date:updateDate,by:SES.name,
+      desc:'Means of verification for '+indLabel(i)+', reporting period '+updateDate+'.',
+      brief:'Means of verification for '+indLabel(i)+', reporting period '+updateDate+'.',
+      full:'No full content entered.',fileUrl:fileInfo.url,fileName:fileInfo.name,
+      confidentiality:'Internal',reviewDue:'',status:'Active'});
+    fileName=fileInfo.name;
+  }
   i.updates=i.updates||[];
-  i.updates.push({date:updateDate,actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name});
+  i.updates.push({date:updateDate,actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name,docId:docId,fileName:fileName});
   i.actual=actual;
   if(female!==null)i.actualFemale=female;
   if(male!==null)i.actualMale=male;
