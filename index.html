@@ -2934,15 +2934,29 @@ tbody tr:hover td{background:var(--g50);}
 <div class="mh"><h3>Add Program Activity</h3><button class="mx" onclick="closeM('m-activity')">&times;</button></div>
 <div class="mbd"><div class="fr">
 <div class="fg ff"><label>Activity Name *</label><input type="text" id="ac-name"></div>
-<div class="fg"><label>Project</label><select id="ac-proj"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
+<div class="fg"><label>Project</label><select id="ac-proj" onchange="refreshActivityIndicatorOptions('ac-proj','ac-indicator')"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
 <div class="fg"><label>Type</label><select id="ac-type"><option>CBS</option><option>ECCD</option><option>RC/TaRL</option><option>Training</option><option>Distribution</option><option>Community Mobilization</option><option>Assessment</option></select></div>
 <div class="fg"><label>Location</label><input type="text" id="ac-loc"></div>
 <div class="fg"><label>Target</label><input type="number" id="ac-target"></div>
 <div class="fg"><label>Actual</label><input type="number" id="ac-actual" value="0"></div>
 <div class="fg"><label>Start Date</label><input type="date" id="ac-start"></div>
 <div class="fg"><label>End Date</label><input type="date" id="ac-end"></div>
+<div class="fg ff"><label>Linked Indicator (optional)</label><select id="ac-indicator"><option value="">— Not linked to an indicator —</option></select><div style="font-size:10px;color:var(--g500);margin-top:3px">Lets you report this activity's progress to MEAL against a specific logframe indicator.</div></div>
 </div></div>
 <div class="mf"><button class="b bo" onclick="closeM('m-activity')">Cancel</button><button class="b bn" onclick="saveActivity()">Save Activity</button></div>
+</div></div>
+<div class="mb" id="m-activity-report"><div class="md">
+<div class="mh"><h3>Report Activity Progress to MEAL</h3><button class="mx" onclick="closeM('m-activity-report')">&times;</button></div>
+<div class="mbd">
+  <div id="ar-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
+  <div class="fr">
+    <div class="fg"><label>Reporting Month *</label><input type="month" id="ar-period"></div>
+    <div class="fg"><label>Actual Value for this Indicator *</label><input type="number" id="ar-actual" oninput="updateArReasonVisibility()"></div>
+    <div class="fg ff"><label>Means of Verification (attach evidence)</label><input type="file" id="ar-file"><div style="font-size:10px;color:var(--g500);margin-top:3px">Max 10 MB. Visible to MEAL and in MEAL Documents.</div></div>
+    <div class="fg ff" id="ar-reason-wrap" style="display:none"><label>Reason this is At Risk / Off Track *</label><textarea id="ar-reason" rows="2"></textarea></div>
+  </div>
+</div>
+<div class="mf"><button class="b bo" onclick="closeM('m-activity-report')">Cancel</button><button class="b bn" id="ar-save-btn" onclick="submitActivityIndicatorUpdate()">Submit to MEAL</button></div>
 </div></div>
 <div class="mb" id="m-incident"><div class="md">
 <div class="mh"><h3>Report Safeguarding Incident</h3><button class="mx" onclick="closeM('m-incident')">&times;</button></div>
@@ -4379,7 +4393,7 @@ function goBack(){
 }
 
 
-function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();if(id==='m-audit-finding')resetAuditFindingModal();if(id==='m-visit')resetVisitModal();}
+function openM(id){var m=$(id);if(m)m.classList.add('on');if(id==='m-task'){restrictTaskDeptField();populateAssignToDropdown();}if(id==='m-project')initProjectLFFields();if(id==='m-proc'){resetProcComplianceUI();refreshSupplierDropdown();}if(id==='m-po')refreshPOModalDropdowns();if(id==='m-grant-report')refreshGrantDropdown();if(id==='m-grn')refreshGRNPODropdown();if(id==='m-invoice')refreshInvoicePODropdown();if(id==='m-stock-move')refreshStockMoveModal();if(id==='m-dqa')resetDQAModal();if(id==='m-evaluation')resetEvaluationModal();if(id==='m-audit-finding')resetAuditFindingModal();if(id==='m-visit')resetVisitModal();if(id==='m-activity')refreshActivityIndicatorOptions('ac-proj','ac-indicator');}
 
 // A department head could previously pick ANY department in the Add Task modal and assign
 // work to someone outside their own team. Only Executive/Program Deputy/Deputy Director (who
@@ -7669,10 +7683,11 @@ function patRegisterFilteredRows(){
   });
 }
 function exportPatRegisterCSV(){
-  var rows=[['Activity','Project','Type','Location','Target','Actual','Progress %','Status','Start','End']];
+  var rows=[['Activity','Project','Type','Location','Target','Actual','Progress %','Status','Start','End','Linked Indicator']];
   patRegisterFilteredRows().forEach(function(a){
     var pct=a.target?Math.round(a.actual/a.target*100):0;
-    rows.push([a.name,a.proj,a.type,a.loc||'',a.target,a.actual,pct,a.status,a.start||'',a.end||'']);
+    var ind=activityLinkedIndicator(a);
+    rows.push([a.name,a.proj,a.type,a.loc||'',a.target,a.actual,pct,a.status,a.start||'',a.end||'',ind?indLabel(ind):'']);
   });
   downloadCSV(rows,'program-activities-'+today()+'.csv');
 }
@@ -7685,10 +7700,11 @@ function renderPatRegister(){
     var pct=a.target?Math.round(a.actual/a.target*100):0;
     var col=pct>=90?'var(--green)':pct>=50?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
     var sb=a.status==='Complete'?'bG':a.status==='In Progress'?'bB':'bY';
-    var actActions=activityCanEdit(a)?'<button class="b bo bs" onclick="openEditActivity(\''+a.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'activity\',\''+a.id+'\')">Del</button>':'-';
-    h+='<tr><td><b>'+esc(a.name)+'</b></td><td>'+esc(a.proj)+'</td><td><span class="bdg bN">'+esc(a.type)+'</span></td><td>'+esc(a.loc||'-')+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td>'+
+    var actActions=(activityCanEdit(a)?'<button class="b bo bs" onclick="openEditActivity(\''+a.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'activity\',\''+a.id+'\')">Del</button>':'')+
+      (a.indicatorId?' <button class="b bo bs" onclick="openActivityReportModal(\''+a.id+'\')">Report to MEAL</button>':'');
+    h+='<tr><td><b>'+esc(a.name)+'</b>'+activityIndicatorStatusBadge(a)+'</td><td>'+esc(a.proj)+'</td><td><span class="bdg bN">'+esc(a.type)+'</span></td><td>'+esc(a.loc||'-')+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td>'+
       '<td><div style="display:flex;align-items:center;gap:6px"><div class="pw" style="width:60px"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><b style="font-size:11px;color:'+col+'">'+pct+'%</b></div></td>'+
-      '<td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td>'+actActions+'</td></tr>';
+      '<td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td>'+(actActions||'-')+'</td></tr>';
   });
   h+='</tbody></table>';
   c.innerHTML=h;
@@ -7701,11 +7717,12 @@ function renderPatReview(){
   rows.forEach(function(a){
     var pct=a.target?Math.round(a.actual/a.target*100):0;
     var od=activityOverdue(a);
-    var actAction=activityCanEdit(a)?'<button class="b bo bs" onclick="openEditActivity(\''+a.id+'\')">Update Progress</button>':'-';
-    h+='<tr><td><b>'+esc(a.name)+'</b></td><td>'+esc(a.proj)+'</td>'+
+    var actAction=(activityCanEdit(a)?'<button class="b bo bs" onclick="openEditActivity(\''+a.id+'\')">Update Progress</button>':'')+
+      (a.indicatorId?' <button class="b bo bs" onclick="openActivityReportModal(\''+a.id+'\')">Report to MEAL</button>':'');
+    h+='<tr><td><b>'+esc(a.name)+'</b>'+activityIndicatorStatusBadge(a)+'</td><td>'+esc(a.proj)+'</td>'+
       '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(a.end)+(od?' — OVERDUE':' — due soon')+'</td>'+
       '<td>'+pct+'%</td><td><span class="bdg '+(a.status==='In Progress'?'bB':'bY')+'">'+esc(a.status)+'</span></td>'+
-      '<td>'+actAction+'</td></tr>';
+      '<td>'+(actAction||'-')+'</td></tr>';
   });
   h+='</tbody></table>';
   c.innerHTML=h;
@@ -7714,10 +7731,11 @@ function renderPatEvidence(){
   var c=$('pat-evidence-body');if(!c)return;
   var rows=DB.activities.slice().sort(function(a,b){return new Date(b.end||b.start||0)-new Date(a.end||a.start||0);});
   if(!rows.length){c.innerHTML='<div class="empty">No activities recorded yet</div>';return;}
-  var h='<table><thead><tr><th>Activity</th><th>Project</th><th>Type</th><th>Start</th><th>End</th><th>Target</th><th>Actual</th><th>Status</th><th>Logged By</th></tr></thead><tbody>';
+  var h='<table><thead><tr><th>Activity</th><th>Project</th><th>Type</th><th>Start</th><th>End</th><th>Target</th><th>Actual</th><th>Status</th><th>Linked Indicator</th><th>Logged By</th></tr></thead><tbody>';
   rows.forEach(function(a){
     var sb=a.status==='Complete'?'bG':a.status==='In Progress'?'bB':'bY';
-    h+='<tr><td>'+esc(a.name)+'</td><td>'+esc(a.proj)+'</td><td>'+esc(a.type)+'</td><td>'+(a.start?dt(a.start):'-')+'</td><td>'+(a.end?dt(a.end):'-')+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td><td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td>'+esc(a.createdBy||'-')+'</td></tr>';
+    var ind=activityLinkedIndicator(a);
+    h+='<tr><td>'+esc(a.name)+'</td><td>'+esc(a.proj)+'</td><td>'+esc(a.type)+'</td><td>'+(a.start?dt(a.start):'-')+'</td><td>'+(a.end?dt(a.end):'-')+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td><td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td style="font-size:11.5px">'+(ind?esc(indLabel(ind)):'-')+'</td><td>'+esc(a.createdBy||'-')+'</td></tr>';
   });
   h+='</tbody></table>';
   c.innerHTML=h;
@@ -9281,8 +9299,92 @@ function saveActivity(){
   var st=ac>=tg&&tg>0?'Complete':ac>0?'In Progress':'Not Started';
   DB.activities.push({id:nid('AC'),name:n.value.trim(),proj:$('ac-proj').value,type:$('ac-type').value,
     loc:$('ac-loc').value,target:tg,actual:ac,start:$('ac-start').value,end:$('ac-end').value,status:st,
+    indicatorId:$('ac-indicator')?($('ac-indicator').value||null):null,
     createdBy:SES.name});
-  closeM('m-activity');n.value='';renderActivities();refreshAll();queueCloudSave();
+  closeM('m-activity');n.value='';if($('ac-indicator'))$('ac-indicator').value='';renderActivities();refreshAll();queueCloudSave();
+}
+function refreshActivityIndicatorOptions(projSelId,indSelId){
+  var projSel=$(projSelId),indSel=$(indSelId);if(!projSel||!indSel)return;
+  var proj=projSel.value;
+  var cur=indSel.value;
+  var inds=DB.indicators.filter(function(i){return i.proj===proj;});
+  indSel.innerHTML='<option value="">— Not linked to an indicator —</option>'+
+    inds.map(function(i){return '<option value="'+esc(i.id)+'">'+esc(indLabel(i))+'</option>';}).join('');
+  if(cur && inds.some(function(i){return i.id===cur;}))indSel.value=cur;
+}
+function activityLinkedIndicator(a){ return a.indicatorId?DB.indicators.find(function(x){return x.id===a.indicatorId;}):null; }
+function activityReportPeriod(a){ return (a.end||today()).slice(0,7); }
+function activityIndicatorStatusBadge(a){
+  var ind=activityLinkedIndicator(a);if(!ind)return '';
+  var period=activityReportPeriod(a);
+  var sub=indicatorMonthSubmission(ind,period);
+  var v=sub?getVerification(ind,period):null;
+  var label=!sub?'Not Submitted':v.status==='Verified'?'Verified '+dt(v.on):v.status==='Returned'?'Returned for Correction':'Pending Verification';
+  var cls=!sub?'bY':v.status==='Verified'?'bG':v.status==='Returned'?'bR':'bO';
+  return '<div style="margin-top:4px;font-size:9.5px"><span class="bdg bN" style="margin-right:3px">'+esc(indLabel(ind))+'</span><span class="bdg '+cls+'">'+label+'</span></div>';
+}
+var _arActivityId=null;
+function openActivityReportModal(activityId){
+  var a=DB.activities.find(function(x){return x.id===activityId;});if(!a)return;
+  var ind=activityLinkedIndicator(a);
+  if(!ind){alert('Link this activity to an indicator first (Edit Activity).');return;}
+  _arActivityId=activityId;
+  $('ar-ctx').innerHTML='<b>'+esc(a.name)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">Reporting against indicator <b>'+esc(indLabel(ind))+'</b> · '+esc(ind.proj)+' · Current: '+fmt(ind.actual)+' · Target: '+fmt(ind.target)+' '+esc(ind.unit||'')+'</div>';
+  $('ar-period').value=activityReportPeriod(a);
+  $('ar-actual').value=a.actual;
+  if($('ar-file'))$('ar-file').value='';
+  if($('ar-reason'))$('ar-reason').value='';
+  updateArReasonVisibility();
+  openM('m-activity-report');
+}
+function updateArReasonVisibility(){
+  var a=DB.activities.find(function(x){return x.id===_arActivityId;});if(!a)return;
+  var ind=activityLinkedIndicator(a);if(!ind)return;
+  var actual=parseFloat($('ar-actual').value);
+  var wrap=$('ar-reason-wrap');if(!wrap)return;
+  wrap.style.display=(!isNaN(actual)&&indUpdateIsBehind(actual,ind.target))?'':'none';
+}
+async function submitActivityIndicatorUpdate(){
+  if(!_arActivityId)return;
+  var a=DB.activities.find(function(x){return x.id===_arActivityId;});if(!a)return;
+  var ind=activityLinkedIndicator(a);if(!ind)return;
+  var period=$('ar-period').value;
+  if(!period){alert('Select the reporting month.');return;}
+  if(ind.verifications && ind.verifications[period] && ind.verifications[period].status==='Verified'){
+    alert('MEAL has verified and locked '+period+' for this indicator. Contact MEAL to reopen the month before submitting a new value.');
+    return;
+  }
+  var actual=parseFloat($('ar-actual').value);
+  if(isNaN(actual)){alert('Enter the actual value for this indicator.');return;}
+  var reason=($('ar-reason')?$('ar-reason').value:'').trim();
+  if(indUpdateIsBehind(actual,ind.target) && !reason){
+    alert('This result is below 90% of target. Please explain why before saving.');
+    return;
+  }
+  var updateDate=period+'-01';
+  var fileInput=$('ar-file'),docId=null,fileName=null;
+  if(fileInput && fileInput.files.length){
+    var btn=$('ar-save-btn');
+    if(btn){btn.disabled=true;btn.textContent='Uploading...';}
+    var fileInfo=await uploadFileToStorage(fileInput.files[0],'indicator-evidence');
+    if(btn){btn.disabled=false;btn.textContent='Submit to MEAL';}
+    if(!fileInfo)return;
+    docId=nid('D');
+    DB.docs.push({id:docId,title:'MOV: '+indLabel(ind)+' — '+updateDate+' (from activity '+a.name+')',dept:'MEAL',type:'Evidence',ver:'1.0',date:updateDate,by:SES.name,
+      desc:'Means of verification for '+indLabel(ind)+', reported from program activity "'+a.name+'".',
+      brief:'Means of verification for '+indLabel(ind)+', reported from program activity "'+a.name+'".',
+      full:'No full content entered.',fileUrl:fileInfo.url,fileName:fileInfo.name,
+      confidentiality:'Internal',reviewDue:'',status:'Active'});
+    fileName=fileInfo.name;
+  }
+  ind.updates=ind.updates||[];
+  ind.updates.push({date:updateDate,actual:actual,female:null,male:null,note:'Reported from Program Activity: '+a.name,by:SES.name,docId:docId,fileName:fileName,reason:reason||null,sourceActivityId:a.id});
+  ind.actual=actual;
+  closeM('m-activity-report');
+  renderActivities();
+  if(typeof renderIndicatorTracker==='function')renderIndicatorTracker();
+  queueCloudSave();
+  alert('Submitted to MEAL for verification.');
 }
 
 DB.sgCases=[];
@@ -13389,7 +13491,7 @@ function openEditActivity(id){
   if(!m){
     var projOpts=Object.keys(PROJ).map(function(k){return '<option>'+k+'</option>';}).join('');
     m=document.createElement('div');m.id='m-edit-activity';m.className='mb';
-    m.innerHTML='<div class="md"><div class="mh"><h3>Edit Activity</h3><button class="mx" onclick="closeM(\'m-edit-activity\')">&times;</button></div><div class="mbd"><div class="fg"><label>Name</label><input id="ea-name" class="fi" type="text"></div><div class="fg"><label>Project</label><select id="ea-proj" class="fi">'+projOpts+'</select></div><div class="fg"><label>Location</label><input id="ea-loc" class="fi" type="text"></div><div class="fg"><label>Target</label><input id="ea-target" class="fi" type="number" min="0"></div><div class="fg"><label>Actual</label><input id="ea-actual" class="fi" type="number" min="0"></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-activity\')">Cancel</button><button class="b bn" onclick="saveEditActivity()">Save Changes</button></div></div>';
+    m.innerHTML='<div class="md"><div class="mh"><h3>Edit Activity</h3><button class="mx" onclick="closeM(\'m-edit-activity\')">&times;</button></div><div class="mbd"><div class="fg"><label>Name</label><input id="ea-name" class="fi" type="text"></div><div class="fg"><label>Project</label><select id="ea-proj" class="fi" onchange="refreshActivityIndicatorOptions(\'ea-proj\',\'ea-indicator\')">'+projOpts+'</select></div><div class="fg"><label>Location</label><input id="ea-loc" class="fi" type="text"></div><div class="fg"><label>Target</label><input id="ea-target" class="fi" type="number" min="0"></div><div class="fg"><label>Actual</label><input id="ea-actual" class="fi" type="number" min="0"></div><div class="fg"><label>Linked Indicator</label><select id="ea-indicator" class="fi"><option value="">— Not linked —</option></select></div></div><div class="mf"><button class="b bo" onclick="closeM(\'m-edit-activity\')">Cancel</button><button class="b bn" onclick="saveEditActivity()">Save Changes</button></div></div>';
     document.body.appendChild(m);
   }
   document.getElementById('ea-name').value=a.name;
@@ -13397,6 +13499,8 @@ function openEditActivity(id){
   document.getElementById('ea-loc').value=a.loc||'';
   document.getElementById('ea-target').value=a.target||0;
   document.getElementById('ea-actual').value=a.actual||0;
+  refreshActivityIndicatorOptions('ea-proj','ea-indicator');
+  document.getElementById('ea-indicator').value=a.indicatorId||'';
   m.classList.add('on');
 }
 
@@ -13411,6 +13515,7 @@ function saveEditActivity(){
   a.proj=document.getElementById('ea-proj').value;
   a.loc=document.getElementById('ea-loc').value.trim();
   a.target=tg;a.actual=ac;
+  a.indicatorId=document.getElementById('ea-indicator').value||null;
   a.status=ac>=tg&&tg>0?'Complete':ac>0?'In Progress':'Not Started';
   closeM('m-edit-activity');
   renderActivities();refreshAll();
