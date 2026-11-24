@@ -758,6 +758,9 @@ tbody tr:hover td{background:var(--g50);}
   <div class="cd"><div class="cdh"><div class="cdt">MEAL Workspaces</div></div>
   <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px" id="meal-workspaces"></div></div>
 
+  <div class="cd"><div class="cdh"><div class="cdt">Recent Activity</div><span style="font-size:10.5px;color:var(--g400)">Latest records across all MEAL tools</span></div>
+  <div class="cdb" id="meal-activity"></div></div>
+
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Staff Directory</div><button class="b bn bs" onclick="openDeptAddUser()">+ Add Staff Account</button></div><div class="cdb tw" id="staffdir-meal"></div></div>
     <div class="cd"><div class="cdh"><div class="cdt">Documents &amp; SOPs</div><button class="b bo bs" onclick="go('meal-docs')">Full View</button></div><div class="cdb" id="meal-docs-preview"></div></div>
@@ -770,7 +773,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-ind')">+ Add Indicator</button></div></div>
 
   <div class="stats">
-    <div class="st nv"><div class="stl">Active Indicators</div><div class="stv" id="mit-tot">0</div></div>
+    <div class="st nv"><div class="stl">Active Indicators</div><div class="stv" id="mit-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mit-tot-sub">—</div></div>
     <div class="st gr"><div class="stl">Outcome Indicators</div><div class="stv" id="mit-outcome">0</div></div>
     <div class="st og"><div class="stl">Output Indicators</div><div class="stv" id="mit-output">0</div></div>
     <div class="st rd"><div class="stl">Targets Needing Definition</div><div class="stv" id="mit-notarget">0</div></div>
@@ -795,12 +798,18 @@ tbody tr:hover td{background:var(--g50);}
       <div class="cd"><div class="cdh"><div class="cdt">Indicator Achievement Against Target</div></div>
         <div class="cdb" id="mit-achievement"></div></div>
     </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Projected Achievement by Project End Date</div><span style="font-size:10.5px;color:var(--g400)">Linear projection from each indicator's own reported trend</span></div>
+      <div class="cdb tw" id="mit-projection"></div></div>
   </div>
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mit-panel-register" style="display:none">
     <div class="cd"><div class="cdh"><div class="cdt">Indicator Register</div>
+      <div style="display:flex;gap:8px;align-items:center">
       <select id="mit-reg-proj" onchange="renderIndRegister()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit"><option value="all">All Projects</option></select>
+      <button class="b bo bs" onclick="exportIndRegisterCSV()">Download CSV</button>
+      </div>
     </div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
@@ -848,13 +857,92 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL CFRM -->
 <div class="pg" id="p-meal-cfrm">
-  <div class="ph"><div><h1>CFRM Register</h1><p>Community Feedback and Response Mechanism — live cases</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-cfrm')">+ Register Case</button></div></div>
-  <div class="stats"><div class="st rd"><div class="stl">Escalated</div><div class="stv" id="cf-esc">0</div></div>
-  <div class="st og"><div class="stl">Open</div><div class="stv" id="cf-open">0</div></div>
-  <div class="st gr"><div class="stl">Resolved</div><div class="stv" id="cf-res">0</div></div>
-  <div class="st nv"><div class="stl">Total Cases</div><div class="stv" id="cf-tot">0</div></div></div>
-  <div class="cd"><div class="cdb" id="cfrm-list"></div></div>
+  <div class="ph"><div><h1>CFRM &amp; Feedback</h1><p>MEAL · Community Feedback and Response Mechanism — cases, triage, resolution and evidence</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-cfrm')">+ Register Case</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Cases</div><div class="stv" id="cf-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="cf-tot-sub">—</div></div>
+    <div class="st og"><div class="stl">Open</div><div class="stv" id="cf-open">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="cf-open-sub">—</div></div>
+    <div class="st rd"><div class="stl">Escalated</div><div class="stv" id="cf-esc">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Priority response</div></div>
+    <div class="st gr"><div class="stl">Resolved</div><div class="stv" id="cf-res">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="cf-res-sub">—</div></div>
+    <div class="st rd"><div class="stl">Overdue Response</div><div class="stv" id="cf-overdue">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Past SLA due date</div></div>
+    <div class="st nv"><div class="stl">Avg. Resolution Time</div><div class="stv" id="cf-avgdays">—</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">days, resolved cases</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mcf-tab-overview" onclick="setCfTab('overview')">Overview</button>
+    <button class="b bo bs" id="mcf-tab-register" onclick="setCfTab('register')">Record Register</button>
+    <button class="b bo bs" id="mcf-tab-entry" onclick="setCfTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mcf-tab-review" onclick="setCfTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mcf-tab-evidence" onclick="setCfTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mcf-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Case Status Breakdown</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mcf-ch-status" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mcf-ch-status-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Cases by Channel</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mcf-ch-channel" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Cases by Type</div>
+          <canvas id="mcf-ch-type" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Cases by Priority</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mcf-ch-prio" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mcf-ch-prio-leg"></div></div></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Cases Logged (6 mo.)</div>
+          <canvas id="mcf-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Cases by Project</div>
+          <canvas id="mcf-ch-proj" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mcf-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">CFRM Case Register</div><button class="b bo bs" onclick="exportCfRegisterCSV()">Download CSV</button></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mcf-reg-search" oninput="renderCfRegister()" placeholder="Case ID, project, district or description"></div>
+        <div class="fg"><label>Status</label><select id="mcf-reg-status" onchange="renderCfRegister()"><option value="all">All States</option><option value="Open">Open</option><option value="Escalated">Escalated</option><option value="Resolved">Resolved</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mcf-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mcf-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Register a New Case</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">A response due date is set automatically from the case priority: Escalate &amp; Safeguarding — 1 day, Urgent — 3 days, Normal — 14 days.</p>
+        <button class="b bn" onclick="openM('m-cfrm')">+ Register Case</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Case Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Register case</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Triage &amp; assign</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Investigate</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Respond &amp; resolve</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Verify &amp; close</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mcf-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Open &amp; Escalated Cases Needing Action</div></div><div class="cdb tw" id="mcf-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mcf-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Case History</div></div><div class="cdb tw" id="cfrm-list"></div></div>
+  </div>
 </div>
 
 <!-- MEAL VISITS -->
@@ -864,7 +952,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <div class="stats">
     <div class="st nv"><div class="stl">Visits Planned</div><div class="stv" id="mfv-planned">0</div></div>
-    <div class="st gr"><div class="stl">Visits Completed</div><div class="stv" id="mfv-completed">0</div></div>
+    <div class="st gr"><div class="stl">Visits Completed</div><div class="stv" id="mfv-completed">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mfv-completed-sub">—</div></div>
     <div class="st og"><div class="stl">Sites Monitored</div><div class="stv" id="mfv-sites">0</div></div>
     <div class="st rd"><div class="stl">Visit Actions Open</div><div class="stv" id="mfv-actions">0</div></div>
   </div>
@@ -892,7 +980,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mfv-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">Field Visits &amp; Monitoring — Visit Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Field Visits &amp; Monitoring — Visit Register</div><button class="b bo bs" onclick="exportFvRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mfv-reg-search" oninput="renderFvRegister()" placeholder="Reference, project, monitor or site"></div>
@@ -922,6 +1010,7 @@ tbody tr:hover td{background:var(--g50);}
   <!-- REVIEW / ACTION -->
   <div class="mitp" id="mfv-panel-review" style="display:none">
     <div class="cd"><div class="cdh"><div class="cdt">Open Follow-Up Actions</div></div><div class="cdb tw" id="mfv-review-body"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Field Findings Awaiting a Linked Finding</div></div><div class="cdb tw" id="mfv-findlink-body"></div></div>
   </div>
 
   <!-- EVIDENCE & HISTORY -->
@@ -933,57 +1022,413 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- MEAL FINDINGS -->
 <div class="pg" id="p-meal-find">
-  <div class="ph"><div><h1>Findings Tracker</h1><p>All findings with owner, action, and resolution status</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-finding')">+ Add Finding</button></div></div>
-  <div class="stats"><div class="st rd"><div class="stl">Critical</div><div class="stv" id="fd-c">0</div></div>
-  <div class="st og"><div class="stl">Major</div><div class="stv" id="fd-m">0</div></div>
-  <div class="st bl"><div class="stl">Minor</div><div class="stv" id="fd-n">0</div></div>
-  <div class="st gr"><div class="stl">Positive</div><div class="stv" id="fd-p">0</div></div></div>
-  <div class="cd"><div class="cdb" id="find-list"></div></div>
+  <div class="ph"><div><h1>Findings &amp; Corrective Actions</h1><p>MEAL · All findings across departments, with owner, action, and verification status</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bn bs" onclick="openNewFinding()">+ Add Finding</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Findings</div><div class="stv" id="fd-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="fd-tot-sub">—</div></div>
+    <div class="st rd"><div class="stl">Critical</div><div class="stv" id="fd-c">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Needs urgent action</div></div>
+    <div class="st og"><div class="stl">Active (Open / In Progress)</div><div class="stv" id="fd-active">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="fd-overdue-sub">—</div></div>
+    <div class="st gr"><div class="stl">Verified &amp; Resolved</div><div class="stv" id="fd-resolved">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="fd-resolved-sub">—</div></div>
+    <div class="st og"><div class="stl">Pending MEAL Verification</div><div class="stv" id="fd-pending">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Awaiting review</div></div>
+    <div class="st nv"><div class="stl">Avg. Resolution Time</div><div class="stv" id="fd-avgdays">—</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">days, verified findings</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mfd-tab-overview" onclick="setFdTab('overview')">Overview</button>
+    <button class="b bo bs" id="mfd-tab-register" onclick="setFdTab('register')">Record Register</button>
+    <button class="b bo bs" id="mfd-tab-entry" onclick="setFdTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mfd-tab-review" onclick="setFdTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mfd-tab-evidence" onclick="setFdTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mfd-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Findings by Severity</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mfd-ch-sev" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mfd-ch-sev-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Findings by Department</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mfd-ch-dept" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Status</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mfd-ch-status" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mfd-ch-status-leg"></div></div></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Source</div>
+          <canvas id="mfd-ch-src" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings Logged (6 mo.)</div>
+          <canvas id="mfd-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Findings by Project</div>
+          <canvas id="mfd-ch-proj" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mfd-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Findings Register</div><button class="b bo bs" onclick="exportFdRegisterCSV()">Download CSV</button></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mfd-reg-search" oninput="renderFdRegister()" placeholder="Finding ID, title, department or project"></div>
+        <div class="fg"><label>Status</label><select id="mfd-reg-status" onchange="renderFdRegister()"><option value="all">All States</option><option value="Open">Open</option><option value="In Progress">In Progress</option><option value="Resolved">Resolved</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mfd-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mfd-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Raise a New Finding</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">The responsible department records the corrective action and submits it for MEAL verification from their own dashboard.</p>
+        <button class="b bn" onclick="openNewFinding()">+ Add Finding</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Finding Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Raise finding</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Department assigns &amp; acts</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Submit for verification</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">MEAL verifies</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Close, or return for more work</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mfd-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Pending MEAL Verification</div></div><div class="cdb" id="mfd-review-pending"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Overdue &amp; Not Yet Actioned</div></div><div class="cdb tw" id="mfd-review-overdue"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mfd-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdb" id="find-list"></div></div>
+  </div>
 </div>
 
 <!-- MEAL RISKS -->
 <div class="pg" id="p-meal-risk">
-  <div class="ph"><div><h1>Risk &amp; Audit Findings</h1><p>Live risk tracking with automatic scoring, plus internal/external/donor audit findings tracked to closure</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bo bs" onclick="openM('m-risk')">+ Add Risk</button><button class="b bn bs" onclick="openM('m-audit-finding')">+ Add Audit Finding</button></div></div>
-  <div class="stats"><div class="st rd"><div class="stl">Critical (15-25)</div><div class="stv" id="rk-c">0</div></div>
-  <div class="st og"><div class="stl">High (10-14)</div><div class="stv" id="rk-h">0</div></div>
-  <div class="st gd"><div class="stl">Medium (5-9)</div><div class="stv" id="rk-m">0</div></div>
-  <div class="st gr"><div class="stl">Low (1-4)</div><div class="stv" id="rk-l">0</div></div></div>
-  <div id="risk-list"></div>
+  <div class="ph"><div><h1>Risk &amp; Audit Findings</h1><p>MEAL · Live risk scoring plus internal/external/donor audit findings tracked to closure</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bo bs" onclick="openM('m-risk')">+ Add Risk</button><button class="b bn bs" onclick="openM('m-audit-finding')">+ Add Audit Finding</button></div></div>
 
-  <div class="cd"><div class="cdh"><div class="cdt">Audit Findings &amp; Corrective Action Tracker</div></div></div>
   <div class="stats">
-    <div class="st og"><div class="stl">Open Findings</div><div class="stv" id="af-open">0</div></div>
-    <div class="st rd"><div class="stl">Overdue</div><div class="stv" id="af-overdue">0</div></div>
-    <div class="st gr"><div class="stl">Closed</div><div class="stv" id="af-closed">0</div></div>
+    <div class="st nv"><div class="stl">Total Risks</div><div class="stv" id="rk-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="rk-tot-sub">—</div></div>
+    <div class="st rd"><div class="stl">High Priority Risks</div><div class="stv" id="rk-highpri">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Critical + High, need mitigation</div></div>
+    <div class="st og"><div class="stl">Open Audit Findings</div><div class="stv" id="af-open">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="af-open-sub">—</div></div>
+    <div class="st rd"><div class="stl">Overdue Findings</div><div class="stv" id="af-overdue">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Past due date</div></div>
+    <div class="st gr"><div class="stl">Findings Closed</div><div class="stv" id="af-closed">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="af-closed-sub">—</div></div>
+    <div class="st nv"><div class="stl">Avg. Closure Time</div><div class="stv" id="af-avgdays">—</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">days, closed findings</div></div>
   </div>
-  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Source</th><th>Finding</th><th>Project</th><th>Severity</th><th>Responsible</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="audit-findings-body"></tbody></table></div></div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mrk-tab-overview" onclick="setRkTab('overview')">Overview</button>
+    <button class="b bo bs" id="mrk-tab-register" onclick="setRkTab('register')">Record Register</button>
+    <button class="b bo bs" id="mrk-tab-entry" onclick="setRkTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mrk-tab-review" onclick="setRkTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mrk-tab-evidence" onclick="setRkTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mrk-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Risk Matrix (Likelihood × Impact)</div></div>
+        <div class="cdb" id="mrk-matrix"></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Risks by Category</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mrk-ch-cat" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Risks by Status</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mrk-ch-status" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mrk-ch-status-leg"></div></div></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Audit Findings by Severity</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mrk-ch-afsev" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mrk-ch-afsev-leg"></div></div></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Audit Findings by Source</div>
+          <canvas id="mrk-ch-afsrc" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Audit Findings Logged (6 mo.)</div>
+          <canvas id="mrk-ch-aftrend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mrk-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Risk Register</div><button class="b bo bs" onclick="exportRkRegisterCSV()">Download CSV</button></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mrk-reg-search" oninput="renderRkRegister()" placeholder="Risk ID, title, category or project"></div>
+        <div class="fg"><label>Level</label><select id="mrk-reg-level" onchange="renderRkRegister()"><option value="all">All Levels</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mrk-reg-body"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Audit Findings Register</div><button class="b bo bs" onclick="exportAfRegisterCSV()">Download CSV</button></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="maf-reg-search" oninput="renderAfRegister()" placeholder="Finding ID, title, source or project"></div>
+        <div class="fg"><label>Status</label><select id="maf-reg-status" onchange="renderAfRegister()"><option value="all">All States</option><option value="Open">Open</option><option value="Closed">Closed</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="maf-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mrk-panel-entry" style="display:none">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Risk Register</div></div>
+        <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Score = Likelihood × Impact. ≥15 Critical, ≥10 High, ≥5 Medium, else Low.</p>
+          <button class="b bn" onclick="openM('m-risk')">+ Add Risk</button></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Audit Findings</div></div>
+        <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Record internal, external, donor or governance findings with a responsible owner and due date.</p>
+          <button class="b bn" onclick="openM('m-audit-finding')">+ Add Audit Finding</button></div></div>
+    </div>
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">How a Risk Is Handled</div></div>
+        <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:11.5px;margin-top:3px">Identify</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:11.5px;margin-top:3px">Score L×I</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:11.5px;margin-top:3px">Mitigate</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:11.5px;margin-top:3px">Monitor</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:11.5px;margin-top:3px">Close</div></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">How an Audit Finding Is Handled</div></div>
+        <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:11.5px;margin-top:3px">Record finding</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:11.5px;margin-top:3px">Assign owner</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:11.5px;margin-top:3px">Act &amp; respond</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:11.5px;margin-top:3px">Review evidence</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:11.5px;margin-top:3px">Close</div></div>
+        </div></div>
+    </div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mrk-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Risks Needing Mitigation Review</div></div><div class="cdb tw" id="mrk-review-body"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Overdue Audit Findings</div></div><div class="cdb tw" id="maf-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mrk-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Risk Log</div></div><div id="risk-list"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Audit Findings Log</div></div>
+    <div class="cdb tw"><table><thead><tr><th>Source</th><th>Finding</th><th>Project</th><th>Severity</th><th>Responsible</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="audit-findings-body"></tbody></table></div></div>
+  </div>
 </div>
 
 <!-- MEAL DQA & EVALUATIONS -->
 <div class="pg" id="p-meal-dqa">
-  <div class="ph"><div><h1>DQA &amp; Evaluations</h1><p>Data Quality Assessments against the standard validity/integrity/precision/reliability/timeliness dimensions, and formal Baseline/Midline/Endline evaluations</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bo bs" onclick="openM('m-dqa')">+ New DQA</button><button class="b bn bs" onclick="openM('m-evaluation')">+ New Evaluation</button></div></div>
+  <div class="ph"><div><h1>DQA &amp; Evaluations</h1><p>MEAL · Data Quality Assessments (validity/integrity/precision/reliability/timeliness) and formal Baseline/Midline/Endline evaluations</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bo bs" onclick="openM('m-dqa')">+ New DQA</button><button class="b bn bs" onclick="openM('m-evaluation')">+ New Evaluation</button></div></div>
+
   <div class="stats">
-    <div class="st nv"><div class="stl">DQAs Conducted</div><div class="stv" id="dqa-tot">0</div></div>
-    <div class="st rd"><div class="stl">Needing Improvement</div><div class="stv" id="dqa-poor">0</div></div>
-    <div class="st gr"><div class="stl">Evaluations Completed</div><div class="stv" id="ev-done">0</div></div>
-    <div class="st og"><div class="stl">Evaluations Ongoing/Planned</div><div class="stv" id="ev-pending">0</div></div>
+    <div class="st nv"><div class="stl">DQAs Conducted</div><div class="stv" id="dqa-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="dqa-tot-sub">—</div></div>
+    <div class="st rd"><div class="stl">Needing Improvement</div><div class="stv" id="dqa-poor">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="dqa-poor-sub">—</div></div>
+    <div class="st gr"><div class="stl">Good Quality</div><div class="stv" id="dqa-good">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="dqa-good-sub">—</div></div>
+    <div class="st nv"><div class="stl">Avg. Quality Score</div><div class="stv" id="dqa-avgscore">—</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">across all dimensions</div></div>
+    <div class="st gr"><div class="stl">Evaluations Completed</div><div class="stv" id="ev-done">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="ev-done-sub">—</div></div>
+    <div class="st og"><div class="stl">Ongoing / Planned</div><div class="stv" id="ev-pending">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="ev-pending-sub">—</div></div>
   </div>
-  <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div></div>
-    <div class="cdb tw"><table><thead><tr><th>Project</th><th>Data / Indicator Assessed</th><th>Date</th><th>Assessed By</th><th>Dimensions (V / I / P / R / T)</th><th>Overall</th></tr></thead><tbody id="dqa-body"></tbody></table></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div></div>
-    <div class="cdb tw"><table><thead><tr><th>Project</th><th>Type</th><th>Title</th><th>Period</th><th>Lead</th><th>Status</th></tr></thead><tbody id="evaluations-body"></tbody></table></div></div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mdq-tab-overview" onclick="setDqTab('overview')">Overview</button>
+    <button class="b bo bs" id="mdq-tab-register" onclick="setDqTab('register')">Record Register</button>
+    <button class="b bo bs" id="mdq-tab-entry" onclick="setDqTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mdq-tab-review" onclick="setDqTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mdq-tab-evidence" onclick="setDqTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mdq-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Data Quality Dimensions (% rated "Yes")</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mdq-ch-dims" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Overall DQA Rating</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mdq-ch-rating" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mdq-ch-rating-leg"></div>
+        </div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">DQAs by Project</div>
+          <canvas id="mdq-ch-proj" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Evaluations by Type</div>
+          <canvas id="mdq-ch-evtype" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Evaluations by Status</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mdq-ch-evstatus" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mdq-ch-evstatus-leg"></div></div></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">DQAs Conducted (6 mo.)</div>
+          <canvas id="mdq-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mdq-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div><button class="b bo bs" onclick="exportDqRegisterCSV()">Download CSV</button></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mdq-reg-search" oninput="renderDqRegister()" placeholder="Project or indicator"></div>
+        <div class="fg"><label>Rating</label><select id="mdq-reg-rating" onchange="renderDqRegister()"><option value="all">All Ratings</option><option value="Good">Good</option><option value="Acceptable">Acceptable</option><option value="Needs Improvement">Needs Improvement</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="dqa-body-reg"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div><button class="b bo bs" onclick="exportEvRegisterCSV()">Download CSV</button></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mev-reg-search" oninput="renderEvRegister()" placeholder="Project or title"></div>
+        <div class="fg"><label>Status</label><select id="mev-reg-status" onchange="renderEvRegister()"><option value="all">All States</option><option value="Planned">Planned</option><option value="Ongoing">Ongoing</option><option value="Completed">Completed</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mev-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mdq-panel-entry" style="display:none">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessment</div></div>
+        <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Score each of the 5 standard dimensions Yes / Partial / No.</p>
+          <button class="b bn" onclick="openM('m-dqa')">+ New DQA</button></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Evaluation / Assessment</div></div>
+        <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Baseline, Midline, Endline or Real-Time Evaluation with findings and management response.</p>
+          <button class="b bn" onclick="openM('m-evaluation')">+ New Evaluation</button></div></div>
+    </div>
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">How a DQA Is Handled</div></div>
+        <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:11.5px;margin-top:3px">Select indicator</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:11.5px;margin-top:3px">Score 5 dimensions</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:11.5px;margin-top:3px">Record issues</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:11.5px;margin-top:3px">Share recommendations</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:11.5px;margin-top:3px">Re-assess next cycle</div></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">How an Evaluation Is Handled</div></div>
+        <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:11.5px;margin-top:3px">Plan</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:11.5px;margin-top:3px">Collect data</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:11.5px;margin-top:3px">Analyze</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:11.5px;margin-top:3px">Report findings</div></div>
+          <div style="background:var(--g50);border-radius:8px;padding:8px"><div style="font-size:9.5px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:11.5px;margin-top:3px">Management response</div></div>
+        </div></div>
+    </div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mdq-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">DQAs Needing Improvement</div></div><div class="cdb tw" id="mdq-review-body"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Evaluations Past Expected End Date</div></div><div class="cdb tw" id="mev-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mdq-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Data Quality Assessments</div></div>
+      <div class="cdb tw"><table><thead><tr><th>Project</th><th>Data / Indicator Assessed</th><th>Date</th><th>Assessed By</th><th>Dimensions (V / I / P / R / T)</th><th>Overall</th></tr></thead><tbody id="dqa-body"></tbody></table></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Evaluations &amp; Assessments</div></div>
+      <div class="cdb tw"><table><thead><tr><th>Project</th><th>Type</th><th>Title</th><th>Period</th><th>Lead</th><th>Status</th></tr></thead><tbody id="evaluations-body"></tbody></table></div></div>
+  </div>
 </div>
 
 <!-- MEAL DOCUMENTS -->
 <div class="pg" id="p-meal-docs">
-  <div class="ph"><div><h1>Documents, SOPs &amp; Policies</h1><p>Upload and manage MEAL documentation</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back</button><button class="b bn bs" onclick="openM('m-doc')">Upload Document</button></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">MEAL Documents</div><span class="bdg bN" id="doc-cnt-meal">0 files</span></div>
-  <div class="cdb"><div id="docs-meal"></div>
-  <div class="up" onclick="openM('m-doc')"><div style="font-size:30px">&#128193;</div><p><b>Click to upload document</b><br>PDF, Word, Excel supported</p></div></div></div>
+  <div class="ph"><div><h1>MEAL Documents, SOPs &amp; Policies</h1><p>MEAL · Document register, versioning, confidentiality and scheduled review</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-doc')">Upload Document</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Documents</div><div class="stv" id="mdc-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mdc-tot-sub">—</div></div>
+    <div class="st gr"><div class="stl">Active</div><div class="stv" id="mdc-active">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mdc-active-sub">—</div></div>
+    <div class="st og"><div class="stl">Needing Review</div><div class="stv" id="mdc-review">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Past review due date</div></div>
+    <div class="st rd"><div class="stl">Confidential</div><div class="stv" id="mdc-conf">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Restricted access</div></div>
+    <div class="st nv"><div class="stl">With Attached File</div><div class="stv" id="mdc-files">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mdc-files-sub">—</div></div>
+    <div class="st og"><div class="stl">Archived</div><div class="stv" id="mdc-archived">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Excluded from active register</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="mdc-tab-overview" onclick="setDcTab('overview')">Overview</button>
+    <button class="b bo bs" id="mdc-tab-register" onclick="setDcTab('register')">Record Register</button>
+    <button class="b bo bs" id="mdc-tab-entry" onclick="setDcTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="mdc-tab-review" onclick="setDcTab('review')">Review / Action</button>
+    <button class="b bo bs" id="mdc-tab-evidence" onclick="setDcTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="mdc-panel-overview">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Documents by Type</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="mdc-ch-type" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Documents by Confidentiality</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="mdc-ch-conf" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="mdc-ch-conf-leg"></div>
+        </div></div>
+    </div>
+
+    <div class="cd"><div class="cdh"><div class="cdt">Additional Analytics</div><span style="font-size:10.5px;color:var(--g400)">All charts use live platform data</span></div>
+    <div class="cdb" style="padding:14px 17px 4px">
+      <div class="g2">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Documents by Status</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mdc-ch-status" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mdc-ch-status-leg"></div></div></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">With Attached File vs Text-Only</div>
+          <div style="display:flex;align-items:center;gap:14px"><canvas id="mdc-ch-hasfile" width="130" height="130" style="width:130px;height:130px;flex-shrink:0"></canvas><div style="flex:1;font-size:11px" id="mdc-ch-hasfile-leg"></div></div></div>
+      </div>
+      <div class="g2" style="margin-top:18px;margin-bottom:4px">
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Uploads Logged (6 mo.)</div>
+          <canvas id="mdc-ch-trend" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+        <div><div style="font-size:11.5px;font-weight:700;color:var(--g600);margin-bottom:6px">Applies To</div>
+          <canvas id="mdc-ch-dept" width="420" height="150" style="width:100%;height:150px"></canvas></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="mdc-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Document Register</div><button class="b bo bs" onclick="exportDcRegisterCSV()">Download CSV</button></div>
+    <div class="cdb" style="padding-bottom:0">
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg ff"><label>Search</label><input type="text" id="mdc-reg-search" oninput="renderDcRegister()" placeholder="Title or type"></div>
+        <div class="fg"><label>Status</label><select id="mdc-reg-status" onchange="renderDcRegister()"><option value="all">All States</option><option value="Active">Active</option><option value="Archived">Archived</option></select></div>
+      </div>
+    </div>
+    <div class="cdb tw" id="mdc-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="mdc-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Upload a New Document</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Set a Review Due Date on policies and SOPs so they surface automatically in Review / Action once due.</p>
+        <button class="b bn" onclick="openM('m-doc')">Upload Document</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Document Is Handled</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Draft</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Classify confidentiality</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Upload &amp; version</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Set review date</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 5</div><div style="font-size:12.5px;margin-top:3px">Publish &amp; re-review</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="mdc-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Documents Past Their Review Due Date</div></div><div class="cdb tw" id="mdc-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="mdc-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">MEAL Documents</div><span class="bdg bN" id="doc-cnt-meal">0 files</span></div>
+    <div class="cdb"><div id="docs-meal"></div>
+    <div class="up" onclick="openM('m-doc')"><div style="font-size:30px">&#128193;</div><p><b>Click to upload document</b><br>PDF, Word, Excel supported</p></div></div></div>
+  </div>
 </div>
 
 <!-- MEAL DATA ENTRY -->
@@ -992,7 +1437,7 @@ tbody tr:hover td{background:var(--g50);}
   <div class="pha"><button class="b bo bs" onclick="go('meal')">Back to Dashboard</button></div></div>
 
   <div class="stats">
-    <div class="st nv"><div class="stl" id="mde-period-lbl">This Month's Submissions</div><div class="stv" id="mde-submissions">0</div></div>
+    <div class="st nv"><div class="stl" id="mde-period-lbl">This Month's Submissions</div><div class="stv" id="mde-submissions">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mde-submissions-sub">—</div></div>
     <div class="st gr"><div class="stl">Expected Project Reports</div><div class="stv" id="mde-expected">0</div></div>
     <div class="st og"><div class="stl">Missing Submissions</div><div class="stv" id="mde-missing">0</div></div>
     <div class="st nv"><div class="stl">Result Rows Collected</div><div class="stv" id="mde-rows">0</div></div>
@@ -1021,7 +1466,7 @@ tbody tr:hover td{background:var(--g50);}
 
   <!-- RECORD REGISTER -->
   <div class="mitp" id="mde-panel-register" style="display:none">
-    <div class="cd"><div class="cdh"><div class="cdt">Monthly Data Entry — Submission Register</div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Monthly Data Entry — Submission Register</div><button class="b bo bs" onclick="exportDeRegisterCSV()">Download CSV</button></div>
     <div class="cdb" style="padding-bottom:0">
       <div class="fr" style="margin-bottom:10px">
         <div class="fg ff"><label>Search</label><input type="text" id="mde-reg-search" oninput="renderDeRegister()" placeholder="Reference, project, owner or period"></div>
@@ -3855,12 +4300,12 @@ function render(pg){
       else if(pg==='settings'){renderSettings();}
       else if(pg==='meal'){renderMealHome();renderMonthlyVerification();renderMonthlyReport();}
       else if(pg==='meal-ind'){renderIndicatorTracker();}
-      else if(pg==='meal-cfrm'){renderCFRM();}
+      else if(pg==='meal-cfrm'){renderCfrmTracker();}
       else if(pg==='meal-visits'){renderFieldVisitsTracker();}
-      else if(pg==='meal-find'){renderFindings();}
-      else if(pg==='meal-risk'){renderRisks();renderAuditFindings();}
-      else if(pg==='meal-dqa'){renderDQAs();renderEvaluations();}
-      else if(pg==='meal-docs'){renderDocs('meal','MEAL');}
+      else if(pg==='meal-find'){renderFindingsTracker();}
+      else if(pg==='meal-risk'){renderRiskAuditTracker();}
+      else if(pg==='meal-dqa'){renderDqaTracker();}
+      else if(pg==='meal-docs'){renderDocsTracker();}
       else if(pg==='meal-data'){renderDataEntryTracker();}
       else if(pg==='finance'){renderDept('finance','Finance');renderFinBudget();renderExpenditureLedger();renderFinanceInvoiceControls();renderBudgetRevisions();renderPayrollPeriods();}
       else if(pg==='finance-commitments'){renderCommitments();}
@@ -4897,6 +5342,13 @@ function renderMealHome(){
   var submittedProjCount=Object.keys(submittedProjSet).length;
   var verifiedTotal=achieved+offtrack;
 
+  var prevMonth=prevMonthKey(month),prevVerifiedTotal=0;
+  inds.forEach(function(i){
+    var sub=indicatorMonthSubmission(i,prevMonth);
+    var v=sub?getVerification(i,prevMonth):null;
+    if(sub&&v&&v.status==='Verified')prevVerifiedTotal++;
+  });
+
   if($('meal-verified-pct'))$('meal-verified-pct').textContent=(inds.length?Math.round(verifiedTotal/inds.length*100):0)+'%';
 
   var distinctLevels=Object.keys(inds.reduce(function(a,i){if(i.level)a[i.level]=1;return a;},{})).length;
@@ -4908,7 +5360,7 @@ function renderMealHome(){
   if($('mh-reports'))$('mh-reports').textContent=submittedProjCount+' / '+totalProjCovered;
   if($('mh-reports-sub'))$('mh-reports-sub').textContent=(totalProjCovered-submittedProjCount)+' project(s) not submitted';
   if($('mh-verified'))$('mh-verified').textContent=verifiedTotal+' / '+inds.length;
-  if($('mh-verified-sub'))$('mh-verified-sub').textContent=outstanding+' awaiting verification';
+  if($('mh-verified-sub'))$('mh-verified-sub').innerHTML=outstanding+' awaiting verification'+trendBadge(verifiedTotal,prevVerifiedTotal);
   var cfOpen=cfrm.filter(function(x){return x.status==='Open';}).length;
   var cfEsc=cfrm.filter(function(x){return x.status==='Escalated';}).length;
   var cfRes=cfrm.filter(function(x){return x.status==='Resolved';}).length;
@@ -5032,6 +5484,8 @@ function renderMealHome(){
     });
   }
 
+  renderMealActivity(pf);
+
   // ---- Documents & SOPs preview (real DB.docs, top 5 most recent) ----
   var dp=$('meal-docs-preview');
   if(dp){
@@ -5046,6 +5500,55 @@ function renderMealHome(){
       });
     }
   }
+}
+
+function renderMealActivity(pf){
+  var c=$('meal-activity');if(!c)return;
+  var items=[];
+  (pf==='all'?DB.cfrm:DB.cfrm.filter(function(x){return x.proj===pf;})).forEach(function(x){
+    items.push({date:x.date,icon:'📞',text:'CFRM case '+x.id+' logged — '+(x.type||'Feedback'),page:'meal-cfrm',setter:'setCfTab'});
+  });
+  DB.findings.filter(function(f){return f.dept==='MEAL'&&(pf==='all'||f.proj===pf);}).forEach(function(f){
+    items.push({date:f.date,icon:'🔍',text:'Finding logged — '+f.title,page:'meal-find',setter:'setFdTab'});
+  });
+  (pf==='all'?DB.risks:DB.risks.filter(function(r){return r.proj===pf;})).filter(function(r){return r.created;}).forEach(function(r){
+    items.push({date:r.created,icon:'⚠️',text:'Risk logged — '+r.title,page:'meal-risk',setter:'setRkTab'});
+  });
+  DB.auditFindings.filter(function(f){return pf==='all'||f.project===pf||f.project==='All Projects';}).forEach(function(f){
+    items.push({date:f.created,icon:'📋',text:'Audit finding logged — '+f.title,page:'meal-risk',setter:'setRkTab'});
+  });
+  (pf==='all'?DB.dqas:DB.dqas.filter(function(d){return d.project===pf;})).forEach(function(d){
+    items.push({date:d.date,icon:'✅',text:'DQA assessment — '+d.indicator,page:'meal-dqa',setter:'setDqTab'});
+  });
+  (pf==='all'?DB.evaluations:DB.evaluations.filter(function(e){return e.project===pf;})).forEach(function(e){
+    items.push({date:e.start,icon:'📊',text:'Evaluation — '+e.title,page:'meal-dqa',setter:'setDqTab'});
+  });
+  DB.docs.filter(function(d){return d.dept==='MEAL'||d.dept==='All';}).forEach(function(d){
+    items.push({date:d.date,icon:'📁',text:'Document uploaded — '+d.title,page:'meal-docs',setter:'setDcTab'});
+  });
+  (pf==='all'?DB.visits:DB.visits.filter(function(v){return v.proj===pf;})).forEach(function(v){
+    items.push({date:v.date||v.plannedDate,icon:'🌍',text:'Field visit — '+v.proj+(v.site?' / '+v.site:''),page:'meal-visits',setter:'setFvTab'});
+  });
+  (pf==='all'?DB.dataSub:DB.dataSub.filter(function(r){return r.proj===pf;})).forEach(function(r){
+    items.push({date:r.date,icon:'✏️',text:'Data submitted — '+r.proj+' / '+r.period,page:'meal-data',setter:'setDeTab'});
+  });
+  items=items.filter(function(it){return it.date;});
+  items.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  items=items.slice(0,15);
+  if(!items.length){c.innerHTML='<div class="empty">No activity recorded yet</div>';return;}
+  c.innerHTML='';
+  items.forEach(function(it){
+    var r=el('div','tk');
+    r.style.cursor='pointer';
+    r.innerHTML='<div style="flex:1"><div class="tkt">'+it.icon+' '+esc(it.text)+'</div><div class="tkd">'+dt(it.date)+'</div></div>';
+    r.onclick=function(){mealActivityOpen(it.page,it.setter);};
+    c.appendChild(r);
+  });
+}
+function mealActivityOpen(page,setter){
+  go(page);
+  var fn=window[setter];
+  if(typeof fn==='function')fn('register');
 }
 
 // ============ INDICATOR TRACKER & LOGFRAMES (tabbed) ============
@@ -5063,9 +5566,21 @@ function indStatusOf(i){
   var p=i.actual/i.target;
   if(p>=0.9)return 'On Track';if(p>=0.7)return 'At Risk';if(i.actual>0)return 'Off Track';return 'Pending';
 }
+function indAvgAchievementForMonth(m){
+  var pcts=[];
+  DB.indicators.forEach(function(i){
+    if(!i.target||!i.updates)return;
+    var upd=i.updates.filter(function(u){return (u.date||'').slice(0,7)===m;});
+    if(upd.length){var last=upd[upd.length-1];pcts.push(Math.min(100,Math.round(last.actual/i.target*100)));}
+  });
+  return pcts.length?Math.round(pcts.reduce(function(s,v){return s+v;},0)/pcts.length):null;
+}
 function renderIndicatorTracker(){
   // KPI tiles -- shared across every tab, always real
   if($('mit-tot'))$('mit-tot').textContent=DB.indicators.length;
+  var mitCurM=today().slice(0,7),mitPrevM=prevMonthKey(mitCurM);
+  var mitCurAvg=indAvgAchievementForMonth(mitCurM),mitPrevAvg=indAvgAchievementForMonth(mitPrevM);
+  if($('mit-tot-sub'))$('mit-tot-sub').innerHTML=mitCurAvg==null?'No results logged this month':('Avg. achievement '+mitCurAvg+'%'+trendBadge(mitCurAvg,mitPrevAvg));
   if($('mit-outcome'))$('mit-outcome').textContent=DB.indicators.filter(function(i){return i.level==='Outcome';}).length;
   if($('mit-output'))$('mit-output').textContent=DB.indicators.filter(function(i){return i.level==='Output';}).length;
   if($('mit-notarget'))$('mit-notarget').textContent=DB.indicators.filter(function(i){return !i.target;}).length;
@@ -5079,6 +5594,44 @@ function renderIndicatorTrackerBody(){
   else if(mitTab==='evidence')renderIndEvidence();
 }
 
+function monthsBetweenDates(a,b){
+  var da=new Date(a),db=new Date(b);
+  return (db.getFullYear()-da.getFullYear())*12+(db.getMonth()-da.getMonth())+(db.getDate()-da.getDate())/30;
+}
+function indicatorProjection(i){
+  if(!i.target||!i.updates||i.updates.length<2)return null;
+  var sorted=i.updates.slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+  var first=sorted[0],last=sorted[sorted.length-1];
+  var monthsSpan=monthsBetweenDates(first.date,last.date);
+  if(monthsSpan<=0)return null;
+  var endDate=(PROJ[i.proj]&&PROJ[i.proj].end)?PROJ[i.proj].end:null;
+  if(!endDate)return null;
+  var monthsRemaining=monthsBetweenDates(today(),endDate);
+  if(monthsRemaining<0)monthsRemaining=0;
+  var rate=(last.actual-first.actual)/monthsSpan;
+  var projectedActual=Math.max(0,last.actual+rate*monthsRemaining);
+  return {
+    currentPct:Math.round(last.actual/i.target*100),
+    projectedPct:Math.round(projectedActual/i.target*100),
+    rate:rate,
+    monthsRemaining:Math.round(monthsRemaining)
+  };
+}
+function renderIndProjection(){
+  var c=$('mit-projection');if(!c)return;
+  var rows=DB.indicators.map(function(i){return {i:i,p:indicatorProjection(i)};}).filter(function(r){return r.p;});
+  if(!rows.length){c.innerHTML='<div class="empty">Not enough reporting history yet — need at least two dated results plus a project end date per indicator</div>';return;}
+  var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Current Achievement</th><th>Trend / Month</th><th>Months to Project End</th><th>Projected Achievement</th><th>Outlook</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var i=r.i,p=r.p;
+    var outlook=p.projectedPct>=100?{l:'On Track',c:'bG'}:p.projectedPct>=70?{l:'At Risk',c:'bO'}:{l:'Off Track',c:'bR'};
+    h+='<tr><td title="'+esc(i.name)+'">'+esc(i.name.length>40?i.name.slice(0,40)+'…':i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+p.currentPct+'%</td>'+
+      '<td>'+(p.rate>=0?'+':'')+fmt(Math.round(p.rate*10)/10)+' '+esc(i.unit||'units')+'/mo</td><td>'+p.monthsRemaining+'</td>'+
+      '<td style="font-weight:700">'+p.projectedPct+'%</td><td><span class="bdg '+outlook.c+'">'+outlook.l+'</span></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
 function renderIndOverview(){
   var byLevel={Outcome:0,Output:0,Impact:0};
   DB.indicators.forEach(function(i){if(byLevel[i.level]!==undefined)byLevel[i.level]++;});
@@ -5102,19 +5655,23 @@ function renderIndOverview(){
       });
     }
   }
+  renderIndProjection();
 }
 
-function renderIndRegister(){
-  var c=$('mit-reg-body');if(!c)return;
+function indRegisterFilteredRows(){
   var pf=$('mit-reg-proj')?$('mit-reg-proj').value:'all';
   var search=($('mit-reg-search')?$('mit-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mit-reg-status')?$('mit-reg-status').value:'all';
-  var inds=DB.indicators.filter(function(i){
+  return DB.indicators.filter(function(i){
     if(pf!=='all'&&i.proj!==pf)return false;
     if(statusF!=='all'&&indStatusOf(i)!==statusF)return false;
     if(search&&(i.name+' '+i.proj).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function renderIndRegister(){
+  var c=$('mit-reg-body');if(!c)return;
+  var inds=indRegisterFilteredRows();
   if(!inds.length){c.innerHTML='<div class="empty">No indicators match</div>';return;}
   var bdgCls={'On Track':'bG','At Risk':'bO','Off Track':'bR','Pending':'bY'};
   var h='<table><thead><tr><th>Indicator ID</th><th>Result Statement</th><th>Project</th><th>Baseline</th><th>Target</th><th>Unit / Frequency</th><th>Status</th><th>Action</th></tr></thead><tbody>';
@@ -5124,6 +5681,13 @@ function renderIndRegister(){
   });
   h+='</tbody></table>';
   c.innerHTML=h;
+}
+function exportIndRegisterCSV(){
+  var rows=[['Indicator ID','Result Statement','Project','Baseline','Target','Unit','Frequency','Status']];
+  indRegisterFilteredRows().forEach(function(i){
+    rows.push([i.id,i.name,i.proj,i.baseline||0,i.target,i.unit,i.freq,indStatusOf(i)]);
+  });
+  downloadCSV(rows,'indicator-register-'+today()+'.csv');
 }
 
 function renderIndEntry(){
@@ -5207,31 +5771,152 @@ function renderIndEvidence(){
   }
 }
 
-function renderCFRM(){
-  var c=$('cfrm-list');if(!c)return;c.innerHTML='';
-  if($('cf-esc'))$('cf-esc').textContent=DB.cfrm.filter(function(x){return x.status==='Escalated';}).length;
-  if($('cf-open'))$('cf-open').textContent=DB.cfrm.filter(function(x){return x.status==='Open';}).length;
-  if($('cf-res'))$('cf-res').textContent=DB.cfrm.filter(function(x){return x.status==='Resolved';}).length;
-  if($('cf-tot'))$('cf-tot').textContent=DB.cfrm.length;
-  if(!DB.cfrm.length){c.innerHTML='<div class="empty">No cases registered</div>';return;}
-  DB.cfrm.forEach(function(x){
-    var cls=x.status==='Escalated'?'es':x.status==='Resolved'?'cl':'op';
-    var bd=x.status==='Escalated'?'bR':x.status==='Resolved'?'bG':'bO';
-    var d=el('div','cf '+cls);
-    d.innerHTML='<div style="display:flex;justify-content:space-between;gap:9px"><div><b style="font-size:12.5px">'+x.id+'</b><div style="font-size:12px;color:var(--g600);margin-top:3px">'+esc(x.desc)+'</div></div>'+
-      '<select data-cfrmstatus="'+x.id+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit;height:fit-content">'+
-      ['Open','Escalated','Resolved'].map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+
-      '</select></div>'+
-      '<div style="font-size:10.5px;color:var(--g400);margin-top:6px">'+dt(x.date)+' · '+esc(x.dist)+' · '+esc(x.chan)+' · '+esc(x.type)+' · Assigned: '+esc(x.assign)+' · '+esc(x.proj)+'</div>';
-    c.appendChild(d);
+// ============ CFRM & FEEDBACK (tabbed) ============
+function cfrmSlaDays(x){ return (x.type==='Safeguarding'||x.prio==='escalate')?1:x.prio==='urgent'?3:14; }
+function cfrmDueDate(x){
+  var d=new Date(x.date||today()); d.setDate(d.getDate()+cfrmSlaDays(x));
+  return d.toISOString().slice(0,10);
+}
+function cfrmOverdue(x){ return x.status!=='Resolved' && overdue(cfrmDueDate(x)); }
+function cfrmStatusBdg(s){ return s==='Escalated'?'bR':s==='Resolved'?'bG':'bO'; }
+
+var mcfTab='overview';
+function setCfTab(tab){
+  mcfTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mcf-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mcf-panel-'+t);if(p)p.style.display=t===tab?'':'none';
   });
+  if(tab==='overview')renderCfOverview();
+  else if(tab==='register')renderCfRegister();
+  else if(tab==='review')renderCfReview();
+  else if(tab==='evidence')renderCFRM();
+}
+function renderCfrmTracker(){
+  var open=DB.cfrm.filter(function(x){return x.status==='Open';});
+  var esc=DB.cfrm.filter(function(x){return x.status==='Escalated';});
+  var res=DB.cfrm.filter(function(x){return x.status==='Resolved';});
+  if($('cf-tot'))$('cf-tot').textContent=DB.cfrm.length;
+  if($('cf-open'))$('cf-open').textContent=open.length;
+  if($('cf-esc'))$('cf-esc').textContent=esc.length;
+  if($('cf-res'))$('cf-res').textContent=res.length;
+  var channels=Object.keys(DB.cfrm.reduce(function(a,x){if(x.chan)a[x.chan]=1;return a;},{})).length;
+  var projs=Object.keys(DB.cfrm.reduce(function(a,x){if(x.proj)a[x.proj]=1;return a;},{})).length;
+  var cfCurM=today().slice(0,7),cfPrevM=prevMonthKey(cfCurM);
+  var cfCurCount=DB.cfrm.filter(function(x){return (x.date||'').slice(0,7)===cfCurM;}).length;
+  var cfPrevCount=DB.cfrm.filter(function(x){return (x.date||'').slice(0,7)===cfPrevM;}).length;
+  if($('cf-tot-sub'))$('cf-tot-sub').innerHTML=channels+' channel'+(channels===1?'':'s')+' · '+projs+' project'+(projs===1?'':'s')+trendBadge(cfCurCount,cfPrevCount);
+  notifyOverdueOnce(DB.cfrm,cfrmOverdue,function(x){return x.assign;},function(x){return 'CFRM case '+x.id+' is overdue for response (due '+dt(cfrmDueDate(x))+').';},'meal-cfrm');
+  if($('cf-open-sub'))$('cf-open-sub').textContent=(DB.cfrm.length?Math.round(open.length/DB.cfrm.length*100):0)+'% of total';
+  if($('cf-res-sub'))$('cf-res-sub').textContent=(DB.cfrm.length?Math.round(res.length/DB.cfrm.length*100):0)+'% resolution rate';
+  if($('cf-overdue'))$('cf-overdue').textContent=DB.cfrm.filter(cfrmOverdue).length;
+  var resolvedWithTime=res.filter(function(x){return x.resolvedOn;});
+  var avgDays=resolvedWithTime.length?Math.round(resolvedWithTime.reduce(function(s,x){return s+(new Date(x.resolvedOn)-new Date(x.date))/86400000;},0)/resolvedWithTime.length):null;
+  if($('cf-avgdays'))$('cf-avgdays').textContent=avgDays==null?'—':avgDays;
+  setCfTab(mcfTab);
+}
+function renderCfOverview(){
+  var statuses=['Open','Escalated','Resolved'];
+  var colors={Open:'#C8922A',Escalated:'#dc2626',Resolved:'#16a34a'};
+  var counts=statuses.map(function(s){return DB.cfrm.filter(function(x){return x.status===s;}).length;});
+  donut('mcf-ch-status',statuses.map(function(s,i){return {v:counts[i],c:colors[s]};}),18,'Total',DB.cfrm.length);
+  var leg=$('mcf-ch-status-leg');
+  if(leg)leg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+colors[s]+';display:inline-block"></span>'+s+' <b style="margin-left:auto">'+counts[i]+'</b></div>';}).join('');
+
+  var channels=['Hotline','Suggestion Box','Community Focal Point','Walk-in','Field Staff'];
+  var chanCounts=channels.map(function(c){return DB.cfrm.filter(function(x){return x.chan===c;}).length;});
+  bars('mcf-ch-channel',channels.map(function(c){return c.length>12?c.slice(0,12)+'…':c;}),[{d:chanCounts,c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var byType={};
+  DB.cfrm.forEach(function(x){var k=x.type||'Other';byType[k]=(byType[k]||0)+1;});
+  var typeKeys=Object.keys(byType);
+  if(typeKeys.length)bars('mcf-ch-type',typeKeys.map(function(k){return k.length>12?k.slice(0,12)+'…':k;}),[{d:typeKeys.map(function(k){return byType[k];}),c:'#0d9488'}],function(v){return Math.round(v);});
+
+  var prios=[{k:'normal',l:'Normal',c:'#2563eb'},{k:'urgent',l:'Urgent',c:'#C8922A'},{k:'escalate',l:'Escalate',c:'#dc2626'}];
+  var prioCounts=prios.map(function(p){return DB.cfrm.filter(function(x){return x.prio===p.k;}).length;});
+  donut('mcf-ch-prio',prios.map(function(p,i){return {v:prioCounts[i],c:p.c};}),18);
+  var prioLeg=$('mcf-ch-prio-leg');
+  if(prioLeg)prioLeg.innerHTML=prios.map(function(p,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+p.c+';display:inline-block"></span>'+p.l+' <b style="margin-left:auto">'+prioCounts[i]+'</b></div>';}).join('');
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return DB.cfrm.filter(function(x){return (x.date||'').slice(0,7)===m.key;}).length;});
+  bars('mcf-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  var byProj={};
+  DB.cfrm.forEach(function(x){var k=x.proj||'Unassigned';byProj[k]=(byProj[k]||0)+1;});
+  var projKeys=Object.keys(byProj);
+  if(projKeys.length)bars('mcf-ch-proj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+}
+function cfRegisterFilteredRows(){
+  var search=($('mcf-reg-search')?$('mcf-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mcf-reg-status')?$('mcf-reg-status').value:'all';
+  return DB.cfrm.filter(function(x){
+    if(statusF!=='all'&&x.status!==statusF)return false;
+    if(search&&((x.id||'')+' '+x.proj+' '+(x.dist||'')+' '+(x.desc||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportCfRegisterCSV(){
+  var rows=[['Case ID','Date','Project','District','Channel','Type','Priority','Due Date','Status','Assigned','Description']];
+  cfRegisterFilteredRows().forEach(function(x){
+    rows.push([x.id,x.date,x.proj,x.dist||'',x.chan,x.type,x.prio,cfrmDueDate(x),x.status,x.assign||'',x.desc||'']);
+  });
+  downloadCSV(rows,'cfrm-register-'+today()+'.csv');
+}
+function renderCfRegister(){
+  var c=$('mcf-reg-body');if(!c)return;
+  var rows=cfRegisterFilteredRows();
+  if(!rows.length){c.innerHTML='<div class="empty">No cases match</div>';return;}
+  var h='<table><thead><tr><th>Case ID</th><th>Project / District</th><th>Channel</th><th>Type</th><th>Priority</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(x){
+    var od=cfrmOverdue(x);
+    h+='<tr><td>'+esc(x.id)+'</td><td>'+esc(x.proj)+' / '+esc(x.dist||'-')+'</td><td>'+esc(x.chan)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.prio)+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(cfrmDueDate(x))+(od?' — OVERDUE':'')+'</td>'+
+      '<td><span class="bdg '+cfrmStatusBdg(x.status)+'">'+esc(x.status)+'</span></td><td><button class="b bo bs" onclick="setCfTab(\'evidence\')">Open</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderCfReview(){
+  var c=$('mcf-review-body');if(!c)return;
+  var pending=DB.cfrm.filter(function(x){return x.status!=='Resolved';}).slice().sort(function(a,b){return new Date(cfrmDueDate(a))-new Date(cfrmDueDate(b));});
+  if(!pending.length){c.innerHTML='<div class="empty">No open or escalated cases</div>';return;}
+  var h='<table><thead><tr><th>Case ID</th><th>Project / District</th><th>Description</th><th>Assigned</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  pending.forEach(function(x){
+    var od=cfrmOverdue(x);
+    h+='<tr><td>'+esc(x.id)+'</td><td>'+esc(x.proj)+' / '+esc(x.dist||'-')+'</td><td style="font-size:11.5px">'+esc(x.desc)+'</td><td>'+esc(x.assign||'-')+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(cfrmDueDate(x))+(od?' — OVERDUE':'')+'</td>'+
+      '<td><select data-cfrmstatus="'+esc(x.id)+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit">'+
+      ['Open','Escalated','Resolved'].map(function(s){return '<option'+(s===x.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td>'+
+      '<td>'+(x.status==='Escalated'?(x.linkedFindingId?'<span class="bdg bG">Finding '+esc(x.linkedFindingId)+'</span>':'<button class="b bo bs" onclick="escalateCfrmToFinding(\''+x.id+'\')">Escalate to Finding</button>'):'')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderCFRM(){
+  var c=$('cfrm-list');if(!c)return;
+  if(!DB.cfrm.length){c.innerHTML='<div class="empty">No cases registered</div>';return;}
+  var h='<table><thead><tr><th>Case ID</th><th>Date</th><th>Project / District</th><th>Channel</th><th>Type</th><th>Assigned</th><th>Status</th><th>Resolved On</th><th>Resolution Note</th></tr></thead><tbody>';
+  DB.cfrm.forEach(function(x){
+    h+='<tr><td>'+esc(x.id)+'</td><td>'+dt(x.date)+'</td><td>'+esc(x.proj)+' / '+esc(x.dist||'-')+'</td><td>'+esc(x.chan)+'</td><td>'+esc(x.type)+'</td><td>'+esc(x.assign||'-')+'</td>'+
+      '<td><span class="bdg '+cfrmStatusBdg(x.status)+'">'+esc(x.status)+'</span></td><td>'+(x.resolvedOn?dt(x.resolvedOn):'-')+'</td><td style="font-size:11.5px">'+esc(x.resolutionNote||'-')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
 }
 
 document.addEventListener('change',function(e){
   var cid=e.target.getAttribute && e.target.getAttribute('data-cfrmstatus');
   if(cid){
     var x=DB.cfrm.find(function(r){return r.id===cid;});
-    if(x){x.status=e.target.value;renderCFRM();queueCloudSave();}
+    if(x){
+      var newStatus=e.target.value;
+      if(newStatus==='Resolved'&&x.status!=='Resolved'){
+        var note=prompt('Resolution note for '+x.id+':','')||'';
+        x.resolutionNote=note;x.resolvedOn=today();
+      }
+      x.status=newStatus;renderCfrmTracker();queueCloudSave();
+    }
   }
 });
 
@@ -5271,6 +5956,10 @@ function renderFieldVisitsTracker(){
   if($('mfv-planned'))$('mfv-planned').textContent=DB.visits.length;
   var completed=DB.visits.filter(function(v){var s=visitStage(v);return s==='Report Filed'||s==='Verified';});
   if($('mfv-completed'))$('mfv-completed').textContent=completed.length;
+  var fvCurM=today().slice(0,7),fvPrevM=prevMonthKey(fvCurM);
+  var fvCurCount=completed.filter(function(v){return (v.date||v.plannedDate||'').slice(0,7)===fvCurM;}).length;
+  var fvPrevCount=completed.filter(function(v){return (v.date||v.plannedDate||'').slice(0,7)===fvPrevM;}).length;
+  if($('mfv-completed-sub'))$('mfv-completed-sub').innerHTML=fvCurCount+' this month'+trendBadge(fvCurCount,fvPrevCount);
   var sitesMonitored=DB.visits.filter(function(v){return visitStage(v)!=='Planned';}).reduce(function(s,v){return s+(v.sites||0);},0);
   if($('mfv-sites'))$('mfv-sites').textContent=sitesMonitored;
   if($('mfv-actions'))$('mfv-actions').textContent=DB.visits.filter(function(v){return v.act&&!v.actionResolved;}).length;
@@ -5301,16 +5990,26 @@ function renderFvOverview(){
     }
   }
 }
-function renderFvRegister(){
-  var c=$('mfv-reg-body');if(!c)return;
+function fvRegisterFilteredRows(){
   var search=($('mfv-reg-search')?$('mfv-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mfv-reg-status')?$('mfv-reg-status').value:'all';
-  var rows=DB.visits.filter(function(v){
+  return DB.visits.filter(function(v){
     var stage=visitStage(v);
     if(statusF!=='all'&&stage!==statusF)return false;
     if(search&&((v.id||'')+' '+v.proj+' '+(v.by||'')+' '+(v.site||'')).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportFvRegisterCSV(){
+  var rows=[['Visit Reference','Project','Site','Monitor','Planned Date','Status','TAR ID']];
+  fvRegisterFilteredRows().forEach(function(v){
+    rows.push([v.id,v.proj,v.site||'',v.by,dt(v.plannedDate||v.date),visitStage(v),v.tarId||'']);
+  });
+  downloadCSV(rows,'field-visits-'+today()+'.csv');
+}
+function renderFvRegister(){
+  var c=$('mfv-reg-body');if(!c)return;
+  var rows=fvRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No visits match</div>';return;}
   var h='<table><thead><tr><th>Visit Reference</th><th>Project / Site</th><th>Monitor</th><th>Planned Date</th><th>TAR Link</th><th>Report / Actions</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   rows.forEach(function(v){
@@ -5334,6 +6033,21 @@ function renderFvReview(){
   });
   h+='</tbody></table>';
   c.innerHTML=h;
+
+  var fc=$('mfv-findlink-body');
+  if(fc){
+    var withFind=DB.visits.filter(function(v){return v.find&&v.find.trim()&&!v.linkedFindingId;});
+    if(!withFind.length){fc.innerHTML='<div class="empty">No field findings awaiting a linked Finding record</div>';}
+    else{
+      var fh='<table><thead><tr><th>Visit</th><th>Project / Site</th><th>Field Finding</th><th>Monitor</th><th>Action</th></tr></thead><tbody>';
+      withFind.forEach(function(v){
+        fh+='<tr><td>'+esc(v.id)+'</td><td>'+esc(v.proj)+(v.site?' / '+esc(v.site):'')+'</td><td style="font-size:11.5px">'+esc(v.find)+'</td><td>'+esc(v.by)+'</td>'+
+          '<td><button class="b bo bs" onclick="createFindingFromVisit(\''+v.id+'\')">Create Finding</button></td></tr>';
+      });
+      fh+='</tbody></table>';
+      fc.innerHTML=fh;
+    }
+  }
 }
 function resolveVisitAction(id){
   var v=DB.visits.find(function(x){return x.id===id;});if(!v)return;
@@ -5341,12 +6055,170 @@ function resolveVisitAction(id){
   renderFieldVisitsTracker();queueCloudSave();
 }
 
+// ============ FINDINGS & CORRECTIVE ACTIONS (tabbed) ============
+var findingSourceCfrmId=null, findingSourceVisitId=null;
+function openNewFinding(){
+  findingSourceCfrmId=null;findingSourceVisitId=null;
+  openM('m-finding');
+}
+function escalateCfrmToFinding(id){
+  var x=DB.cfrm.find(function(c){return c.id===id;});
+  if(!x)return;
+  findingSourceCfrmId=id;findingSourceVisitId=null;
+  openM('m-finding');
+  if($('fn-title'))$('fn-title').value='CFRM Escalation — '+x.id+' ('+(x.type||'Case')+')';
+  if($('fn-sev'))$('fn-sev').value=x.prio==='escalate'?'critical':'major';
+  if($('fn-proj'))$('fn-proj').value=x.proj||'';
+  if($('fn-dept'))$('fn-dept').value='MEAL';
+  if($('fn-loc'))$('fn-loc').value=x.dist||'';
+  if($('fn-date'))$('fn-date').value=today();
+  if($('fn-src'))$('fn-src').value='CFRM';
+  if($('fn-desc'))$('fn-desc').value=x.desc||'';
+}
+function createFindingFromVisit(id){
+  var v=DB.visits.find(function(x){return x.id===id;});
+  if(!v)return;
+  findingSourceCfrmId=null;findingSourceVisitId=id;
+  openM('m-finding');
+  if($('fn-title'))$('fn-title').value='Field Visit Finding — '+v.id+' ('+(v.proj||'')+')';
+  if($('fn-sev'))$('fn-sev').value='major';
+  if($('fn-proj'))$('fn-proj').value=v.proj||'';
+  if($('fn-dept'))$('fn-dept').value='MEAL';
+  if($('fn-loc'))$('fn-loc').value=v.site||v.dist||'';
+  if($('fn-date'))$('fn-date').value=today();
+  if($('fn-src'))$('fn-src').value='Monitoring Visit';
+  if($('fn-desc'))$('fn-desc').value=v.find||'';
+  if($('fn-act'))$('fn-act').value=v.act||'';
+}
+var mfdTab='overview';
+function setFdTab(tab){
+  mfdTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mfd-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mfd-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderFdOverview();
+  else if(tab==='register')renderFdRegister();
+  else if(tab==='review')renderFdReview();
+  else if(tab==='evidence')renderFindings();
+}
+function renderFindingsTracker(){
+  var active=DB.findings.filter(function(f){return f.status!=='Resolved';});
+  var resolved=DB.findings.filter(function(f){return f.status==='Resolved';});
+  if($('fd-tot'))$('fd-tot').textContent=DB.findings.length;
+  var depts=Object.keys(DB.findings.reduce(function(a,f){if(f.dept)a[f.dept]=1;return a;},{})).length;
+  var projs=Object.keys(DB.findings.reduce(function(a,f){if(f.proj)a[f.proj]=1;return a;},{})).length;
+  var fdCurM=today().slice(0,7),fdPrevM=prevMonthKey(fdCurM);
+  var fdCurCount=DB.findings.filter(function(f){return (f.date||'').slice(0,7)===fdCurM;}).length;
+  var fdPrevCount=DB.findings.filter(function(f){return (f.date||'').slice(0,7)===fdPrevM;}).length;
+  if($('fd-tot-sub'))$('fd-tot-sub').innerHTML=depts+' department'+(depts===1?'':'s')+' · '+projs+' project'+(projs===1?'':'s')+trendBadge(fdCurCount,fdPrevCount);
+  if($('fd-c'))$('fd-c').textContent=DB.findings.filter(function(f){return f.sev==='critical';}).length;
+  if($('fd-active'))$('fd-active').textContent=active.length;
+  notifyOverdueOnce(DB.findings,function(f){return f.status!=='Resolved'&&overdue(f.due);},function(f){return f.assign;},function(f){return 'Finding "'+f.title+'" is overdue (due '+dt(f.due)+').';},'meal-find');
+  var overdueActive=active.filter(function(f){return overdue(f.due);}).length;
+  if($('fd-overdue-sub'))$('fd-overdue-sub').textContent=overdueActive+' overdue';
+  if($('fd-resolved'))$('fd-resolved').textContent=resolved.length;
+  if($('fd-resolved-sub'))$('fd-resolved-sub').textContent=(DB.findings.length?Math.round(resolved.length/DB.findings.length*100):0)+'% resolution rate';
+  if($('fd-pending'))$('fd-pending').textContent=DB.findings.filter(function(f){return f.verifyStatus==='pending';}).length;
+  var withTime=resolved.filter(function(f){return f.verifiedOn;});
+  var avgDays=withTime.length?Math.round(withTime.reduce(function(s,f){return s+(new Date(f.verifiedOn)-new Date(f.date))/86400000;},0)/withTime.length):null;
+  if($('fd-avgdays'))$('fd-avgdays').textContent=avgDays==null?'—':avgDays;
+  setFdTab(mfdTab);
+}
+function renderFdOverview(){
+  var sevs=[{k:'critical',l:'Critical',c:'#dc2626'},{k:'major',l:'Major',c:'#ea580c'},{k:'minor',l:'Minor',c:'#2563eb'},{k:'positive',l:'Positive',c:'#16a34a'}];
+  var sevCounts=sevs.map(function(s){return DB.findings.filter(function(f){return f.sev===s.k;}).length;});
+  donut('mfd-ch-sev',sevs.map(function(s,i){return {v:sevCounts[i],c:s.c};}),18,'Total',DB.findings.length);
+  var leg=$('mfd-ch-sev-leg');
+  if(leg)leg.innerHTML=sevs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.l+' <b style="margin-left:auto">'+sevCounts[i]+'</b></div>';}).join('');
+
+  var byDept={};
+  DB.findings.forEach(function(f){var k=f.dept||'Unassigned';byDept[k]=(byDept[k]||0)+1;});
+  var deptKeys=Object.keys(byDept);
+  if(deptKeys.length)bars('mfd-ch-dept',deptKeys.map(function(k){return k.length>10?k.slice(0,10)+'…':k;}),[{d:deptKeys.map(function(k){return byDept[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var statuses=[{k:'Open',c:'#C8922A'},{k:'In Progress',c:'#2563eb'},{k:'Resolved',c:'#16a34a'}];
+  var stCounts=statuses.map(function(s){return DB.findings.filter(function(f){return f.status===s.k;}).length;});
+  donut('mfd-ch-status',statuses.map(function(s,i){return {v:stCounts[i],c:s.c};}),18);
+  var stLeg=$('mfd-ch-status-leg');
+  if(stLeg)stLeg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+stCounts[i]+'</b></div>';}).join('');
+
+  var srcs=['Monitoring Visit','Data Quality Check','CFRM','PDM','Audit'];
+  var srcCounts=srcs.map(function(s){return DB.findings.filter(function(f){return f.src===s;}).length;});
+  bars('mfd-ch-src',srcs.map(function(s){return s.length>12?s.slice(0,12)+'…':s;}),[{d:srcCounts,c:'#0d9488'}],function(v){return Math.round(v);});
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return DB.findings.filter(function(f){return (f.date||'').slice(0,7)===m.key;}).length;});
+  bars('mfd-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  var byProj={};
+  DB.findings.forEach(function(f){var k=f.proj||'Unassigned';byProj[k]=(byProj[k]||0)+1;});
+  var projKeys=Object.keys(byProj);
+  if(projKeys.length)bars('mfd-ch-proj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+}
+function fdRegisterFilteredRows(){
+  var search=($('mfd-reg-search')?$('mfd-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mfd-reg-status')?$('mfd-reg-status').value:'all';
+  return DB.findings.filter(function(f){
+    if(statusF!=='all'&&f.status!==statusF)return false;
+    if(search&&((f.id||'')+' '+f.title+' '+(f.dept||'')+' '+(f.proj||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportFdRegisterCSV(){
+  var rows=[['Finding ID','Title','Department','Project','Severity','Source','Due Date','Status','Assigned']];
+  fdRegisterFilteredRows().forEach(function(f){
+    rows.push([f.id,f.title,f.dept,f.proj,f.sev,f.src||'',f.due,f.status,f.assign||'']);
+  });
+  downloadCSV(rows,'findings-register-'+today()+'.csv');
+}
+function renderFdRegister(){
+  var c=$('mfd-reg-body');if(!c)return;
+  var rows=fdRegisterFilteredRows();
+  if(!rows.length){c.innerHTML='<div class="empty">No findings match</div>';return;}
+  var sevBdg={critical:'bR',major:'bO',minor:'bB',positive:'bG'};
+  var h='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Dept / Project</th><th>Severity</th><th>Source</th><th>Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(f){
+    var od=f.status!=='Resolved'&&overdue(f.due);
+    h+='<tr><td>'+esc(f.id)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.dept)+' / '+esc(f.proj)+'</td><td><span class="bdg '+(sevBdg[f.sev]||'bY')+'">'+esc(f.sev)+'</span></td><td>'+esc(f.src||'-')+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(f.due)+(od?' — OVERDUE':'')+'</td><td>'+esc(f.status)+'</td><td><button class="b bo bs" onclick="setFdTab(\'evidence\')">Open</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderFdReview(){
+  var pendBox=$('mfd-review-pending');
+  if(pendBox){
+    var pending=DB.findings.filter(function(f){return f.verifyStatus==='pending';});
+    if(!pending.length){pendBox.innerHTML='<div class="empty">Nothing awaiting verification</div>';}
+    else{
+      pendBox.innerHTML='';
+      pending.forEach(function(f){
+        var lastNote=(f.feedback&&f.feedback.length)?f.feedback[f.feedback.length-1]:null;
+        var d=el('div','al alW');
+        d.innerHTML='<div><b>'+esc(f.id)+' — '+esc(f.title)+'</b><div style="font-size:11px;color:var(--g500);margin:3px 0">'+esc(f.dept)+' · '+esc(f.proj)+'</div>'+
+          (lastNote?'<div style="font-size:11.5px;color:var(--g600)">'+esc(lastNote.note)+'</div>':'')+
+          '<div style="margin-top:7px"><button class="b bn bs" data-verifyfinding="'+esc(f.id)+'">Verify &amp; Close</button> <button class="b bo bs" data-rejectverify="'+esc(f.id)+'">Send Back</button></div></div>';
+        pendBox.appendChild(d);
+      });
+    }
+  }
+  var odBox=$('mfd-review-overdue');
+  if(odBox){
+    var ods=DB.findings.filter(function(f){return f.status!=='Resolved'&&f.verifyStatus!=='pending'&&overdue(f.due);});
+    if(!ods.length){odBox.innerHTML='<div class="empty">No overdue, unactioned findings</div>';}
+    else{
+      var h='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Dept / Project</th><th>Assigned</th><th>Due</th></tr></thead><tbody>';
+      ods.forEach(function(f){
+        h+='<tr><td>'+esc(f.id)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.dept)+' / '+esc(f.proj)+'</td><td>'+esc(f.assign||'-')+'</td><td style="color:var(--red);font-weight:600">'+dt(f.due)+' — OVERDUE</td></tr>';
+      });
+      h+='</tbody></table>';
+      odBox.innerHTML=h;
+    }
+  }
+}
 function renderFindings(){
   var c=$('find-list');if(!c)return;c.innerHTML='';
-  if($('fd-c'))$('fd-c').textContent=DB.findings.filter(function(f){return f.sev==='critical';}).length;
-  if($('fd-m'))$('fd-m').textContent=DB.findings.filter(function(f){return f.sev==='major';}).length;
-  if($('fd-n'))$('fd-n').textContent=DB.findings.filter(function(f){return f.sev==='minor';}).length;
-  if($('fd-p'))$('fd-p').textContent=DB.findings.filter(function(f){return f.sev==='positive';}).length;
   if(!DB.findings.length){c.innerHTML='<div class="empty">No findings</div>';return;}
   DB.findings.forEach(function(f){
     var cls=f.sev==='critical'?'cr':f.sev==='major'?'mj':f.sev==='positive'?'ps':'mn';
@@ -5374,12 +6246,176 @@ function renderFindings(){
   });
 }
 
+// ============ RISK & AUDIT FINDINGS (tabbed) ============
+var mrkTab='overview';
+function setRkTab(tab){
+  mrkTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mrk-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mrk-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderRkOverview();
+  else if(tab==='register'){renderRkRegister();renderAfRegister();}
+  else if(tab==='review')renderRkReview();
+  else if(tab==='evidence'){renderRisks();renderAuditFindings();}
+}
+function renderRiskAuditTracker(){
+  if($('rk-tot'))$('rk-tot').textContent=DB.risks.length;
+  var cats=Object.keys(DB.risks.reduce(function(a,r){if(r.cat)a[r.cat]=1;return a;},{})).length;
+  var rprojs=Object.keys(DB.risks.reduce(function(a,r){if(r.proj)a[r.proj]=1;return a;},{})).length;
+  var rkCurM=today().slice(0,7),rkPrevM=prevMonthKey(rkCurM);
+  var rkCurCount=DB.risks.filter(function(r){return (r.created||'').slice(0,7)===rkCurM;}).length;
+  var rkPrevCount=DB.risks.filter(function(r){return (r.created||'').slice(0,7)===rkPrevM;}).length;
+  if($('rk-tot-sub'))$('rk-tot-sub').innerHTML=cats+' categor'+(cats===1?'y':'ies')+' · '+rprojs+' project'+(rprojs===1?'':'s')+trendBadge(rkCurCount,rkPrevCount);
+  if($('rk-highpri'))$('rk-highpri').textContent=DB.risks.filter(function(r){return(r.lvl==='critical'||r.lvl==='high')&&r.status!=='Closed';}).length;
+
+  renderAuditFindings();
+  var closedAF=DB.auditFindings.filter(function(f){return f.status==='Closed';});
+  var afSources=Object.keys(DB.auditFindings.reduce(function(a,f){if(f.source)a[f.source]=1;return a;},{})).length;
+  if($('af-open-sub'))$('af-open-sub').textContent=afSources+' source'+(afSources===1?'':'s')+' tracked';
+  notifyOverdueOnce(DB.auditFindings,auditFindingOverdue,function(f){return f.owner;},function(f){return 'Audit finding "'+f.title+'" is overdue (due '+dt(f.dueDate)+').';},'meal-risk');
+  if($('af-closed-sub'))$('af-closed-sub').textContent=(DB.auditFindings.length?Math.round(closedAF.length/DB.auditFindings.length*100):0)+'% closure rate';
+  var withTime=closedAF.filter(function(f){return f.closedDate&&f.created;});
+  var avgDays=withTime.length?Math.round(withTime.reduce(function(s,f){return s+(new Date(f.closedDate)-new Date(f.created))/86400000;},0)/withTime.length):null;
+  if($('af-avgdays'))$('af-avgdays').textContent=avgDays==null?'—':avgDays;
+
+  setRkTab(mrkTab);
+}
+function renderRkOverview(){
+  var box=$('mrk-matrix');
+  if(box){
+    var grid={};
+    DB.risks.forEach(function(r){var k=r.like+'-'+r.imp;grid[k]=(grid[k]||0)+1;});
+    var bandColor=function(score){return score>=15?'#dc2626':score>=10?'#ea580c':score>=5?'#C8922A':'#16a34a';};
+    var h='<div style="display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;font-size:10.5px;max-width:420px">';
+    h+='<div></div>';
+    for(var l=1;l<=5;l++)h+='<div style="text-align:center;font-weight:700;color:var(--g500)">L'+l+'</div>';
+    for(var imp=5;imp>=1;imp--){
+      h+='<div style="font-weight:700;color:var(--g500);display:flex;align-items:center">I'+imp+'</div>';
+      for(var like=1;like<=5;like++){
+        var score=like*imp, cnt=grid[like+'-'+imp]||0;
+        h+='<div style="background:'+bandColor(score)+(cnt?'':'22')+';color:'+(cnt?'#fff':'var(--g400)')+';border-radius:5px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-weight:700">'+(cnt||'')+'</div>';
+      }
+    }
+    h+='</div><div style="font-size:10px;color:var(--g400);margin-top:8px">Rows = Impact (1–5, bottom to top) · Columns = Likelihood (1–5) · cell = risk count at that score</div>';
+    box.innerHTML=h;
+  }
+  var byCat={};
+  DB.risks.forEach(function(r){var k=r.cat||'Other';byCat[k]=(byCat[k]||0)+1;});
+  var catKeys=Object.keys(byCat);
+  if(catKeys.length)bars('mrk-ch-cat',catKeys.map(function(k){return k.length>10?k.slice(0,10)+'…':k;}),[{d:catKeys.map(function(k){return byCat[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var statuses=[{k:'Active Risk',c:'#dc2626'},{k:'Monitoring',c:'#C8922A'},{k:'Controlled',c:'#2563eb'},{k:'Closed',c:'#16a34a'}];
+  var stCounts=statuses.map(function(s){return DB.risks.filter(function(r){return r.status===s.k;}).length;});
+  donut('mrk-ch-status',statuses.map(function(s,i){return {v:stCounts[i],c:s.c};}),18);
+  var stLeg=$('mrk-ch-status-leg');
+  if(stLeg)stLeg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+stCounts[i]+'</b></div>';}).join('');
+
+  var afSevs=[{k:'Critical',c:'#dc2626'},{k:'High',c:'#ea580c'},{k:'Medium',c:'#C8922A'},{k:'Low',c:'#16a34a'}];
+  var afSevCounts=afSevs.map(function(s){return DB.auditFindings.filter(function(f){return f.severity===s.k;}).length;});
+  donut('mrk-ch-afsev',afSevs.map(function(s,i){return {v:afSevCounts[i],c:s.c};}),18);
+  var afLeg=$('mrk-ch-afsev-leg');
+  if(afLeg)afLeg.innerHTML=afSevs.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+afSevCounts[i]+'</b></div>';}).join('');
+
+  var afSrcs=['Internal Audit','External Audit','Donor Audit','Board/Governance'];
+  var afSrcCounts=afSrcs.map(function(s){return DB.auditFindings.filter(function(f){return f.source===s;}).length;});
+  bars('mrk-ch-afsrc',afSrcs.map(function(s){return s.length>12?s.slice(0,12)+'…':s;}),[{d:afSrcCounts,c:'#0d9488'}],function(v){return Math.round(v);});
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return DB.auditFindings.filter(function(f){return (f.created||'').slice(0,7)===m.key;}).length;});
+  bars('mrk-ch-aftrend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
+}
+function rkRegisterFilteredRows(){
+  var search=($('mrk-reg-search')?$('mrk-reg-search').value:'').trim().toLowerCase();
+  var levelF=$('mrk-reg-level')?$('mrk-reg-level').value:'all';
+  return DB.risks.filter(function(r){
+    if(levelF!=='all'&&r.lvl!==levelF)return false;
+    if(search&&((r.id||'')+' '+r.title+' '+(r.cat||'')+' '+(r.proj||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportRkRegisterCSV(){
+  var rows=[['Risk ID','Title','Category','Project','Likelihood','Impact','Score','Level','Owner','Status']];
+  rkRegisterFilteredRows().forEach(function(r){
+    rows.push([r.id,r.title,r.cat,r.proj,r.like,r.imp,r.score,r.lvl,r.owner||'',r.status]);
+  });
+  downloadCSV(rows,'risk-register-'+today()+'.csv');
+}
+function renderRkRegister(){
+  var c=$('mrk-reg-body');if(!c)return;
+  var rows=rkRegisterFilteredRows();
+  if(!rows.length){c.innerHTML='<div class="empty">No risks match</div>';return;}
+  var lvlBdg={critical:'bR',high:'bO',medium:'bY',low:'bG'};
+  var h='<table><thead><tr><th>Risk ID</th><th>Title</th><th>Category / Project</th><th>Score</th><th>Level</th><th>Owner</th><th>Status</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    h+='<tr><td>'+esc(r.id)+'</td><td>'+esc(r.title)+'</td><td>'+esc(r.cat)+' / '+esc(r.proj)+'</td><td>'+r.score+'</td><td><span class="bdg '+(lvlBdg[r.lvl]||'bY')+'">'+esc(r.lvl)+'</span></td><td>'+esc(r.owner||'-')+'</td><td>'+esc(r.status)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function afRegisterFilteredRows(){
+  var search=($('maf-reg-search')?$('maf-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('maf-reg-status')?$('maf-reg-status').value:'all';
+  return DB.auditFindings.filter(function(f){
+    if(statusF!=='all'&&f.status!==statusF)return false;
+    if(search&&((f.id||'')+' '+f.title+' '+(f.source||'')+' '+(f.project||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportAfRegisterCSV(){
+  var rows=[['Finding ID','Source','Title','Project','Severity','Owner','Due Date','Status']];
+  afRegisterFilteredRows().forEach(function(f){
+    rows.push([f.id,f.source,f.title,f.project,f.severity,f.owner||'',f.dueDate||'',f.status]);
+  });
+  downloadCSV(rows,'audit-findings-register-'+today()+'.csv');
+}
+function renderAfRegister(){
+  var c=$('maf-reg-body');if(!c)return;
+  var rows=afRegisterFilteredRows();
+  if(!rows.length){c.innerHTML='<div class="empty">No audit findings match</div>';return;}
+  var sevBdg={Critical:'bR',High:'bO',Medium:'bY',Low:'bG'};
+  var h='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Source / Project</th><th>Severity</th><th>Due</th><th>Status</th></tr></thead><tbody>';
+  rows.forEach(function(f){
+    var od=auditFindingOverdue(f);
+    h+='<tr><td>'+esc(f.id)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.source)+' / '+esc(f.project)+'</td><td><span class="bdg '+(sevBdg[f.severity]||'bY')+'">'+esc(f.severity)+'</span></td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+(f.dueDate?dt(f.dueDate):'-')+(od?' — OVERDUE':'')+'</td><td>'+esc(f.status)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderRkReview(){
+  var rbox=$('mrk-review-body');
+  if(rbox){
+    var risky=DB.risks.filter(function(r){return(r.lvl==='critical'||r.lvl==='high')&&r.status!=='Closed';}).slice().sort(function(a,b){return b.score-a.score;});
+    if(!risky.length){rbox.innerHTML='<div class="empty">No critical or high risks need review</div>';}
+    else{
+      var h='<table><thead><tr><th>Risk ID</th><th>Title</th><th>Score</th><th>Owner</th><th>Status</th></tr></thead><tbody>';
+      risky.forEach(function(r){
+        h+='<tr><td>'+esc(r.id)+'</td><td>'+esc(r.title)+'</td><td>'+r.score+'</td><td>'+esc(r.owner||'-')+'</td>'+
+          '<td><select data-riskstatus="'+esc(r.id)+'" style="font-size:11px;padding:2px 5px;border-radius:5px;border:1px solid var(--g200);font-family:inherit">'+
+          ['Active Risk','Monitoring','Controlled','Closed'].map(function(s){return '<option'+(s===r.status?' selected':'')+'>'+s+'</option>';}).join('')+'</select></td></tr>';
+      });
+      h+='</tbody></table>';
+      rbox.innerHTML=h;
+    }
+  }
+  var abox=$('maf-review-body');
+  if(abox){
+    var ods=DB.auditFindings.filter(auditFindingOverdue);
+    if(!ods.length){abox.innerHTML='<div class="empty">No overdue audit findings</div>';}
+    else{
+      var h2='<table><thead><tr><th>Finding ID</th><th>Title</th><th>Owner</th><th>Due</th><th>Action</th></tr></thead><tbody>';
+      ods.forEach(function(f){
+        h2+='<tr><td>'+esc(f.id)+'</td><td>'+esc(f.title)+'</td><td>'+esc(f.owner||'-')+'</td><td style="color:var(--red);font-weight:600">'+dt(f.dueDate)+' — OVERDUE</td>'+
+          '<td><button class="b bo bs" onclick="toggleAuditFindingStatus(\''+esc(f.id)+'\')">Close</button></td></tr>';
+      });
+      h2+='</tbody></table>';
+      abox.innerHTML=h2;
+    }
+  }
+}
 function renderRisks(){
   var c=$('risk-list');if(!c)return;c.innerHTML='';
-  if($('rk-c'))$('rk-c').textContent=DB.risks.filter(function(r){return r.lvl==='critical';}).length;
-  if($('rk-h'))$('rk-h').textContent=DB.risks.filter(function(r){return r.lvl==='high';}).length;
-  if($('rk-m'))$('rk-m').textContent=DB.risks.filter(function(r){return r.lvl==='medium';}).length;
-  if($('rk-l'))$('rk-l').textContent=DB.risks.filter(function(r){return r.lvl==='low';}).length;
   if(!DB.risks.length){c.innerHTML='<div class="empty">No risks</div>';return;}
   DB.risks.forEach(function(r){
     var cls=r.lvl==='critical'?'cr':r.lvl==='high'?'hi':r.lvl==='medium'?'md2':'lo';
@@ -5399,7 +6435,7 @@ document.addEventListener('change',function(e){
   var rid=e.target.getAttribute && e.target.getAttribute('data-riskstatus');
   if(rid){
     var r=DB.risks.find(function(x){return x.id===rid;});
-    if(r){r.status=e.target.value;queueCloudSave();}
+    if(r){r.status=e.target.value;renderRiskAuditTracker();queueCloudSave();}
   }
 });
 
@@ -5410,6 +6446,160 @@ document.addEventListener('change',function(e){
 DB.dqas=[];
 DB.evaluations=[];
 
+// ============ DQA & EVALUATIONS (tabbed) ============
+var mdqTab='overview';
+function setDqTab(tab){
+  mdqTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mdq-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mdq-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderDqOverview();
+  else if(tab==='register'){renderDqRegister();renderEvRegister();}
+  else if(tab==='review')renderDqReview();
+  else if(tab==='evidence'){renderDQAs();renderEvaluations();}
+}
+function renderDqaTracker(){
+  renderDQAs();renderEvaluations();
+  var good=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Good';});
+  var poor=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Needs Improvement';});
+  var dqaProjs=Object.keys(DB.dqas.reduce(function(a,d){if(d.project)a[d.project]=1;return a;},{})).length;
+  var dqCurM=today().slice(0,7),dqPrevM=prevMonthKey(dqCurM);
+  var dqCurCount=DB.dqas.filter(function(d){return (d.date||'').slice(0,7)===dqCurM;}).length;
+  var dqPrevCount=DB.dqas.filter(function(d){return (d.date||'').slice(0,7)===dqPrevM;}).length;
+  if($('dqa-tot-sub'))$('dqa-tot-sub').innerHTML=dqaProjs+' project'+(dqaProjs===1?'':'s')+trendBadge(dqCurCount,dqPrevCount);
+  if($('dqa-poor-sub'))$('dqa-poor-sub').textContent=(DB.dqas.length?Math.round(poor.length/DB.dqas.length*100):0)+'% of DQAs';
+  if($('dqa-good'))$('dqa-good').textContent=good.length;
+  if($('dqa-good-sub'))$('dqa-good-sub').textContent=(DB.dqas.length?Math.round(good.length/DB.dqas.length*100):0)+'% of DQAs';
+  var dims=['validity','integrity','precision','reliability','timeliness'];
+  var score=function(v){return v==='Yes'?100:v==='Partial'?50:0;};
+  var avgScore=DB.dqas.length?Math.round(DB.dqas.reduce(function(s,d){return s+dims.reduce(function(s2,k){return s2+score(d[k]);},0)/dims.length;},0)/DB.dqas.length):null;
+  if($('dqa-avgscore'))$('dqa-avgscore').textContent=avgScore==null?'—':avgScore+'%';
+
+  var completed=DB.evaluations.filter(function(e){return e.status==='Completed';});
+  var pending=DB.evaluations.filter(function(e){return e.status!=='Completed';});
+  if($('ev-done-sub'))$('ev-done-sub').textContent=(DB.evaluations.length?Math.round(completed.length/DB.evaluations.length*100):0)+'% of total';
+  var overdueEv=DB.evaluations.filter(function(e){return e.status==='Ongoing'&&e.end&&overdue(e.end);}).length;
+  if($('ev-pending-sub'))$('ev-pending-sub').textContent=overdueEv+' past expected end';
+
+  setDqTab(mdqTab);
+}
+function renderDqOverview(){
+  var dims=[{k:'validity',l:'Validity'},{k:'integrity',l:'Integrity'},{k:'precision',l:'Precision'},{k:'reliability',l:'Reliability'},{k:'timeliness',l:'Timeliness'}];
+  if(DB.dqas.length){
+    var pct=dims.map(function(d){return Math.round(DB.dqas.filter(function(a){return a[d.k]==='Yes';}).length/DB.dqas.length*100);});
+    bars('mdq-ch-dims',dims.map(function(d){return d.l;}),[{d:pct,c:'#0d9488'}],function(v){return Math.round(v)+'%';});
+  }
+  var ratings=[{l:'Good',c:'#16a34a'},{l:'Acceptable',c:'#C8922A'},{l:'Needs Improvement',c:'#dc2626'}];
+  var rCounts=ratings.map(function(r){return DB.dqas.filter(function(d){return dqaOverallRating(d).label===r.l;}).length;});
+  donut('mdq-ch-rating',ratings.map(function(r,i){return {v:rCounts[i],c:r.c};}),18,'Total',DB.dqas.length);
+  var leg=$('mdq-ch-rating-leg');
+  if(leg)leg.innerHTML=ratings.map(function(r,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+rCounts[i]+'</b></div>';}).join('');
+
+  var byProj={};
+  DB.dqas.forEach(function(d){var k=d.project||'Unassigned';byProj[k]=(byProj[k]||0)+1;});
+  var projKeys=Object.keys(byProj);
+  if(projKeys.length)bars('mdq-ch-proj',projKeys,[{d:projKeys.map(function(k){return byProj[k];}),c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var types=['Baseline','Midline','Endline','Real-Time Evaluation','Other'];
+  var typeCounts=types.map(function(t){return DB.evaluations.filter(function(e){return e.type===t;}).length;});
+  bars('mdq-ch-evtype',types.map(function(t){return t.length>12?t.slice(0,12)+'…':t;}),[{d:typeCounts,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  var statuses=[{k:'Planned',c:'#C8922A'},{k:'Ongoing',c:'#2563eb'},{k:'Completed',c:'#16a34a'}];
+  var stCounts=statuses.map(function(s){return DB.evaluations.filter(function(e){return e.status===s.k;}).length;});
+  donut('mdq-ch-evstatus',statuses.map(function(s,i){return {v:stCounts[i],c:s.c};}),18);
+  var stLeg=$('mdq-ch-evstatus-leg');
+  if(stLeg)stLeg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+stCounts[i]+'</b></div>';}).join('');
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return DB.dqas.filter(function(d){return (d.date||'').slice(0,7)===m.key;}).length;});
+  bars('mdq-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#C8922A'}],function(v){return Math.round(v);});
+}
+function dqRegisterFilteredRows(){
+  var search=($('mdq-reg-search')?$('mdq-reg-search').value:'').trim().toLowerCase();
+  var ratingF=$('mdq-reg-rating')?$('mdq-reg-rating').value:'all';
+  return DB.dqas.filter(function(d){
+    if(ratingF!=='all'&&dqaOverallRating(d).label!==ratingF)return false;
+    if(search&&((d.project||'')+' '+d.indicator).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportDqRegisterCSV(){
+  var rows=[['Project','Indicator','Date','Validity','Integrity','Precision','Reliability','Timeliness','Overall']];
+  dqRegisterFilteredRows().forEach(function(d){
+    rows.push([d.project,d.indicator,d.date,d.validity,d.integrity,d.precision,d.reliability,d.timeliness,dqaOverallRating(d).label]);
+  });
+  downloadCSV(rows,'dqa-register-'+today()+'.csv');
+}
+function renderDqRegister(){
+  var c=$('dqa-body-reg');if(!c)return;
+  var rows=dqRegisterFilteredRows();
+  if(!rows.length){c.innerHTML='<div class="empty">No assessments match</div>';return;}
+  var dimBdg=function(v){return '<span class="bdg '+(v==='Yes'?'bG':v==='Partial'?'bO':'bR')+'" style="padding:1px 5px;font-size:9.5px">'+v[0]+'</span>';};
+  var h='<table><thead><tr><th>Project</th><th>Indicator</th><th>Date</th><th>Dimensions (V/I/P/R/T)</th><th>Overall</th></tr></thead><tbody>';
+  rows.forEach(function(d){
+    var overall=dqaOverallRating(d);
+    h+='<tr><td>'+esc(d.project)+'</td><td>'+esc(d.indicator)+'</td><td>'+dt(d.date)+'</td><td>'+[d.validity,d.integrity,d.precision,d.reliability,d.timeliness].map(dimBdg).join(' ')+'</td><td><span class="bdg '+overall.cls+'">'+overall.label+'</span></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function evRegisterFilteredRows(){
+  var search=($('mev-reg-search')?$('mev-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mev-reg-status')?$('mev-reg-status').value:'all';
+  return DB.evaluations.filter(function(e){
+    if(statusF!=='all'&&e.status!==statusF)return false;
+    if(search&&((e.project||'')+' '+e.title).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportEvRegisterCSV(){
+  var rows=[['Project','Type','Title','Start','End','Lead','Status']];
+  evRegisterFilteredRows().forEach(function(e){
+    rows.push([e.project,e.type,e.title,e.start||'',e.end||'',e.lead||'',e.status]);
+  });
+  downloadCSV(rows,'evaluations-register-'+today()+'.csv');
+}
+function renderEvRegister(){
+  var c=$('mev-reg-body');if(!c)return;
+  var rows=evRegisterFilteredRows();
+  if(!rows.length){c.innerHTML='<div class="empty">No evaluations match</div>';return;}
+  var sb={Completed:'bG',Ongoing:'bO',Planned:'bY'};
+  var h='<table><thead><tr><th>Project</th><th>Type</th><th>Title</th><th>Period</th><th>Lead</th><th>Status</th></tr></thead><tbody>';
+  rows.forEach(function(e){
+    h+='<tr><td>'+esc(e.project)+'</td><td>'+esc(e.type)+'</td><td>'+esc(e.title)+'</td><td>'+(e.start?dt(e.start):'-')+' – '+(e.end?dt(e.end):'-')+'</td><td>'+esc(e.lead||'-')+'</td><td><span class="bdg '+(sb[e.status]||'bY')+'">'+esc(e.status)+'</span></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderDqReview(){
+  var dbox=$('mdq-review-body');
+  if(dbox){
+    var poor=DB.dqas.filter(function(d){return dqaOverallRating(d).label==='Needs Improvement';});
+    if(!poor.length){dbox.innerHTML='<div class="empty">No DQAs currently need improvement</div>';}
+    else{
+      var h='<table><thead><tr><th>Project</th><th>Indicator</th><th>Date</th><th>Issues</th><th>Recommendations</th></tr></thead><tbody>';
+      poor.forEach(function(d){
+        h+='<tr><td>'+esc(d.project)+'</td><td>'+esc(d.indicator)+'</td><td>'+dt(d.date)+'</td><td style="font-size:11.5px">'+esc(d.issues||'-')+'</td><td style="font-size:11.5px">'+esc(d.recommendations||'-')+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      dbox.innerHTML=h;
+    }
+  }
+  var ebox=$('mev-review-body');
+  if(ebox){
+    var ods=DB.evaluations.filter(function(e){return e.status==='Ongoing'&&e.end&&overdue(e.end);});
+    if(!ods.length){ebox.innerHTML='<div class="empty">No evaluations are past their expected end date</div>';}
+    else{
+      var h2='<table><thead><tr><th>Project</th><th>Title</th><th>Lead</th><th>Expected End</th></tr></thead><tbody>';
+      ods.forEach(function(e){
+        h2+='<tr><td>'+esc(e.project)+'</td><td>'+esc(e.title)+'</td><td>'+esc(e.lead||'-')+'</td><td style="color:var(--red);font-weight:600">'+dt(e.end)+' — OVERDUE</td></tr>';
+      });
+      h2+='</tbody></table>';
+      ebox.innerHTML=h2;
+    }
+  }
+}
 function dqaOverallRating(d){
   var vals=[d.validity,d.integrity,d.precision,d.reliability,d.timeliness];
   if(vals.indexOf('No')!==-1)return {label:'Needs Improvement',cls:'bR'};
@@ -5434,7 +6624,7 @@ function saveDQA(){
     issues:$('dqa-issues').value.trim(),recommendations:$('dqa-recs').value.trim()});
   closeM('m-dqa');
   resetDQAModal();
-  renderDQAs();queueCloudSave();
+  renderDqaTracker();queueCloudSave();
 }
 
 function renderDQAs(){
@@ -5470,7 +6660,7 @@ function saveEvaluation(){
     findings:$('ev-findings').value.trim(),recommendations:$('ev-recs').value.trim(),response:$('ev-response').value.trim()});
   closeM('m-evaluation');
   resetEvaluationModal();
-  renderEvaluations();queueCloudSave();
+  renderDqaTracker();queueCloudSave();
 }
 
 function renderEvaluations(){
@@ -5512,7 +6702,7 @@ function saveAuditFinding(){
     owner:$('af-owner').value.trim(),dueDate:$('af-due').value,status:'Open',createdBy:SES.name,created:today()});
   closeM('m-audit-finding');
   resetAuditFindingModal();
-  renderAuditFindings();queueCloudSave();
+  renderRiskAuditTracker();queueCloudSave();
 }
 
 function auditFindingOverdue(f){
@@ -5524,7 +6714,7 @@ function toggleAuditFindingStatus(id){
   if(!f)return;
   f.status=f.status==='Open'?'Closed':'Open';
   if(f.status==='Closed')f.closedDate=today();
-  renderAuditFindings();queueCloudSave();
+  renderRiskAuditTracker();queueCloudSave();
 }
 
 function renderAuditFindings(){
@@ -5552,6 +6742,117 @@ function renderAuditFindings(){
 }
 
 // ============ DOCUMENTS ============
+// ============ MEAL DOCUMENTS (tabbed) ============
+var mdcTab='overview';
+function setDcTab(tab){
+  mdcTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('mdc-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('mdc-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  if(tab==='overview')renderDcOverview();
+  else if(tab==='register')renderDcRegister();
+  else if(tab==='review')renderDcReview();
+  else if(tab==='evidence')renderDocs('meal','MEAL');
+}
+function mealDocs(){ return DB.docs.filter(function(d){return d.dept==='MEAL'||d.dept==='All';}); }
+function docReviewOverdue(d){ return !!d.reviewDue && d.status!=='Archived' && overdue(d.reviewDue); }
+function renderDocsTracker(){
+  var docs=mealDocs();
+  var active=docs.filter(function(d){return d.status!=='Archived';});
+  var archived=docs.filter(function(d){return d.status==='Archived';});
+  if($('mdc-tot'))$('mdc-tot').textContent=docs.length;
+  var types=Object.keys(docs.reduce(function(a,d){if(d.type)a[d.type]=1;return a;},{})).length;
+  var dcCurM=today().slice(0,7),dcPrevM=prevMonthKey(dcCurM);
+  var dcCurCount=docs.filter(function(d){return (d.date||'').slice(0,7)===dcCurM;}).length;
+  var dcPrevCount=docs.filter(function(d){return (d.date||'').slice(0,7)===dcPrevM;}).length;
+  if($('mdc-tot-sub'))$('mdc-tot-sub').innerHTML=types+' type'+(types===1?'':'s')+trendBadge(dcCurCount,dcPrevCount);
+  if($('mdc-active'))$('mdc-active').textContent=active.length;
+  if($('mdc-active-sub'))$('mdc-active-sub').textContent=(docs.length?Math.round(active.length/docs.length*100):0)+'% of total';
+  if($('mdc-review'))$('mdc-review').textContent=docs.filter(docReviewOverdue).length;
+  notifyOverdueOnce(docs,docReviewOverdue,function(d){return d.by;},function(d){return 'Document "'+d.title+'" is overdue for review (due '+dt(d.reviewDue)+').';},'meal-docs');
+  if($('mdc-conf'))$('mdc-conf').textContent=docs.filter(function(d){return d.confidentiality==='Confidential';}).length;
+  var withFile=docs.filter(function(d){return !!d.fileUrl;});
+  if($('mdc-files'))$('mdc-files').textContent=withFile.length;
+  if($('mdc-files-sub'))$('mdc-files-sub').textContent=(docs.length?Math.round(withFile.length/docs.length*100):0)+'% of total';
+  if($('mdc-archived'))$('mdc-archived').textContent=archived.length;
+  setDcTab(mdcTab);
+}
+function renderDcOverview(){
+  var docs=mealDocs();
+  var types=['SOP','Policy','Guideline','Template','Report','Beneficiary List','Selection Criteria'];
+  var typeCounts=types.map(function(t){return docs.filter(function(d){return d.type===t;}).length;});
+  bars('mdc-ch-type',types.map(function(t){return t.length>12?t.slice(0,12)+'…':t;}),[{d:typeCounts,c:'#1A3A6B'}],function(v){return Math.round(v);});
+
+  var confs=[{k:'Public',c:'#16a34a'},{k:'Internal',c:'#2563eb'},{k:'Confidential',c:'#dc2626'}];
+  var confCounts=confs.map(function(c){return docs.filter(function(d){return d.confidentiality===c.k;}).length;});
+  donut('mdc-ch-conf',confs.map(function(c,i){return {v:confCounts[i],c:c.c};}),18,'Total',docs.length);
+  var leg=$('mdc-ch-conf-leg');
+  if(leg)leg.innerHTML=confs.map(function(c,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+c.c+';display:inline-block"></span>'+c.k+' <b style="margin-left:auto">'+confCounts[i]+'</b></div>';}).join('');
+
+  var statuses=[{k:'Active',c:'#16a34a'},{k:'Archived',c:'#94a3b8'}];
+  var stCounts=statuses.map(function(s){return docs.filter(function(d){return (d.status||'Active')===s.k;}).length;});
+  donut('mdc-ch-status',statuses.map(function(s,i){return {v:stCounts[i],c:s.c};}),18);
+  var stLeg=$('mdc-ch-status-leg');
+  if(stLeg)stLeg.innerHTML=statuses.map(function(s,i){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+s.c+';display:inline-block"></span>'+s.k+' <b style="margin-left:auto">'+stCounts[i]+'</b></div>';}).join('');
+
+  var withFile=docs.filter(function(d){return !!d.fileUrl;}).length;
+  var textOnly=docs.length-withFile;
+  donut('mdc-ch-hasfile',[{v:withFile,c:'#1A3A6B'},{v:textOnly,c:'#C8922A'}],18);
+  var hfLeg=$('mdc-ch-hasfile-leg');
+  if(hfLeg)hfLeg.innerHTML=[{l:'With File',v:withFile,c:'#1A3A6B'},{l:'Text-Only',v:textOnly,c:'#C8922A'}].map(function(r){return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+r.v+'</b></div>';}).join('');
+
+  var months=mealLast6Months();
+  var trend=months.map(function(m){return docs.filter(function(d){return (d.date||'').slice(0,7)===m.key;}).length;});
+  bars('mdc-ch-trend',months.map(function(m){return m.label;}),[{d:trend,c:'#7c3aed'}],function(v){return Math.round(v);});
+
+  var byDept={};
+  docs.forEach(function(d){var k=d.dept||'Unspecified';byDept[k]=(byDept[k]||0)+1;});
+  var deptKeys=Object.keys(byDept);
+  if(deptKeys.length)bars('mdc-ch-dept',deptKeys,[{d:deptKeys.map(function(k){return byDept[k];}),c:'#0d9488'}],function(v){return Math.round(v);});
+}
+function dcRegisterFilteredRows(){
+  var search=($('mdc-reg-search')?$('mdc-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('mdc-reg-status')?$('mdc-reg-status').value:'all';
+  return mealDocs().filter(function(d){
+    if(statusF!=='all'&&(d.status||'Active')!==statusF)return false;
+    if(search&&(d.title+' '+d.type).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportDcRegisterCSV(){
+  var rows=[['Title','Type','Version','Date','Confidentiality','Review Due','Status']];
+  dcRegisterFilteredRows().forEach(function(d){
+    rows.push([d.title,d.type,d.ver,dt(d.date),d.confidentiality||'Internal',d.reviewDue?dt(d.reviewDue):'',d.status||'Active']);
+  });
+  downloadCSV(rows,'meal-documents-'+today()+'.csv');
+}
+function renderDcRegister(){
+  var c=$('mdc-reg-body');if(!c)return;
+  var rows=dcRegisterFilteredRows();
+  if(!rows.length){c.innerHTML='<div class="empty">No documents match</div>';return;}
+  var h='<table><thead><tr><th>Title</th><th>Type</th><th>Version</th><th>Date</th><th>Confidentiality</th><th>Review Due</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(d){
+    var od=docReviewOverdue(d);
+    h+='<tr><td>'+esc(d.title)+'</td><td>'+esc(d.type)+'</td><td>'+esc(d.ver)+'</td><td>'+dt(d.date)+'</td><td>'+esc(d.confidentiality||'Internal')+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+(d.reviewDue?dt(d.reviewDue):'-')+(od?' — OVERDUE':'')+'</td>'+
+      '<td>'+esc(d.status||'Active')+'</td><td><button class="b bo bs" data-doc="'+esc(d.id)+'">View</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderDcReview(){
+  var c=$('mdc-review-body');if(!c)return;
+  var rows=mealDocs().filter(docReviewOverdue);
+  if(!rows.length){c.innerHTML='<div class="empty">No documents are past their review due date</div>';return;}
+  var h='<table><thead><tr><th>Title</th><th>Type</th><th>Confidentiality</th><th>Review Due</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(d){
+    h+='<tr><td>'+esc(d.title)+'</td><td>'+esc(d.type)+'</td><td>'+esc(d.confidentiality||'Internal')+'</td><td style="color:var(--red);font-weight:600">'+dt(d.reviewDue)+' — OVERDUE</td>'+
+      '<td><button class="b bo bs" data-doc="'+esc(d.id)+'">View</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
 function renderDocs(cid,dept){
   var c=$('docs-'+cid);if(!c)return;c.innerHTML='';
   var ds=DB.docs.filter(function(d){return (d.dept===dept||d.dept==='All')&&d.status!=='Archived';});
@@ -6011,9 +7312,10 @@ function verifyFinding(id){
   f.verifyStatus='verified';
   f.status='Resolved';
   f.progress=100;
+  f.verifiedOn=today();
   if(!f.feedback)f.feedback=[];
   f.feedback.push({by:SES.name,note:'Verified and closed by MEAL.',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
-  renderFindings();
+  if(typeof renderFindingsTracker==='function')renderFindingsTracker();else renderFindings();
   refreshCurrentDeptView();
   queueCloudSave();
   alert('Finding '+f.id+' verified and marked resolved. The responsible department has been notified.');
@@ -6027,7 +7329,7 @@ function rejectFindingVerification(id){
   f.verifyStatus='rejected';
   if(!f.feedback)f.feedback=[];
   f.feedback.push({by:SES.name,note:'Needs more work: '+reason,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
-  renderFindings();
+  if(typeof renderFindingsTracker==='function')renderFindingsTracker();else renderFindings();
   refreshCurrentDeptView();
   queueCloudSave();
   alert('Sent back to '+f.dept+' with your comment.');
@@ -6819,7 +8121,11 @@ function renderDataEntryTracker(){
   var curMonth=today().slice(0,7);
   var monthName=new Date(curMonth+'-01').toLocaleDateString('en',{month:'long'});
   if($('mde-period-lbl'))$('mde-period-lbl').textContent=monthName+"'s Submissions";
-  if($('mde-submissions'))$('mde-submissions').textContent=DB.dataSub.filter(function(r){return r.period===curMonth;}).length;
+  var mdeCurCount=DB.dataSub.filter(function(r){return r.period===curMonth;}).length;
+  if($('mde-submissions'))$('mde-submissions').textContent=mdeCurCount;
+  var mdePrevMonth=prevMonthKey(curMonth);
+  var mdePrevCount=DB.dataSub.filter(function(r){return r.period===mdePrevMonth;}).length;
+  if($('mde-submissions-sub'))$('mde-submissions-sub').innerHTML='vs '+mdePrevCount+' last month'+trendBadge(mdeCurCount,mdePrevCount,new Date(mdePrevMonth+'-01').toLocaleDateString('en',{month:'long'}));
   var expectedProjects=Object.keys(PROJ).length;
   if($('mde-expected'))$('mde-expected').textContent=expectedProjects;
   var reportedProjSet={};
@@ -6871,17 +8177,28 @@ function mdeFlattenRows(){
   });
   return rows;
 }
-function renderDeRegister(){
-  var c=$('mde-reg-body');if(!c)return;
+var mdeStatusLabel={Submitted:'Submitted',Verified:'Verified',Approved:'Approved',Returned:'Needs Correction',Missing:'Not Submitted'};
+function deRegisterFilteredRows(){
   var search=($('mde-reg-search')?$('mde-reg-search').value:'').trim().toLowerCase();
   var statusF=$('mde-reg-status')?$('mde-reg-status').value:'all';
-  var statusLabel={Submitted:'Submitted',Verified:'Verified',Approved:'Approved',Returned:'Needs Correction',Missing:'Not Submitted'};
-  var statusBdg={Submitted:'bY',Verified:'bB',Approved:'bG',Returned:'bR',Missing:'bY'};
-  var rows=mdeFlattenRows().filter(function(r){
+  return mdeFlattenRows().filter(function(r){
     if(statusF!=='all'&&r.statusRaw!==statusF)return false;
     if(search&&((r.submissionId||'')+' '+r.proj+' '+r.period+' '+r.indicatorName).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
+}
+function exportDeRegisterCSV(){
+  var rows=[['Submission','Project','Period','Indicator','Location','Actual','Target','Source','Status']];
+  deRegisterFilteredRows().forEach(function(r){
+    rows.push([r.submissionId||'',r.proj,r.period,r.indicatorName,r.dist||'',r.actual==null?'':r.actual,r.target,r.source||'',mdeStatusLabel[r.statusRaw]||r.statusRaw]);
+  });
+  downloadCSV(rows,'monthly-data-entry-'+today()+'.csv');
+}
+function renderDeRegister(){
+  var c=$('mde-reg-body');if(!c)return;
+  var statusLabel=mdeStatusLabel;
+  var statusBdg={Submitted:'bY',Verified:'bB',Approved:'bG',Returned:'bR',Missing:'bY'};
+  var rows=deRegisterFilteredRows();
   if(!rows.length){c.innerHTML='<div class="empty">No submissions match</div>';return;}
   var h='<table><thead><tr><th>Submission</th><th>Project / Period</th><th>Indicator</th><th>Location</th><th>Actual / Target</th><th>Source</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   rows.forEach(function(r){
@@ -6964,6 +8281,19 @@ function notify(userName,category,message,link){
   if(userName===SES.name)renderNotifBell();
 }
 
+function notifyOverdueOnce(records,isOverdueFn,userFn,msgFn,link){
+  records.forEach(function(r){
+    if(isOverdueFn(r)){
+      if(!r._overdueNotified){
+        r._overdueNotified=true;
+        var who=userFn(r);
+        if(who)notify(who,'meal',msgFn(r),link);
+      }
+    }else if(r._overdueNotified){
+      r._overdueNotified=false;
+    }
+  });
+}
 function renderNotifBell(){
   var badge=$('notif-badge');if(!badge)return;
   var unread=DB.notifications.filter(function(n){return n.user===SES.name && !n.read;}).length;
@@ -7060,6 +8390,7 @@ async function saveDoc(){
   if($('d-conf'))$('d-conf').value='Internal';if($('d-review'))$('d-review').value='';
   refreshAll();
   renderDocRegistry();
+  renderDocsTracker();
   queueCloudSave();
   if(fileInfo)alert('Document and file uploaded successfully.');
 }
@@ -7180,6 +8511,25 @@ function renderMonthlyReport(){
   if($('mr-offtrack'))$('mr-offtrack').textContent=offtrack;
   if($('mr-outstanding'))$('mr-outstanding').textContent=outstanding;
 }
+function prevMonthKey(m){
+  var d=new Date(m+'-01T00:00:00');
+  d.setMonth(d.getMonth()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function trendBadge(curr,prev,periodLabel){
+  if(prev==null)return '';
+  var arrow,pct;
+  if(curr===prev){arrow='▬';pct=null;}
+  else{arrow=curr>prev?'▲':'▼';pct=prev?Math.round(Math.abs(curr-prev)/Math.abs(prev)*100):100;}
+  return ' · <span style="color:var(--navy);font-weight:700">'+arrow+(pct!=null?' '+pct+'%':'')+'</span> vs '+(periodLabel||'last month');
+}
+function downloadCSV(rows,filename){
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 function exportMonthlyReport(){
   var monthEl=$('mv-month');
   var month=monthEl&&monthEl.value?monthEl.value:today().slice(0,7);
@@ -7203,18 +8553,32 @@ function saveCFRM(){
     dist:$('c-dist').value,proj:$('c-proj').value,type:$('c-type').value,desc:d.value.trim(),
     prio:$('c-prio').value,assign:$('c-assign').value||SES.name,
     status:$('c-prio').value==='escalate'?'Escalated':'Open'});
-  closeM('m-cfrm');d.value='';renderCFRM();refreshAll();queueCloudSave();
+  closeM('m-cfrm');d.value='';renderCfrmTracker();refreshAll();queueCloudSave();
 }
 
 function saveFinding(){
   var t=$('fn-title');
   if(!t||!t.value.trim()){alert('Please enter finding title.');return;}
-  DB.findings.push({id:nid('F'),title:t.value.trim(),sev:$('fn-sev').value,
+  var f={id:nid('F'),title:t.value.trim(),sev:$('fn-sev').value,
     proj:$('fn-proj').value,dept:$('fn-dept').value,loc:$('fn-loc').value,date:$('fn-date').value||today(),
     src:$('fn-src').value,desc:$('fn-desc').value,act:$('fn-act').value,
-    assign:$('fn-assign').value||SES.name,due:$('fn-due').value||today(),status:'Open',progress:0});
+    assign:$('fn-assign').value||SES.name,due:$('fn-due').value||today(),status:'Open',progress:0};
+  if(findingSourceCfrmId)f.sourceCfrmId=findingSourceCfrmId;
+  if(findingSourceVisitId)f.sourceVisitId=findingSourceVisitId;
+  DB.findings.push(f);
+  if(findingSourceCfrmId){
+    var cx=DB.cfrm.find(function(c){return c.id===findingSourceCfrmId;});
+    if(cx)cx.linkedFindingId=f.id;
+  }
+  if(findingSourceVisitId){
+    var vx=DB.visits.find(function(v){return v.id===findingSourceVisitId;});
+    if(vx)vx.linkedFindingId=f.id;
+  }
+  findingSourceCfrmId=null;findingSourceVisitId=null;
   closeM('m-finding');t.value='';$('fn-desc').value='';$('fn-act').value='';
-  renderFindings();refreshAll();queueCloudSave();
+  renderFindingsTracker();refreshAll();queueCloudSave();
+  if(typeof renderCfrmTracker==='function')renderCfrmTracker();
+  if(typeof renderFieldVisitsTracker==='function')renderFieldVisitsTracker();
 }
 
 function saveRisk(){
@@ -7224,9 +8588,9 @@ function saveRisk(){
   var lv=s>=15?'critical':s>=10?'high':s>=5?'medium':'low';
   DB.risks.push({id:nid('R'),title:t.value.trim(),cat:$('r-cat').value,proj:$('r-proj').value,
     like:l,imp:i,score:s,lvl:lv,desc:$('r-desc').value,mit:$('r-mit').value,
-    owner:$('r-owner').value||SES.name,status:$('r-stat').value});
+    owner:$('r-owner').value||SES.name,status:$('r-stat').value,created:today()});
   closeM('m-risk');t.value='';$('r-desc').value='';$('r-mit').value='';
-  renderRisks();queueCloudSave();
+  renderRiskAuditTracker();queueCloudSave();
 }
 
 function saveAsset(){
