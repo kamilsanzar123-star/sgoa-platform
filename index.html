@@ -1986,9 +1986,86 @@ tbody tr:hover td{background:var(--g50);}
 </div>
 
 <div class="pg" id="p-prog-partners">
-  <div class="ph"><div><h1>Implementing Partners</h1><p>Local partners &amp; sub-grantees delivering SGOA-funded activities</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('programs')">Back</button><button class="b bn bs" onclick="openM('m-partner')">+ Add Partner</button></div></div>
-  <div class="cd"><div class="cdb tw"><table><thead><tr><th>Partner</th><th>Type</th><th>Project</th><th>Capacity Assessment</th><th>Sub-Grant Agreement</th><th>Amount</th><th>Reporting</th><th>Status</th><th>Action</th></tr></thead><tbody id="partners-body"></tbody></table></div></div>
+  <div class="ph"><div><h1>Implementing Partners</h1><p>Local partners &amp; sub-grantees delivering SGOA-funded activities — capacity, sub-grant agreements and reporting compliance</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('programs')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-partner')">+ Add Partner</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Partners</div><div class="stv" id="pt-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="pt-tot-sub">—</div></div>
+    <div class="st gr"><div class="stl">Active Partnerships</div><div class="stv" id="pt-active">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="pt-active-sub">—</div></div>
+    <div class="st og"><div class="stl">Total Sub-Grant Value</div><div class="stv" id="pt-value">$0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">USD equivalent, active partners</div></div>
+    <div class="st nv"><div class="stl">Capacity Assessed</div><div class="stv" id="pt-capdone">0</div></div>
+    <div class="st rd"><div class="stl">Reports Overdue</div><div class="stv" id="pt-overdue">0</div></div>
+    <div class="st og"><div class="stl">Reports Due (Next 30 Days)</div><div class="stv" id="pt-duesoon">0</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="pt-tab-overview" onclick="setPtTab('overview')">Overview</button>
+    <button class="b bo bs" id="pt-tab-register" onclick="setPtTab('register')">Record Register</button>
+    <button class="b bo bs" id="pt-tab-entry" onclick="setPtTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="pt-tab-review" onclick="setPtTab('review')">Review / Action</button>
+    <button class="b bo bs" id="pt-tab-evidence" onclick="setPtTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="pt-panel-overview" style="display:none">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Partner Type Breakdown</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="pt-ch-type" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="pt-ch-type-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Capacity Assessment Status</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="pt-ch-capacity" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="pt-ch-capacity-leg"></div>
+        </div></div>
+    </div>
+    <div class="cd"><div class="cdh"><div class="cdt">Sub-Grant Value by Project (USD Equivalent)</div></div>
+      <div class="cdb" style="padding:14px"><canvas id="pt-ch-byproj" width="900" height="200" style="width:100%;height:200px"></canvas></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Reporting Compliance</div></div><div class="cdb" id="pt-compliance"></div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="pt-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Partner Register</div><button class="b bo bs" onclick="exportPtRegisterCSV()">Download CSV</button></div>
+      <div class="cdb" style="padding-bottom:0">
+        <div class="fr" style="margin-bottom:10px">
+          <div class="fg ff"><label>Search</label><input type="text" id="pt-reg-search" oninput="renderPtRegister()" placeholder="Partner name or agreement ref"></div>
+          <div class="fg"><label>Project</label><select id="pt-reg-proj" onchange="renderPtRegister()"><option value="all">All Projects</option></select></div>
+          <div class="fg"><label>Status</label><select id="pt-reg-status" onchange="renderPtRegister()"><option value="all">All Statuses</option><option>Active</option><option>Completed</option></select></div>
+        </div>
+      </div>
+      <div class="cdb tw" id="pt-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="pt-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Register a New Implementing Partner</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">The next report due date is set automatically from the reporting frequency and the agreement start date, and advances every time a report is logged.</p>
+        <button class="b bn" onclick="openM('m-partner')">+ Add Partner</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How a Partnership Is Tracked</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Capacity Assessment</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">Sub-Grant Agreement</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Periodic Reporting</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 4</div><div style="font-size:12.5px;margin-top:3px">Ended / Closed Out</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="pt-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Overdue Partner Reports</div></div>
+      <div class="cdb tw" id="pt-review-overdue"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Expired Agreements Still Marked Active</div><span style="font-size:10.5px;color:var(--g400)">Agreement end date has passed</span></div>
+      <div class="cdb tw" id="pt-review-expired"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="pt-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Full Partner &amp; Reporting History</div></div>
+      <div class="cdb" id="pt-evidence-body"></div></div>
+  </div>
 </div>
 
 <div class="pg" id="p-prog-grants">
@@ -7651,22 +7728,156 @@ function terminatePartner(id){
   p.status='Completed';
   renderPartners();queueCloudSave();
 }
+function partnerReportOverdue(p){ return p.status==='Active' && !!p.nextReportDue && new Date(p.nextReportDue)<new Date(today()); }
+function partnerAgreementExpired(p){ return p.status==='Active' && !!p.end && new Date(p.end)<new Date(today()); }
+var ptTab='overview';
+function setPtTab(tab){
+  ptTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('pt-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('pt-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  renderPtTrackerBody();
+}
+function renderPtTrackerBody(){
+  if(ptTab==='overview')renderPtOverview();
+  else if(ptTab==='register')renderPtRegister();
+  else if(ptTab==='review')renderPtReview();
+  else if(ptTab==='evidence')renderPtEvidence();
+}
 function renderPartners(){
-  var c=$('partners-body');if(!c)return;c.innerHTML='';
-  if(!DB.partners.length){c.innerHTML='<tr><td colspan="9" class="empty">No implementing partners registered</td></tr>';return;}
-  DB.partners.forEach(function(p){
+  var partners=DB.partners;
+  var active=partners.filter(function(p){return p.status==='Active';});
+  if($('pt-tot'))$('pt-tot').textContent=partners.length;
+  if($('pt-active'))$('pt-active').textContent=active.length;
+  var totalUSD=active.reduce(function(s,p){return s+(p.amount||0)*projFxToUSD(p.proj);},0);
+  if($('pt-value'))$('pt-value').textContent=money(totalUSD,'USD');
+  if($('pt-capdone'))$('pt-capdone').textContent=partners.filter(function(p){return p.capacity==='Completed';}).length;
+  if($('pt-overdue'))$('pt-overdue').textContent=partners.filter(partnerReportOverdue).length;
+  var in30=new Date();in30.setDate(in30.getDate()+30);
+  if($('pt-duesoon'))$('pt-duesoon').textContent=active.filter(function(p){return p.nextReportDue&&!partnerReportOverdue(p)&&new Date(p.nextReportDue)<=in30;}).length;
+  var projs=Object.keys(partners.reduce(function(a,p){if(p.proj)a[p.proj]=1;return a;},{})).length;
+  if($('pt-tot-sub'))$('pt-tot-sub').textContent=projs+' project'+(projs===1?'':'s');
+  if($('pt-active-sub'))$('pt-active-sub').textContent=(partners.length?Math.round(active.length/partners.length*100):0)+'% of total';
+  setPtTab(ptTab);
+}
+function renderPtOverview(){
+  var partners=DB.partners;
+  var types=Object.keys(partners.reduce(function(a,p){if(p.type)a[p.type]=1;return a;},{}));
+  var typeCounts=types.map(function(t){return partners.filter(function(p){return p.type===t;}).length;});
+  donut('pt-ch-type',typeCounts.map(function(v,i){return {v:v,c:['#1A3A6B','#2563eb','#C8922A','#16a34a','#dc2626'][i%5]};}),18);
+  var legT=$('pt-ch-type-leg');
+  if(legT)legT.innerHTML=types.map(function(t,i){
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+(['#1A3A6B','#2563eb','#C8922A','#16a34a','#dc2626'][i%5])+';display:inline-block"></span>'+esc(t)+' <b style="margin-left:auto">'+typeCounts[i]+'</b></div>';
+  }).join('');
+
+  var capStates=['Not Started','In Progress','Completed'];
+  var capCounts=capStates.map(function(s){return partners.filter(function(p){return p.capacity===s;}).length;});
+  donut('pt-ch-capacity',[{v:capCounts[0],c:'#cbd5e1'},{v:capCounts[1],c:'#C8922A'},{v:capCounts[2],c:'#16a34a'}],18);
+  var legC=$('pt-ch-capacity-leg');
+  if(legC)legC.innerHTML=[{l:'Not Started',v:capCounts[0],c:'#cbd5e1'},{l:'In Progress',v:capCounts[1],c:'#C8922A'},{l:'Completed',v:capCounts[2],c:'#16a34a'}].map(function(r){
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+r.v+'</b></div>';
+  }).join('');
+
+  var projKeys=Object.keys(PROJ);
+  if(projKeys.length){
+    var projValues=projKeys.map(function(k){return partners.filter(function(p){return p.proj===k&&p.status==='Active';}).reduce(function(s,p){return s+(p.amount||0)*projFxToUSD(k);},0);});
+    bars('pt-ch-byproj',projKeys,[{d:projValues,c:'#C8922A'}],function(v){return '$'+(v/1000).toFixed(0)+'K';});
+  }
+
+  var box=$('pt-compliance');
+  if(box){
+    var active=partners.filter(function(p){return p.status==='Active';});
+    var onTime=active.filter(function(p){return !partnerReportOverdue(p);}).length;
+    var overdue=active.filter(partnerReportOverdue).length;
+    var totalReports=partners.reduce(function(s,p){return s+(p.reports?p.reports.length:0);},0);
+    box.innerHTML='<div class="stats" style="grid-template-columns:repeat(3,1fr)">'+
+      '<div class="st gr"><div class="stl">On-Time Partners</div><div class="stv">'+onTime+'</div></div>'+
+      '<div class="st rd"><div class="stl">Overdue Partners</div><div class="stv">'+overdue+'</div></div>'+
+      '<div class="st nv"><div class="stl">Reports Logged (All Time)</div><div class="stv">'+totalReports+'</div></div></div>';
+  }
+}
+function ptRegisterFilteredRows(){
+  var pf=$('pt-reg-proj')?$('pt-reg-proj').value:'all';
+  var search=($('pt-reg-search')?$('pt-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('pt-reg-status')?$('pt-reg-status').value:'all';
+  return DB.partners.filter(function(p){
+    if(pf!=='all'&&p.proj!==pf)return false;
+    if(statusF!=='all'&&p.status!==statusF)return false;
+    if(search&&(p.name+' '+(p.agreementRef||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportPtRegisterCSV(){
+  var rows=[['Partner','Type','Project','Capacity Assessment','Agreement Ref','Agreement Start','Agreement End','Amount','Currency','Reporting Frequency','Next Report Due','Status']];
+  ptRegisterFilteredRows().forEach(function(p){
+    rows.push([p.name,p.type,p.proj,p.capacity,p.agreementRef||'',p.start||'',p.end||'',p.amount,projCurrency(p.proj),p.reportFreq,p.nextReportDue||'',p.status]);
+  });
+  downloadCSV(rows,'implementing-partners-'+today()+'.csv');
+}
+function renderPtRegister(){
+  var c=$('pt-reg-body');if(!c)return;
+  var partners=ptRegisterFilteredRows();
+  if(!partners.length){c.innerHTML='<div class="empty">No partners match</div>';return;}
+  var h='<table><thead><tr><th>Partner</th><th>Type</th><th>Project</th><th>Capacity Assessment</th><th>Sub-Grant Agreement</th><th>Amount</th><th>Reporting</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  partners.forEach(function(p){
     var capBdg=p.capacity==='Completed'?'bG':p.capacity==='In Progress'?'bO':'bY';
-    var overdue=p.status==='Active'&&p.nextReportDue&&new Date(p.nextReportDue)<new Date();
+    var overdue=partnerReportOverdue(p);
     var reportCell='<span class="bdg '+(overdue?'bR':'bG')+'">'+(overdue?'Overdue since ':'Next due ')+dt(p.nextReportDue)+'</span>'+
       (p.reports&&p.reports.length?'<div style="font-size:10px;color:var(--g400);margin-top:3px">'+p.reports.length+' report(s) received</div>':'');
     var actions=p.status==='Active'?
       '<button class="b bo bs" onclick="openPartnerReportModal(\''+p.id+'\')">Log Report</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="terminatePartner(\''+p.id+'\')">End</button>'
       :'<span class="bdg bY">Ended</span>';
-    var r=el('tr');
-    r.innerHTML='<td><b>'+esc(p.name)+'</b></td><td>'+esc(p.type)+'</td><td>'+esc(p.proj)+'</td><td><span class="bdg '+capBdg+'">'+esc(p.capacity)+'</span></td>'+
+    h+='<tr><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.type)+'</td><td>'+esc(p.proj)+'</td><td><span class="bdg '+capBdg+'">'+esc(p.capacity)+'</span></td>'+
       '<td>'+esc(p.agreementRef||'-')+'<div style="font-size:10px;color:var(--g400)">'+dt(p.start)+' – '+dt(p.end)+'</div></td>'+
-      '<td>'+money(p.amount,projCurrency(p.proj))+'</td><td>'+reportCell+'</td><td><span class="bdg '+(p.status==='Active'?'bG':'bY')+'">'+esc(p.status)+'</span></td><td>'+actions+'</td>';
-    c.appendChild(r);
+      '<td>'+money(p.amount,projCurrency(p.proj))+'</td><td>'+reportCell+'</td><td><span class="bdg '+(p.status==='Active'?'bG':'bY')+'">'+esc(p.status)+'</span></td><td>'+actions+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderPtReview(){
+  var overdueC=$('pt-review-overdue');
+  if(overdueC){
+    var overdueP=DB.partners.filter(partnerReportOverdue).sort(function(a,b){return new Date(a.nextReportDue)-new Date(b.nextReportDue);});
+    if(!overdueP.length){overdueC.innerHTML='<div class="empty">No overdue partner reports</div>';}
+    else{
+      var h='<table><thead><tr><th>Partner</th><th>Project</th><th>Report Due</th><th>Frequency</th><th>Action</th></tr></thead><tbody>';
+      overdueP.forEach(function(p){
+        h+='<tr><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.proj)+'</td><td style="color:var(--red);font-weight:600">'+dt(p.nextReportDue)+' — OVERDUE</td><td>'+esc(p.reportFreq)+'</td>'+
+          '<td><button class="b bo bs" onclick="openPartnerReportModal(\''+p.id+'\')">Log Report</button></td></tr>';
+      });
+      h+='</tbody></table>';
+      overdueC.innerHTML=h;
+    }
+  }
+  var expiredC=$('pt-review-expired');
+  if(expiredC){
+    var expiredP=DB.partners.filter(partnerAgreementExpired).sort(function(a,b){return new Date(a.end)-new Date(b.end);});
+    if(!expiredP.length){expiredC.innerHTML='<div class="empty">No expired agreements still marked active</div>';}
+    else{
+      var h2='<table><thead><tr><th>Partner</th><th>Project</th><th>Agreement Ended</th><th>Action</th></tr></thead><tbody>';
+      expiredP.forEach(function(p){
+        h2+='<tr><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.proj)+'</td><td style="color:var(--red);font-weight:600">'+dt(p.end)+'</td>'+
+          '<td><button class="b bs" style="background:var(--red);color:#fff" onclick="terminatePartner(\''+p.id+'\')">End Partnership</button></td></tr>';
+      });
+      h2+='</tbody></table>';
+      expiredC.innerHTML=h2;
+    }
+  }
+}
+function renderPtEvidence(){
+  var c=$('pt-evidence-body');if(!c)return;
+  if(!DB.partners.length){c.innerHTML='<div class="empty">No implementing partners registered</div>';return;}
+  c.innerHTML='';
+  DB.partners.slice().sort(function(a,b){return new Date(b.createdOn||0)-new Date(a.createdOn||0);}).forEach(function(p){
+    var card=el('div','cd');
+    var reportsHtml=(p.reports&&p.reports.length)?('<table style="margin-top:8px"><thead><tr><th>Date</th><th>Type</th><th>Notes</th><th>Logged By</th></tr></thead><tbody>'+
+      p.reports.slice().reverse().map(function(r){return '<tr><td>'+dt(r.date)+'</td><td>'+esc(r.type)+'</td><td style="font-size:11.5px">'+esc(r.notes||'-')+'</td><td>'+esc(r.loggedBy||'-')+'</td></tr>';}).join('')+
+      '</tbody></table>'):'<div class="empty">No reports logged yet</div>';
+    card.innerHTML='<div class="cdh"><div class="cdt">'+esc(p.name)+' <span class="bdg '+(p.status==='Active'?'bG':'bY')+'" style="margin-left:6px">'+esc(p.status)+'</span></div>'+
+      '<span style="font-size:10.5px;color:var(--g400)">'+esc(p.proj)+' · '+esc(p.type)+' · Registered '+dt(p.createdOn)+' by '+esc(p.createdBy||'-')+'</span></div>'+
+      '<div class="cdb tw">'+reportsHtml+'</div>';
+    c.appendChild(card);
   });
 }
 
@@ -8912,6 +9123,7 @@ var PROJECT_SELECT_IDS=[
   {id:'de-proj',all:false,core:false},
   {id:'ac-proj',all:false,core:false},
   {id:'pat-reg-proj',all:true,core:false},
+  {id:'pt-reg-proj',all:true,core:false},
   {id:'bn-proj',all:false,core:false},
   {id:'bf-proj',all:true,core:false},
   {id:'i-proj',all:false,core:false},
