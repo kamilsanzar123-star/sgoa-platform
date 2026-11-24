@@ -2744,12 +2744,13 @@ tbody tr:hover td{background:var(--g50);}
 <div class="mbd">
   <div id="iu-ctx" style="background:var(--g50);padding:10px;border-radius:7px;font-size:13px;margin-bottom:13px"></div>
   <div class="fr">
-    <div class="fg"><label>New Actual Value *</label><input type="number" id="iu-actual"></div>
+    <div class="fg"><label>New Actual Value *</label><input type="number" id="iu-actual" oninput="updateIuReasonVisibility()"></div>
     <div class="fg"><label>Reporting Date</label><input type="date" id="iu-date"></div>
     <div class="fg"><label>Female <span style="font-weight:400;color:var(--g500)">(optional breakdown)</span></label><input type="number" id="iu-female" placeholder="e.g. 60"></div>
     <div class="fg"><label>Male <span style="font-weight:400;color:var(--g500)">(optional breakdown)</span></label><input type="number" id="iu-male" placeholder="e.g. 55"></div>
     <div class="fg ff"><label>Note</label><input type="text" id="iu-note" placeholder="e.g. Term 2 attendance registers"></div>
     <div class="fg ff"><label>Means of Verification (attach evidence)</label><input type="file" id="iu-file"><div style="font-size:10px;color:var(--g500);margin-top:3px">Upload the actual attendance register, report, photo or other document that proves this result — visible to anyone who checks this indicator, and in MEAL Documents. Max 10 MB.</div></div>
+    <div class="fg ff" id="iu-reason-wrap" style="display:none"><label>Reason this indicator is At Risk / Off Track *</label><textarea id="iu-reason" rows="2" placeholder="e.g. Teacher training delayed by weather; expect to catch up next quarter"></textarea></div>
   </div>
   <div style="font-size:10.5px;color:var(--g500);margin-top:2px">If both Female and Male are entered, they must add up to the New Actual Value — this is how progress gets reported disaggregated by sex, matching donor reporting requirements, instead of one undifferentiated total.</div>
 </div>
@@ -5778,6 +5779,10 @@ function indStatusOf(i){
   var p=i.actual/i.target;
   if(p>=0.9)return 'On Track';if(p>=0.7)return 'At Risk';if(i.actual>0)return 'Off Track';return 'Pending';
 }
+function indLatestReason(i){
+  var withReason=(i.updates||[]).filter(function(u){return u.reason;});
+  return withReason.length?withReason[withReason.length-1].reason:null;
+}
 function indAvgAchievementForMonth(m){
   var pcts=[];
   DB.indicators.forEach(function(i){
@@ -5940,10 +5945,11 @@ function renderIndReview(){
   if(otBox){
     if(!offTrack.length){otBox.innerHTML='<div class="empty">No off-track indicators</div>';}
     else{
-      var h2='<table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>%</th><th></th></tr></thead><tbody>';
+      var h2='<table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>%</th><th>Why</th><th></th></tr></thead><tbody>';
       offTrack.forEach(function(i){
         var pct=Math.round(i.actual/i.target*100);
-        h2+='<tr><td>'+esc(indLabel(i))+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td><span class="bdg bR">'+pct+'%</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button></td></tr>';
+        var why=indLatestReason(i);
+        h2+='<tr><td>'+esc(indLabel(i))+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td><span class="bdg bR">'+pct+'%</span></td><td style="font-size:11.5px">'+(why?esc(why):'<span style="color:var(--g400)">Not explained yet</span>')+'</td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button></td></tr>';
       });
       h2+='</tbody></table>';
       otBox.innerHTML=h2;
@@ -5970,15 +5976,15 @@ function renderIndEvidence(){
   if(histBox){
     var rows=[];
     DB.indicators.forEach(function(i){
-      (i.updates||[]).forEach(function(u){rows.push({ind:i.name,proj:i.proj,date:u.date,actual:u.actual,female:u.female,male:u.male,note:u.note,by:u.by,docId:u.docId,fileName:u.fileName});});
+      (i.updates||[]).forEach(function(u){rows.push({ind:i.name,proj:i.proj,date:u.date,actual:u.actual,female:u.female,male:u.male,note:u.note,by:u.by,docId:u.docId,fileName:u.fileName,reason:u.reason});});
     });
     rows.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
     if(!rows.length){histBox.innerHTML='<div class="empty">No progress updates logged yet</div>';}
     else{
-      var h2='<table><thead><tr><th>Date</th><th>Indicator</th><th>Project</th><th>Actual</th><th>F / M</th><th>Note</th><th>By</th><th>Evidence</th></tr></thead><tbody>';
+      var h2='<table><thead><tr><th>Date</th><th>Indicator</th><th>Project</th><th>Actual</th><th>F / M</th><th>Note</th><th>By</th><th>Evidence</th><th>Reason (if behind)</th></tr></thead><tbody>';
       rows.forEach(function(r){
         var evCell=r.docId?('<button class="b bo bs" data-private-file="'+esc(r.docId)+'" title="'+esc(r.fileName||'')+'">View File</button>'):'<span style="color:var(--g400)">-</span>';
-        h2+='<tr><td>'+dt(r.date)+'</td><td>'+esc(r.ind)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.actual)+'</td><td>'+(r.female!=null||r.male!=null?fmt(r.female||0)+' / '+fmt(r.male||0):'-')+'</td><td>'+esc(r.note||'-')+'</td><td>'+esc(r.by||'-')+'</td><td>'+evCell+'</td></tr>';
+        h2+='<tr><td>'+dt(r.date)+'</td><td>'+esc(r.ind)+'</td><td>'+esc(r.proj)+'</td><td>'+fmt(r.actual)+'</td><td>'+(r.female!=null||r.male!=null?fmt(r.female||0)+' / '+fmt(r.male||0):'-')+'</td><td>'+esc(r.note||'-')+'</td><td>'+esc(r.by||'-')+'</td><td>'+evCell+'</td><td style="font-size:11.5px">'+(r.reason?esc(r.reason):'-')+'</td></tr>';
       });
       h2+='</tbody></table>';
       histBox.innerHTML=h2;
@@ -9026,12 +9032,21 @@ function editIndicatorCode(id){
 
 // ============ INDICATOR PROGRESS UPDATES (with sex disaggregation) ============
 var _indUpdateId=null;
+function indUpdateIsBehind(actual,target){ return !!target && actual>0 && (actual/target)<0.9; }
+function updateIuReasonVisibility(){
+  var i=DB.indicators.find(function(x){return x.id===_indUpdateId;});if(!i)return;
+  var actual=parseFloat($('iu-actual').value);
+  var wrap=$('iu-reason-wrap');if(!wrap)return;
+  wrap.style.display=(!isNaN(actual)&&indUpdateIsBehind(actual,i.target))?'':'none';
+}
 function openIndicatorUpdateModal(id){
   var i=DB.indicators.find(function(x){return x.id===id;});if(!i)return;
   _indUpdateId=id;
   $('iu-ctx').innerHTML='<b>'+esc(indLabel(i))+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
   $('iu-actual').value=i.actual;$('iu-date').value=today();$('iu-female').value='';$('iu-male').value='';$('iu-note').value='';
   if($('iu-file'))$('iu-file').value='';
+  if($('iu-reason'))$('iu-reason').value='';
+  updateIuReasonVisibility();
   openM('m-ind-update');
 }
 async function saveIndicatorUpdate(){
@@ -9051,6 +9066,11 @@ async function saveIndicatorUpdate(){
     alert('Female ('+female+') + Male ('+male+') = '+(female+male)+', which does not match the New Actual Value ('+actual+'). Please correct the breakdown or the total.');
     return;
   }
+  var reason=($('iu-reason')?$('iu-reason').value:'').trim();
+  if(indUpdateIsBehind(actual,i.target) && !reason){
+    alert('This result is below 90% of target. Please explain why before saving, so anyone reviewing this indicator can see what is holding it back.');
+    return;
+  }
   var fileInput=$('iu-file'),docId=null,fileName=null;
   if(fileInput && fileInput.files.length){
     var btn=$('iu-save-btn');
@@ -9067,7 +9087,7 @@ async function saveIndicatorUpdate(){
     fileName=fileInfo.name;
   }
   i.updates=i.updates||[];
-  i.updates.push({date:updateDate,actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name,docId:docId,fileName:fileName});
+  i.updates.push({date:updateDate,actual:actual,female:female,male:male,note:$('iu-note').value.trim(),by:SES.name,docId:docId,fileName:fileName,reason:reason||null});
   i.actual=actual;
   if(female!==null)i.actualFemale=female;
   if(male!==null)i.actualMale=male;
