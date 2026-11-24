@@ -2727,6 +2727,7 @@ tbody tr:hover td{background:var(--g50);}
 <div class="mb" id="m-ind"><div class="md">
 <div class="mh"><h3>Add Indicator</h3><button class="mx" onclick="closeM('m-ind')">&times;</button></div>
 <div class="mbd"><div class="fr">
+<div class="fg"><label>Indicator Code</label><input type="text" id="i-code" placeholder="e.g. Outcome 1.2, OUT-2.1.3"></div>
 <div class="fg ff"><label>Indicator Name *</label><input type="text" id="i-name" placeholder="e.g. # children enrolled by sex"></div>
 <div class="fg"><label>Project</label><select id="i-proj"><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
 <div class="fg"><label>Level</label><select id="i-level"><option>Output</option><option>Outcome</option><option>Impact</option></select></div>
@@ -5586,7 +5587,7 @@ function renderMealHome(){
       inds.slice(0,8).forEach(function(i){
         var pct=i.target?Math.round(i.actual/i.target*100):0;
         var bdg=pct>=90?'<span class="bdg bG">On Track</span>':pct>=70?'<span class="bdg bO">At Risk</span>':pct>0?'<span class="bdg bR">Off Track</span>':'<span class="bdg bY">Pending</span>';
-        h+='<tr><td title="'+esc(i.name)+'">'+esc(i.name.length>42?i.name.slice(0,42)+'…':i.name)+'</td><td>'+esc(i.proj||'-')+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td>'+pct+'%</td><td>'+bdg+'</td></tr>';
+        h+='<tr><td title="'+esc(indLabel(i))+'">'+esc(indLabelShort(i,42))+'</td><td>'+esc(i.proj||'-')+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td>'+pct+'%</td><td>'+bdg+'</td></tr>';
       });
       h+='</tbody></table>';
       c.innerHTML=h;
@@ -5630,7 +5631,7 @@ function renderMealHome(){
   if($('meal-ch-indstatus-leg'))$('meal-ch-indstatus-leg').innerHTML=legHtml([{l:'On Track',v:onS,c:'#16a34a'},{l:'At Risk',v:riskS,c:'#C8922A'},{l:'Off Track',v:offS,c:'#dc2626'},{l:'Pending Baseline',v:pendS,c:'#cbd5e1'}]);
 
   var withTarget=inds.filter(function(i){return i.target;}).slice(0,8);
-  if(withTarget.length)bars('meal-ch-targetactual',withTarget.map(function(i){return i.name.length>14?i.name.slice(0,14)+'…':i.name;}),
+  if(withTarget.length)bars('meal-ch-targetactual',withTarget.map(function(i){var l=i.code||i.name;return l.length>14?l.slice(0,14)+'…':l;}),
     [{d:withTarget.map(function(i){return i.target;}),c:'#C8922A'},{d:withTarget.map(function(i){return i.actual;}),c:'#1A3A6B'}],
     function(v){return Math.round(v);});
 
@@ -5835,7 +5836,7 @@ function renderIndProjection(){
   rows.forEach(function(r){
     var i=r.i,p=r.p;
     var outlook=p.projectedPct>=100?{l:'On Track',c:'bG'}:p.projectedPct>=70?{l:'At Risk',c:'bO'}:{l:'Off Track',c:'bR'};
-    h+='<tr><td title="'+esc(i.name)+'">'+esc(i.name.length>40?i.name.slice(0,40)+'…':i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+p.currentPct+'%</td>'+
+    h+='<tr><td title="'+esc(indLabel(i))+'">'+esc(indLabelShort(i,40))+'</td><td>'+esc(i.proj)+'</td><td>'+p.currentPct+'%</td>'+
       '<td>'+(p.rate>=0?'+':'')+fmt(Math.round(p.rate*10)/10)+' '+esc(i.unit||'units')+'/mo</td><td>'+p.monthsRemaining+'</td>'+
       '<td style="font-weight:700">'+p.projectedPct+'%</td><td><span class="bdg '+outlook.c+'">'+outlook.l+'</span></td></tr>';
   });
@@ -5860,7 +5861,7 @@ function renderIndOverview(){
         var pct=Math.round(i.actual/i.target*100);
         var col=pct>=90?'var(--green)':pct>=70?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
         var r=el('div','mbr');
-        r.innerHTML='<div class="mbl" style="font-size:11.5px" title="'+esc(i.name)+'">'+esc(i.name.length>36?i.name.slice(0,36)+'…':i.name)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
+        r.innerHTML='<div class="mbl" style="font-size:11.5px" title="'+esc(indLabel(i))+'">'+esc(indLabelShort(i,36))+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
         box.appendChild(r);
       });
     }
@@ -5875,7 +5876,7 @@ function indRegisterFilteredRows(){
   return DB.indicators.filter(function(i){
     if(pf!=='all'&&i.proj!==pf)return false;
     if(statusF!=='all'&&indStatusOf(i)!==statusF)return false;
-    if(search&&(i.name+' '+i.proj).toLowerCase().indexOf(search)<0)return false;
+    if(search&&(i.name+' '+i.proj+' '+(i.code||'')).toLowerCase().indexOf(search)<0)return false;
     return true;
   });
 }
@@ -5884,18 +5885,18 @@ function renderIndRegister(){
   var inds=indRegisterFilteredRows();
   if(!inds.length){c.innerHTML='<div class="empty">No indicators match</div>';return;}
   var bdgCls={'On Track':'bG','At Risk':'bO','Off Track':'bR','Pending':'bY'};
-  var h='<table><thead><tr><th>Indicator ID</th><th>Result Statement</th><th>Project</th><th>Baseline</th><th>Target</th><th>Unit / Frequency</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  var h='<table><thead><tr><th>Code</th><th>Indicator ID</th><th>Result Statement</th><th>Project</th><th>Baseline</th><th>Target</th><th>Unit / Frequency</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   inds.forEach(function(i){
     var st=indStatusOf(i);
-    h+='<tr><td>'+esc(i.id)+'</td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.baseline||0)+'</td><td>'+fmt(i.target)+'</td><td>'+esc(i.unit)+' / '+esc(i.freq)+'</td><td><span class="bdg '+(bdgCls[st]||'bY')+'">'+st+'</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Open</button></td></tr>';
+    h+='<tr><td>'+(i.code?'<span class="bdg bN">'+esc(i.code)+'</span>':'<button class="b bo bs" style="font-size:10px;padding:2px 6px" onclick="editIndicatorCode(\''+i.id+'\')">+ Add Code</button>')+'</td><td>'+esc(i.id)+'</td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.baseline||0)+'</td><td>'+fmt(i.target)+'</td><td>'+esc(i.unit)+' / '+esc(i.freq)+'</td><td><span class="bdg '+(bdgCls[st]||'bY')+'">'+st+'</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Open</button>'+(i.code?' <button class="b bo bs" onclick="editIndicatorCode(\''+i.id+'\')">Edit Code</button>':'')+'</td></tr>';
   });
   h+='</tbody></table>';
   c.innerHTML=h;
 }
 function exportIndRegisterCSV(){
-  var rows=[['Indicator ID','Result Statement','Project','Baseline','Target','Unit','Frequency','Status']];
+  var rows=[['Code','Indicator ID','Result Statement','Project','Baseline','Target','Unit','Frequency','Status']];
   indRegisterFilteredRows().forEach(function(i){
-    rows.push([i.id,i.name,i.proj,i.baseline||0,i.target,i.unit,i.freq,indStatusOf(i)]);
+    rows.push([i.code||'',i.id,i.name,i.proj,i.baseline||0,i.target,i.unit,i.freq,indStatusOf(i)]);
   });
   downloadCSV(rows,'indicator-register-'+today()+'.csv');
 }
@@ -5905,13 +5906,13 @@ function renderIndEntry(){
   var indSel=$('mit-entry-ind');if(!indSel)return;
   var curId=indSel.value;
   var inds=proj==='all'?DB.indicators:DB.indicators.filter(function(i){return i.proj===proj;});
-  indSel.innerHTML=inds.map(function(i){return '<option value="'+i.id+'">'+esc(i.id)+' — '+esc(i.name)+'</option>';}).join('')||'<option value="">No indicators</option>';
+  indSel.innerHTML=inds.map(function(i){return '<option value="'+i.id+'">'+esc(i.code||i.id)+' — '+esc(i.name)+'</option>';}).join('')||'<option value="">No indicators</option>';
   if(curId&&inds.some(function(i){return i.id===curId;}))indSel.value=curId;
   var i=DB.indicators.find(function(x){return x.id===indSel.value;});
   var ctx=$('mit-entry-ctx'),btn=$('mit-entry-btn');
   if(!i){if(ctx)ctx.innerHTML='<span style="color:var(--g500)">No indicator selected.</span>';if(btn)btn.disabled=true;return;}
   if(btn)btn.disabled=false;
-  if(ctx)ctx.innerHTML='<b>'+esc(i.name)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
+  if(ctx)ctx.innerHTML='<b>'+esc(indLabel(i))+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
 }
 function mitRecordResult(){
   var id=$('mit-entry-ind')?$('mit-entry-ind').value:null;
@@ -5927,7 +5928,7 @@ function renderIndReview(){
     else{
       var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Level</th><th></th></tr></thead><tbody>';
       noTarget.forEach(function(i){
-        h+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.level)+'</td><td><button class="b bo bs" onclick="setIndTab(\'register\');$(\'mit-reg-search\').value='+esc(JSON.stringify(i.name))+';renderIndRegister();">View in Register</button></td></tr>';
+        h+='<tr><td>'+esc(indLabel(i))+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.level)+'</td><td><button class="b bo bs" onclick="setIndTab(\'register\');$(\'mit-reg-search\').value='+esc(JSON.stringify(i.name))+';renderIndRegister();">View in Register</button></td></tr>';
       });
       h+='</tbody></table>';
       ntBox.innerHTML=h;
@@ -5941,7 +5942,7 @@ function renderIndReview(){
       var h2='<table><thead><tr><th>Indicator</th><th>Project</th><th>Target</th><th>Actual</th><th>%</th><th></th></tr></thead><tbody>';
       offTrack.forEach(function(i){
         var pct=Math.round(i.actual/i.target*100);
-        h2+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td><span class="bdg bR">'+pct+'%</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button></td></tr>';
+        h2+='<tr><td>'+esc(indLabel(i))+'</td><td>'+esc(i.proj)+'</td><td>'+fmt(i.target)+'</td><td>'+fmt(i.actual)+'</td><td><span class="bdg bR">'+pct+'%</span></td><td><button class="b bo bs" onclick="openIndicatorUpdateModal(\''+i.id+'\')">Update Progress</button></td></tr>';
       });
       h2+='</tbody></table>';
       otBox.innerHTML=h2;
@@ -5954,9 +5955,9 @@ function renderIndEvidence(){
   if(movBox){
     if(!DB.indicators.length){movBox.innerHTML='<div class="empty">No indicators yet</div>';}
     else{
-      var h='<table><thead><tr><th>Indicator</th><th>Project</th><th>Means of Verification</th><th>Frequency</th></tr></thead><tbody>';
+      var h='<table><thead><tr><th>Code</th><th>Indicator</th><th>Project</th><th>Means of Verification</th><th>Frequency</th></tr></thead><tbody>';
       DB.indicators.forEach(function(i){
-        h+='<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.mov||'-')+'</td><td>'+esc(i.freq||'-')+'</td></tr>';
+        h+='<tr><td>'+(i.code?esc(i.code):'-')+'</td><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+esc(i.mov||'-')+'</td><td>'+esc(i.freq||'-')+'</td></tr>';
       });
       h+='</tbody></table>';
       movBox.innerHTML=h;
@@ -8763,14 +8764,14 @@ function mdeFlattenRows(){
   DB.dataSub.forEach(function(r){
     (r.results||[]).forEach(function(res){
       var ind=DB.indicators.find(function(x){return x.id===res.indicatorId;});
-      rows.push({submissionId:r.id,proj:r.proj,period:r.period,indicatorName:ind?ind.name:res.indicatorId,
+      rows.push({submissionId:r.id,proj:r.proj,period:r.period,indicatorName:ind?indLabel(ind):res.indicatorId,
         dist:r.dist,actual:res.actual,target:res.target,source:r.source,statusRaw:r.status,date:r.date});
       if(r.period===curMonth)covered[res.indicatorId]=true;
     });
   });
   DB.indicators.forEach(function(i){
     if(!covered[i.id]){
-      rows.push({submissionId:null,proj:i.proj,period:curMonth,indicatorName:i.name,dist:'-',actual:null,target:i.target,source:'-',statusRaw:'Missing',date:null});
+      rows.push({submissionId:null,proj:i.proj,period:curMonth,indicatorName:indLabel(i),dist:'-',actual:null,target:i.target,source:'-',statusRaw:'Missing',date:null});
     }
   });
   return rows;
@@ -9000,10 +9001,23 @@ function saveInd(){
   // update, silently losing the starting point — kept as its own field now so a report can still
   // show "started at X, now at Y, target Z" after progress has moved on.
   var baseline=parseInt($('i-base').value)||0;
-  DB.indicators.push({id:nid('I'),name:n.value.trim(),proj:$('i-proj').value,level:$('i-level').value,
+  DB.indicators.push({id:nid('I'),code:($('i-code').value||'').trim(),name:n.value.trim(),proj:$('i-proj').value,level:$('i-level').value,
     target:parseInt($('i-target').value)||0,baseline:baseline,actual:baseline,
     unit:$('i-unit').value||'#',mov:$('i-mov').value,freq:$('i-freq').value,updates:[]});
-  closeM('m-ind');n.value='';renderIndicatorTracker();queueCloudSave();
+  closeM('m-ind');n.value='';$('i-code').value='';renderIndicatorTracker();queueCloudSave();
+}
+function indLabel(i){ return (i.code?i.code+' — ':'')+i.name; }
+function indLabelShort(i,n){
+  n=n||36;
+  var label=indLabel(i);
+  return label.length>n?label.slice(0,n)+'…':label;
+}
+function editIndicatorCode(id){
+  var i=DB.indicators.find(function(x){return x.id===id;});if(!i)return;
+  var v=window.prompt('Indicator code (DIP/logframe reference, e.g. "Outcome 1.2"):',i.code||'');
+  if(v===null)return;
+  i.code=v.trim();
+  renderIndicatorTracker();queueCloudSave();
 }
 
 // ============ INDICATOR PROGRESS UPDATES (with sex disaggregation) ============
@@ -9011,7 +9025,7 @@ var _indUpdateId=null;
 function openIndicatorUpdateModal(id){
   var i=DB.indicators.find(function(x){return x.id===id;});if(!i)return;
   _indUpdateId=id;
-  $('iu-ctx').innerHTML='<b>'+esc(i.name)+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
+  $('iu-ctx').innerHTML='<b>'+esc(indLabel(i))+'</b><div style="font-size:11px;color:var(--g500);margin-top:3px">'+esc(i.proj)+' · Baseline: '+fmt(i.baseline||0)+' · Current: '+fmt(i.actual)+' · Target: '+fmt(i.target)+' '+esc(i.unit)+'</div>';
   $('iu-actual').value=i.actual;$('iu-date').value=today();$('iu-female').value='';$('iu-male').value='';$('iu-note').value='';
   openM('m-ind-update');
 }
@@ -9087,7 +9101,7 @@ function renderMonthlyVerification(){
     if(canAct && sub && v.status!=='Verified'){
       actions='<button class="b bn bs" onclick="verifyIndicatorMonth(\''+i.id+'\',\''+month+'\')">Verify &amp; Lock</button> <button class="b bo bs" onclick="returnIndicatorMonth(\''+i.id+'\',\''+month+'\')">Return</button>';
     }
-    return '<tr><td>'+esc(i.name)+'</td><td>'+esc(i.proj)+'</td><td>'+(sub?fmt(sub.actual)+' '+esc(i.unit||''):'—')+'</td>'+
+    return '<tr><td>'+esc(indLabel(i))+'</td><td>'+esc(i.proj)+'</td><td>'+(sub?fmt(sub.actual)+' '+esc(i.unit||''):'—')+'</td>'+
       '<td>'+decision+'</td><td style="font-size:11px">'+corrections+'</td><td>'+actions+'</td></tr>';
   }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g400)">No indicators yet.</td></tr>';
 }
@@ -10567,7 +10581,7 @@ function sgoaResultFields(){
   panel.innerHTML='<h3>Indicator results · exact project definitions</h3>'+
     '<p>Zero and decimal values are supported. Monthly results reach the director chart after independent verification and approval.</p>'+
     indicators.map(function(i){
-      return '<div class="fr" data-result-id="'+esc(i.id)+'"><div class="fg"><label>'+esc(i.name)+' · target '+esc(i.target)+' '+esc(i.unit||'')+'</label>'+
+      return '<div class="fr" data-result-id="'+esc(i.id)+'"><div class="fg"><label>'+esc(indLabel(i))+' · target '+esc(i.target)+' '+esc(i.unit||'')+'</label>'+
         '<input type="number" min="0" step="any" data-result-value placeholder="Actual value"></div>'+
         '<div class="fg"><label>Female, where applicable</label><input type="number" min="0" step="any" data-result-female></div>'+
         '<div class="fg"><label>Male, where applicable</label><input type="number" min="0" step="any" data-result-male></div></div>';
@@ -11823,7 +11837,7 @@ function loadResultsReviewMonth(){
     var sub=indicatorMonthSubmission(i,month);
     if(!sub){missing.push(i.name);return;}
     var v=getVerification(i,month);
-    verified.push(esc(i.name)+': '+(v.status==='Verified'?v.value:sub.actual)+' / '+i.target+(v.status==='Verified'?' (Verified)':' (Pending Verification)'));
+    verified.push(esc(indLabel(i))+': '+(v.status==='Verified'?v.value:sub.actual)+' / '+i.target+(v.status==='Verified'?' (Verified)':' (Pending Verification)'));
   });
   perfBox.innerHTML=verified.length?verified.join('<br>'):'No indicator submissions found for this month.';
   missBox.innerHTML=missing.length?missing.map(esc).join(', '):'None — every indicator has a submission for this month.';
