@@ -1930,18 +1930,78 @@ tbody tr:hover td{background:var(--g50);}
 </div>
 
 <div class="pg" id="p-prog-benef">
-  <div class="ph"><div><h1>Beneficiary Selection &amp; Register</h1><p>Selection criteria, verification, and beneficiary lists</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('programs')">Back</button><button class="b bo bs" onclick="openM('m-doc')">Upload List</button><button class="b bn bs" onclick="openM('m-benef')">+ Add Beneficiary</button></div></div>
-  <div class="stats"><div class="st nv"><div class="stl">Total Registered</div><div class="stv" id="bn-tot">0</div></div>
-  <div class="st gr"><div class="stl">Verified</div><div class="stv" id="bn-ver">0</div></div>
-  <div class="st og"><div class="stl">Pending</div><div class="stv" id="bn-pen">0</div></div>
-  <div class="st pp"><div class="stl">Female %</div><div class="stv" id="bn-fem">0%</div></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Selection Criteria &amp; Documents</div><button class="b bn bs" onclick="openM('m-doc')">Upload Document</button></div>
-  <div class="cdb"><div id="docs-benef"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload beneficiary lists, selection criteria, verification forms</b></p></div></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Beneficiary Register</div>
-    <select id="bf-proj" onchange="renderBenef()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
-      <option value="all">All Projects</option><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
-  <div class="cdb tw"><table><thead><tr><th>ID</th><th>Name</th><th>Sex</th><th>Age</th><th>Project</th><th>District</th><th>Selection Criteria</th><th>Status</th><th>Data Privacy</th></tr></thead><tbody id="benef-body"></tbody></table></div></div>
+  <div class="ph"><div><h1>Beneficiary Selection &amp; Register</h1><p>Selection criteria, consent, verification and data-privacy tracking for every registered beneficiary</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('programs')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-benef')">+ Add Beneficiary</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Registered</div><div class="stv" id="bn-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="bn-tot-sub">—</div></div>
+    <div class="st gr"><div class="stl">Verified</div><div class="stv" id="bn-ver">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="bn-ver-sub">—</div></div>
+    <div class="st og"><div class="stl">Pending Verification</div><div class="stv" id="bn-pen">0</div></div>
+    <div class="st rd"><div class="stl">Rejected</div><div class="stv" id="bn-rej">0</div></div>
+    <div class="st pp"><div class="stl">Female %</div><div class="stv" id="bn-fem">0%</div></div>
+    <div class="st nv"><div class="stl">Living with Disability</div><div class="stv" id="bn-dis">0</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="bn-tab-overview" onclick="setBnTab('overview')">Overview</button>
+    <button class="b bo bs" id="bn-tab-register" onclick="setBnTab('register')">Record Register</button>
+    <button class="b bo bs" id="bn-tab-entry" onclick="setBnTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="bn-tab-review" onclick="setBnTab('review')">Review / Action</button>
+    <button class="b bo bs" id="bn-tab-evidence" onclick="setBnTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="bn-panel-overview" style="display:none">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Verification Status</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="bn-ch-status" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="bn-ch-status-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Gender &amp; CWD Disaggregation</div></div><div class="cdb" id="bn-gender"></div></div>
+    </div>
+    <div class="cd"><div class="cdh"><div class="cdt">Beneficiaries by Selection Criteria</div></div>
+      <div class="cdb" style="padding:14px"><canvas id="bn-ch-crit" width="900" height="200" style="width:100%;height:200px"></canvas></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Beneficiaries by District</div></div>
+      <div class="cdb" style="padding:14px"><canvas id="bn-ch-dist" width="900" height="200" style="width:100%;height:200px"></canvas></div></div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="bn-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Beneficiary Register</div><button class="b bo bs" onclick="exportBnRegisterCSV()">Download CSV</button></div>
+      <div class="cdb" style="padding-bottom:0">
+        <div class="fr" style="margin-bottom:10px">
+          <div class="fg ff"><label>Search</label><input type="text" id="bn-reg-search" oninput="renderBnRegister()" placeholder="Name, district or ID"></div>
+          <div class="fg"><label>Project</label><select id="bn-reg-proj" onchange="renderBnRegister()"><option value="all">All Projects</option></select></div>
+          <div class="fg"><label>Status</label><select id="bn-reg-status" onchange="renderBnRegister()"><option value="all">All Statuses</option><option>Verified</option><option>Pending Verification</option><option>Rejected</option></select></div>
+        </div>
+      </div>
+      <div class="cdb tw" id="bn-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="bn-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Register a New Beneficiary</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Informed consent from the beneficiary (or their guardian, for a minor) is required before a record can be saved — this is personal data about a vulnerable individual.</p>
+        <button class="b bn" onclick="openM('m-benef')">+ Add Beneficiary</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Selection Criteria &amp; Supporting Documents</div><button class="b bn bs" onclick="openM('m-doc')">Upload Document</button></div>
+      <div class="cdb"><div id="docs-benef"></div><div class="up" onclick="openM('m-doc')"><div style="font-size:26px">&#128193;</div><p><b>Upload beneficiary lists, selection criteria, verification forms</b></p></div></div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="bn-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Pending Verification</div></div>
+      <div class="cdb tw" id="bn-review-pending"></div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">Rejected Records</div><span style="font-size:10.5px;color:var(--g400)">Can be reconsidered if new information comes in</span></div>
+      <div class="cdb tw" id="bn-review-rejected"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="bn-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Full Beneficiary History</div><span style="font-size:10.5px;color:var(--g400)">Includes anonymized and status-change records</span></div>
+      <div class="cdb tw" id="bn-evidence-body"></div></div>
+  </div>
 </div>
 
 <div class="pg" id="p-prog-analysis">
@@ -7652,29 +7712,145 @@ function renderPatEvidence(){
   c.innerHTML=h;
 }
 
+function benefNameCell(b){
+  return b.anonymized?
+    '<b style="color:var(--g400);font-style:italic">Anonymized</b><div style="font-size:10px;color:var(--g400)">record #'+b.id+'</div>'
+    :'<b>'+esc(b.name)+'</b><div style="font-size:10px;color:var(--g400)">s/o '+esc(b.father)+'</div>';
+}
+function benefPrivacyCell(b){
+  return b.anonymized?
+    '<span class="bdg bN">Anonymized '+dt(b.anonymizedOn)+'</span>'
+    :(b.consent?'<span class="bdg bG">Consent on file</span> <button class="b bo bs" style="margin-left:4px" onclick="anonymizeBeneficiary(\''+b.id+'\')">Anonymize</button>'
+      :'<span class="bdg bR">No consent recorded</span>');
+}
+function setBeneficiaryStatus(id,status){
+  var b=DB.benef.find(function(x){return x.id===id;});if(!b)return;
+  b.status=status;b.statusBy=SES.name;b.statusOn=today();
+  renderBenef();queueCloudSave();
+}
+var bnTab='overview';
+function setBnTab(tab){
+  bnTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('bn-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('bn-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  renderBnTrackerBody();
+}
+function renderBnTrackerBody(){
+  if(bnTab==='overview')renderBnOverview();
+  else if(bnTab==='register')renderBnRegister();
+  else if(bnTab==='review')renderBnReview();
+  else if(bnTab==='evidence')renderBnEvidence();
+}
 function renderBenef(){
-  var c=$('benef-body');if(!c)return;c.innerHTML='';
-  var pf=$('bf-proj')?$('bf-proj').value:'all';
-  var bs=pf==='all'?DB.benef:DB.benef.filter(function(b){return b.proj===pf;});
   if($('bn-tot'))$('bn-tot').textContent=DB.benef.length;
   if($('bn-ver'))$('bn-ver').textContent=DB.benef.filter(function(b){return b.status==='Verified';}).length;
   if($('bn-pen'))$('bn-pen').textContent=DB.benef.filter(function(b){return b.status==='Pending Verification';}).length;
+  if($('bn-rej'))$('bn-rej').textContent=DB.benef.filter(function(b){return b.status==='Rejected';}).length;
   var f=DB.benef.filter(function(b){return b.sex==='Female';}).length;
   if($('bn-fem'))$('bn-fem').textContent=DB.benef.length?Math.round(f/DB.benef.length*100)+'%':'0%';
-  if(!bs.length){c.innerHTML='<tr><td colspan="9" class="empty">No beneficiaries registered</td></tr>';return;}
+  if($('bn-dis'))$('bn-dis').textContent=DB.benef.filter(function(b){return b.disability;}).length;
+  var projs=Object.keys(DB.benef.reduce(function(a,b){if(b.proj)a[b.proj]=1;return a;},{})).length;
+  if($('bn-tot-sub'))$('bn-tot-sub').textContent=projs+' project'+(projs===1?'':'s');
+  if($('bn-ver-sub'))$('bn-ver-sub').textContent=(DB.benef.length?Math.round(DB.benef.filter(function(b){return b.status==='Verified';}).length/DB.benef.length*100):0)+'% of total';
+  setBnTab(bnTab);
+}
+function renderBnOverview(){
+  var statuses=['Verified','Pending Verification','Rejected'];
+  var counts=statuses.map(function(s){return DB.benef.filter(function(b){return b.status===s;}).length;});
+  donut('bn-ch-status',[{v:counts[0],c:'#16a34a'},{v:counts[1],c:'#C8922A'},{v:counts[2],c:'#dc2626'}],18);
+  var leg=$('bn-ch-status-leg');
+  if(leg)leg.innerHTML=[{l:'Verified',v:counts[0],c:'#16a34a'},{l:'Pending Verification',v:counts[1],c:'#C8922A'},{l:'Rejected',v:counts[2],c:'#dc2626'}].map(function(r){
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+r.v+'</b></div>';
+  }).join('');
+
+  renderGenderCWD('bn-gender','all');
+
+  var crits=Object.keys(DB.benef.reduce(function(a,b){if(b.crit)a[b.crit]=1;return a;},{}));
+  if(crits.length){
+    var critCounts=crits.map(function(c){return DB.benef.filter(function(b){return b.crit===c;}).length;});
+    bars('bn-ch-crit',crits,[{d:critCounts,c:'#1A3A6B'}],function(v){return Math.round(v);});
+  }
+
+  var dists=Object.keys(DB.benef.reduce(function(a,b){if(b.dist)a[b.dist]=1;return a;},{}));
+  if(dists.length){
+    var distCounts=dists.map(function(d){return DB.benef.filter(function(b){return b.dist===d;}).length;});
+    bars('bn-ch-dist',dists,[{d:distCounts,c:'#C8922A'}],function(v){return Math.round(v);});
+  }
+}
+function bnRegisterFilteredRows(){
+  var pf=$('bn-reg-proj')?$('bn-reg-proj').value:'all';
+  var search=($('bn-reg-search')?$('bn-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('bn-reg-status')?$('bn-reg-status').value:'all';
+  return DB.benef.filter(function(b){
+    if(pf!=='all'&&b.proj!==pf)return false;
+    if(statusF!=='all'&&b.status!==statusF)return false;
+    if(search&&((b.anonymized?'':b.name)+' '+b.id+' '+(b.dist||'')).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportBnRegisterCSV(){
+  var rows=[['ID','Name','Sex','Age','Project','District','Selection Criteria','Disability','Status','Consent','Privacy']];
+  bnRegisterFilteredRows().forEach(function(b){
+    rows.push([b.id,b.anonymized?'Anonymized':b.name,b.sex,b.age,b.proj,b.dist,b.crit,b.disability?'Yes':'No',b.status,b.consent?'Yes':'No',b.anonymized?'Anonymized '+b.anonymizedOn:'Active']);
+  });
+  downloadCSV(rows,'beneficiaries-'+today()+'.csv');
+}
+function renderBnRegister(){
+  var c=$('bn-reg-body');if(!c)return;
+  var bs=bnRegisterFilteredRows();
+  if(!bs.length){c.innerHTML='<div class="empty">No beneficiaries match</div>';return;}
+  var h='<table><thead><tr><th>ID</th><th>Name</th><th>Sex</th><th>Age</th><th>Project</th><th>District</th><th>Selection Criteria</th><th>Status</th><th>Data Privacy</th></tr></thead><tbody>';
   bs.forEach(function(b){
     var sb=b.status==='Verified'?'bG':b.status==='Rejected'?'bR':'bO';
-    var r=el('tr');
-    var nameCell=b.anonymized?
-      '<b style="color:var(--g400);font-style:italic">Anonymized</b><div style="font-size:10px;color:var(--g400)">record #'+b.id+'</div>'
-      :'<b>'+esc(b.name)+'</b><div style="font-size:10px;color:var(--g400)">s/o '+esc(b.father)+'</div>';
-    var privacyCell=b.anonymized?
-      '<span class="bdg bN">Anonymized '+dt(b.anonymizedOn)+'</span>'
-      :(b.consent?'<span class="bdg bG">Consent on file</span> <button class="b bo bs" style="margin-left:4px" onclick="anonymizeBeneficiary(\''+b.id+'\')">Anonymize</button>'
-        :'<span class="bdg bR">No consent recorded</span>');
-    r.innerHTML='<td>'+b.id+'</td><td>'+nameCell+'</td><td>'+esc(b.sex)+'</td><td>'+b.age+'</td><td>'+esc(b.proj)+'</td><td>'+esc(b.dist)+'</td><td style="font-size:11.5px">'+esc(b.crit)+'</td><td><span class="bdg '+sb+'">'+esc(b.status)+'</span></td><td>'+privacyCell+'</td>';
-    c.appendChild(r);
+    h+='<tr><td>'+b.id+'</td><td>'+benefNameCell(b)+'</td><td>'+esc(b.sex)+'</td><td>'+b.age+'</td><td>'+esc(b.proj)+'</td><td>'+esc(b.dist)+'</td><td style="font-size:11.5px">'+esc(b.crit)+'</td><td><span class="bdg '+sb+'">'+esc(b.status)+'</span></td><td>'+benefPrivacyCell(b)+'</td></tr>';
   });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderBnReview(){
+  var pc=$('bn-review-pending');
+  if(pc){
+    var pending=DB.benef.filter(function(b){return b.status==='Pending Verification';});
+    if(!pending.length){pc.innerHTML='<div class="empty">No beneficiaries awaiting verification</div>';}
+    else{
+      var h='<table><thead><tr><th>ID</th><th>Name</th><th>Project</th><th>Selection Criteria</th><th>Registered</th><th>Action</th></tr></thead><tbody>';
+      pending.forEach(function(b){
+        h+='<tr><td>'+b.id+'</td><td>'+benefNameCell(b)+'</td><td>'+esc(b.proj)+'</td><td style="font-size:11.5px">'+esc(b.crit)+'</td><td>'+dt(b.date)+'</td>'+
+          '<td><button class="b bn bs" onclick="setBeneficiaryStatus(\''+b.id+'\',\'Verified\')">Verify</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="setBeneficiaryStatus(\''+b.id+'\',\'Rejected\')">Reject</button></td></tr>';
+      });
+      h+='</tbody></table>';
+      pc.innerHTML=h;
+    }
+  }
+  var rc=$('bn-review-rejected');
+  if(rc){
+    var rejected=DB.benef.filter(function(b){return b.status==='Rejected';});
+    if(!rejected.length){rc.innerHTML='<div class="empty">No rejected records</div>';}
+    else{
+      var h2='<table><thead><tr><th>ID</th><th>Name</th><th>Project</th><th>Selection Criteria</th><th>Action</th></tr></thead><tbody>';
+      rejected.forEach(function(b){
+        h2+='<tr><td>'+b.id+'</td><td>'+benefNameCell(b)+'</td><td>'+esc(b.proj)+'</td><td style="font-size:11.5px">'+esc(b.crit)+'</td>'+
+          '<td><button class="b bo bs" onclick="setBeneficiaryStatus(\''+b.id+'\',\'Pending Verification\')">Reconsider</button></td></tr>';
+      });
+      h2+='</tbody></table>';
+      rc.innerHTML=h2;
+    }
+  }
+}
+function renderBnEvidence(){
+  var c=$('bn-evidence-body');if(!c)return;
+  if(!DB.benef.length){c.innerHTML='<div class="empty">No beneficiaries registered yet</div>';return;}
+  var rows=DB.benef.slice().sort(function(a,b){return new Date(b.date||0)-new Date(a.date||0);});
+  var h='<table><thead><tr><th>ID</th><th>Name</th><th>Project</th><th>Status</th><th>Registered</th><th>Registered By</th><th>Status Updated</th><th>Privacy</th></tr></thead><tbody>';
+  rows.forEach(function(b){
+    var sb=b.status==='Verified'?'bG':b.status==='Rejected'?'bR':'bO';
+    h+='<tr><td>'+b.id+'</td><td>'+benefNameCell(b)+'</td><td>'+esc(b.proj)+'</td><td><span class="bdg '+sb+'">'+esc(b.status)+'</span></td>'+
+      '<td>'+dt(b.date)+'</td><td>'+esc(b.registeredBy||'-')+'</td><td>'+(b.statusOn?dt(b.statusOn)+' by '+esc(b.statusBy||'-'):'-')+'</td><td>'+benefPrivacyCell(b)+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
 }
 function anonymizeBeneficiary(id){
   var b=DB.benef.find(function(x){return x.id===id;});
@@ -9125,7 +9301,7 @@ var PROJECT_SELECT_IDS=[
   {id:'pat-reg-proj',all:true,core:false},
   {id:'pt-reg-proj',all:true,core:false},
   {id:'bn-proj',all:false,core:false},
-  {id:'bf-proj',all:true,core:false},
+  {id:'bn-reg-proj',all:true,core:false},
   {id:'i-proj',all:false,core:false},
   {id:'c-proj',all:false,core:false},
   {id:'fn-proj',all:false,core:false},
