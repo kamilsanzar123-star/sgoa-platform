@@ -1848,12 +1848,85 @@ tbody tr:hover td{background:var(--g50);}
 
 <!-- PROGRAMS SUB-PAGES -->
 <div class="pg" id="p-prog-activities">
-  <div class="ph"><div><h1>Program Activities</h1><p>All implementation activities across projects</p></div>
-  <div class="pha"><button class="b bo bs" onclick="go('programs')">Back</button><button class="b bn bs" onclick="openM('m-activity')">+ Add Activity</button></div></div>
-  <div class="cd"><div class="cdh"><div class="cdt">Activity Register</div>
-    <select id="acf-proj" onchange="renderActivities()" style="font-size:11px;padding:4px 7px;border:1px solid var(--g200);border-radius:6px;font-family:inherit">
-      <option value="all">All Projects</option><option>GPE-STG</option><option>GPE-AL</option><option>Sponsorship</option><option>GLTTA</option></select></div>
-  <div class="cdb tw"><table><thead><tr><th>Activity</th><th>Project</th><th>Type</th><th>Location</th><th>Target</th><th>Actual</th><th>Progress</th><th>Status</th></tr></thead><tbody id="activities-body"></tbody></table></div></div>
+  <div class="ph"><div><h1>Program Activities</h1><p>All implementation activities across projects — planning, delivery and completion tracked against target</p></div>
+  <div class="pha"><button class="b bo bs" onclick="go('programs')">Back to Dashboard</button><button class="b bn bs" onclick="openM('m-activity')">+ Add Activity</button></div></div>
+
+  <div class="stats">
+    <div class="st nv"><div class="stl">Total Activities</div><div class="stv" id="pat-tot">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="pat-tot-sub">—</div></div>
+    <div class="st gr"><div class="stl">Completed</div><div class="stv" id="pat-complete">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="pat-complete-sub">—</div></div>
+    <div class="st og"><div class="stl">In Progress</div><div class="stv" id="pat-inprogress">0</div></div>
+    <div class="st rd"><div class="stl">Not Started</div><div class="stv" id="pat-notstarted">0</div></div>
+    <div class="st rd"><div class="stl">Overdue</div><div class="stv" id="pat-overdue">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">Past end date, not complete</div></div>
+    <div class="st nv"><div class="stl">Overall Achievement</div><div class="stv" id="pat-achievement">0%</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px">actual vs target, all activities</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="b bn bs" id="pat-tab-overview" onclick="setPatTab('overview')">Overview</button>
+    <button class="b bo bs" id="pat-tab-register" onclick="setPatTab('register')">Record Register</button>
+    <button class="b bo bs" id="pat-tab-entry" onclick="setPatTab('entry')">Entry Form</button>
+    <button class="b bo bs" id="pat-tab-review" onclick="setPatTab('review')">Review / Action</button>
+    <button class="b bo bs" id="pat-tab-evidence" onclick="setPatTab('evidence')">Evidence &amp; History</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="mitp" id="pat-panel-overview" style="display:none">
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Activity Status Breakdown</div></div>
+        <div class="cdb" style="display:flex;align-items:center;gap:16px">
+          <canvas id="pat-ch-status" width="150" height="150" style="width:150px;height:150px;flex-shrink:0"></canvas>
+          <div style="flex:1;font-size:12px" id="pat-ch-status-leg"></div>
+        </div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Activities by Type</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="pat-ch-bytype" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+    </div>
+    <div class="cd"><div class="cdh"><div class="cdt">Target vs Actual by Project</div></div>
+      <div class="cdb" style="padding:14px"><canvas id="pat-ch-byproj" width="900" height="220" style="width:100%;height:220px"></canvas></div></div>
+    <div class="g2">
+      <div class="cd"><div class="cdh"><div class="cdt">Completions — Last 6 Months</div></div>
+        <div class="cdb" style="padding:14px"><canvas id="pat-ch-trend" width="500" height="200" style="width:100%;height:200px"></canvas></div></div>
+      <div class="cd"><div class="cdh"><div class="cdt">Achievement by Project</div></div>
+        <div class="cdb" id="pat-achievement-list"></div></div>
+    </div>
+  </div>
+
+  <!-- RECORD REGISTER -->
+  <div class="mitp" id="pat-panel-register" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Activity Register</div><button class="b bo bs" onclick="exportPatRegisterCSV()">Download CSV</button></div>
+      <div class="cdb" style="padding-bottom:0">
+        <div class="fr" style="margin-bottom:10px">
+          <div class="fg ff"><label>Search</label><input type="text" id="pat-reg-search" oninput="renderPatRegister()" placeholder="Activity name, location or type"></div>
+          <div class="fg"><label>Project</label><select id="pat-reg-proj" onchange="renderPatRegister()"><option value="all">All Projects</option></select></div>
+          <div class="fg"><label>Status</label><select id="pat-reg-status" onchange="renderPatRegister()"><option value="all">All Statuses</option><option>Not Started</option><option>In Progress</option><option>Complete</option></select></div>
+        </div>
+      </div>
+      <div class="cdb tw" id="pat-reg-body"></div></div>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <div class="mitp" id="pat-panel-entry" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Register a New Activity</div></div>
+      <div class="cdb"><p style="font-size:12.5px;color:var(--g500);margin-bottom:10px">Status is set automatically from target vs. actual: Not Started (no progress), In Progress (some progress), Complete (actual meets or exceeds target).</p>
+        <button class="b bn" onclick="openM('m-activity')">+ Add Activity</button>
+      </div></div>
+    <div class="cd"><div class="cdh"><div class="cdt">How an Activity Is Tracked</div></div>
+      <div class="cdb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 1</div><div style="font-size:12.5px;margin-top:3px">Not Started</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 2</div><div style="font-size:12.5px;margin-top:3px">In Progress</div></div>
+        <div style="background:var(--g50);border-radius:8px;padding:10px"><div style="font-size:10px;color:var(--g500);font-weight:700">STEP 3</div><div style="font-size:12.5px;margin-top:3px">Complete</div></div>
+      </div></div>
+  </div>
+
+  <!-- REVIEW / ACTION -->
+  <div class="mitp" id="pat-panel-review" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Overdue &amp; At-Risk Activities</div><span style="font-size:10.5px;color:var(--g400)">Past end date and not complete, or ending within 14 days</span></div>
+      <div class="cdb tw" id="pat-review-body"></div></div>
+  </div>
+
+  <!-- EVIDENCE & HISTORY -->
+  <div class="mitp" id="pat-panel-evidence" style="display:none">
+    <div class="cd"><div class="cdh"><div class="cdt">Full Activity History</div></div>
+      <div class="cdb tw" id="pat-evidence-body"></div></div>
+  </div>
 </div>
 
 <div class="pg" id="p-prog-benef">
@@ -7347,21 +7420,159 @@ function renderProgProgress(){
   });
 }
 
+function activityOverdue(a){ return a.status!=='Complete' && !!a.end && overdue(a.end); }
+function activityAtRisk(a){
+  if(a.status==='Complete'||!a.end)return false;
+  if(activityOverdue(a))return true;
+  var days=(new Date(a.end)-new Date(today()))/86400000;
+  return days>=0&&days<=14;
+}
+function activityCanEdit(a){ return a.createdBy===SES.name||!a.createdBy; }
+var patTab='overview';
+function setPatTab(tab){
+  patTab=tab;
+  ['overview','register','entry','review','evidence'].forEach(function(t){
+    var b=$('pat-tab-'+t);if(b)b.className=t===tab?'b bn bs':'b bo bs';
+    var p=$('pat-panel-'+t);if(p)p.style.display=t===tab?'':'none';
+  });
+  renderPatTrackerBody();
+}
+function renderPatTrackerBody(){
+  if(patTab==='overview')renderPatOverview();
+  else if(patTab==='register')renderPatRegister();
+  else if(patTab==='review')renderPatReview();
+  else if(patTab==='evidence')renderPatEvidence();
+}
 function renderActivities(){
-  var c=$('activities-body');if(!c)return;c.innerHTML='';
-  var pf=$('acf-proj')?$('acf-proj').value:'all';
-  var acts=pf==='all'?DB.activities:DB.activities.filter(function(a){return a.proj===pf;});
-  if(!acts.length){c.innerHTML='<tr><td colspan="8" class="empty">No activities</td></tr>';return;}
+  var acts=DB.activities;
+  var complete=acts.filter(function(a){return a.status==='Complete';});
+  var inprog=acts.filter(function(a){return a.status==='In Progress';});
+  var notstarted=acts.filter(function(a){return a.status==='Not Started';});
+  var overdueActs=acts.filter(activityOverdue);
+  if($('pat-tot'))$('pat-tot').textContent=acts.length;
+  if($('pat-complete'))$('pat-complete').textContent=complete.length;
+  if($('pat-inprogress'))$('pat-inprogress').textContent=inprog.length;
+  if($('pat-notstarted'))$('pat-notstarted').textContent=notstarted.length;
+  if($('pat-overdue'))$('pat-overdue').textContent=overdueActs.length;
+  var sumTarget=acts.reduce(function(s,a){return s+(a.target||0);},0);
+  var sumActual=acts.reduce(function(s,a){return s+(a.actual||0);},0);
+  if($('pat-achievement'))$('pat-achievement').textContent=(sumTarget?Math.round(sumActual/sumTarget*100):0)+'%';
+  var projs=Object.keys(acts.reduce(function(a,x){if(x.proj)a[x.proj]=1;return a;},{})).length;
+  if($('pat-tot-sub'))$('pat-tot-sub').textContent=projs+' project'+(projs===1?'':'s');
+  if($('pat-complete-sub'))$('pat-complete-sub').textContent=(acts.length?Math.round(complete.length/acts.length*100):0)+'% of total';
+  setPatTab(patTab);
+}
+function renderPatOverview(){
+  var acts=DB.activities;
+  var statusCounts=['Not Started','In Progress','Complete'].map(function(s){return acts.filter(function(a){return a.status===s;}).length;});
+  donut('pat-ch-status',[{v:statusCounts[0],c:'#cbd5e1'},{v:statusCounts[1],c:'#2563eb'},{v:statusCounts[2],c:'#16a34a'}],18);
+  var leg=$('pat-ch-status-leg');
+  if(leg)leg.innerHTML=[{l:'Not Started',v:statusCounts[0],c:'#cbd5e1'},{l:'In Progress',v:statusCounts[1],c:'#2563eb'},{l:'Complete',v:statusCounts[2],c:'#16a34a'}].map(function(r){
+    return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="width:9px;height:9px;border-radius:2px;background:'+r.c+';display:inline-block"></span>'+r.l+' <b style="margin-left:auto">'+r.v+'</b></div>';
+  }).join('');
+
+  var types=Object.keys(acts.reduce(function(a,x){if(x.type)a[x.type]=1;return a;},{}));
+  if(types.length){
+    var typeCounts=types.map(function(t){return acts.filter(function(a){return a.type===t;}).length;});
+    bars('pat-ch-bytype',types,[{d:typeCounts,c:'#1A3A6B'}],function(v){return Math.round(v);});
+  }
+
+  var projKeys=Object.keys(PROJ);
+  if(projKeys.length){
+    var projTargets=projKeys.map(function(k){return acts.filter(function(a){return a.proj===k;}).reduce(function(s,a){return s+(a.target||0);},0);});
+    var projActuals=projKeys.map(function(k){return acts.filter(function(a){return a.proj===k;}).reduce(function(s,a){return s+(a.actual||0);},0);});
+    bars('pat-ch-byproj',projKeys,[{d:projTargets,c:'#C8922A'},{d:projActuals,c:'#1A3A6B'}],function(v){return Math.round(v);});
+  }
+
+  var months=mealLast6Months();
+  var trendData=months.map(function(m){return acts.filter(function(a){return a.status==='Complete'&&(a.end||'').slice(0,7)===m.key;}).length;});
+  bars('pat-ch-trend',months.map(function(m){return m.label;}),[{d:trendData,c:'#16a34a'}],function(v){return Math.round(v);});
+
+  var box=$('pat-achievement-list');
+  if(box){
+    var rows=projKeys.map(function(k){
+      var pacts=acts.filter(function(a){return a.proj===k;});
+      var t=pacts.reduce(function(s,a){return s+(a.target||0);},0);
+      var ac=pacts.reduce(function(s,a){return s+(a.actual||0);},0);
+      return {k:k,pct:t?Math.round(ac/t*100):null,count:pacts.length};
+    }).filter(function(r){return r.count;});
+    if(!rows.length){box.innerHTML='<div class="empty">No activities with a target yet</div>';}
+    else{
+      box.innerHTML='';
+      rows.forEach(function(r){
+        var pct=r.pct||0;
+        var col=pct>=90?'var(--green)':pct>=50?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
+        var row=el('div','mbr');
+        row.innerHTML='<div class="mbl" style="font-size:11.5px">'+esc(r.k)+'</div><div class="mbt"><div class="pw"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div></div><div class="mbv" style="color:'+col+'">'+pct+'%</div>';
+        box.appendChild(row);
+      });
+    }
+  }
+}
+function patRegisterFilteredRows(){
+  var pf=$('pat-reg-proj')?$('pat-reg-proj').value:'all';
+  var search=($('pat-reg-search')?$('pat-reg-search').value:'').trim().toLowerCase();
+  var statusF=$('pat-reg-status')?$('pat-reg-status').value:'all';
+  return DB.activities.filter(function(a){
+    if(pf!=='all'&&a.proj!==pf)return false;
+    if(statusF!=='all'&&a.status!==statusF)return false;
+    if(search&&(a.name+' '+(a.loc||'')+' '+a.type).toLowerCase().indexOf(search)<0)return false;
+    return true;
+  });
+}
+function exportPatRegisterCSV(){
+  var rows=[['Activity','Project','Type','Location','Target','Actual','Progress %','Status','Start','End']];
+  patRegisterFilteredRows().forEach(function(a){
+    var pct=a.target?Math.round(a.actual/a.target*100):0;
+    rows.push([a.name,a.proj,a.type,a.loc||'',a.target,a.actual,pct,a.status,a.start||'',a.end||'']);
+  });
+  downloadCSV(rows,'program-activities-'+today()+'.csv');
+}
+function renderPatRegister(){
+  var c=$('pat-reg-body');if(!c)return;
+  var acts=patRegisterFilteredRows();
+  if(!acts.length){c.innerHTML='<div class="empty">No activities match</div>';return;}
+  var h='<table><thead><tr><th>Activity</th><th>Project</th><th>Type</th><th>Location</th><th>Target</th><th>Actual</th><th>Progress</th><th>Status</th><th>Action</th></tr></thead><tbody>';
   acts.forEach(function(a){
     var pct=a.target?Math.round(a.actual/a.target*100):0;
     var col=pct>=90?'var(--green)':pct>=50?'var(--gold)':pct>0?'var(--orange)':'var(--g300)';
     var sb=a.status==='Complete'?'bG':a.status==='In Progress'?'bB':'bY';
-    var r=el('tr');
-    var canEditAct=(a.createdBy===SES.name||!a.createdBy);
-    var actActions=canEditAct?'<button class="b bo bs" onclick="openEditActivity(\''+a.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'activity\',\''+a.id+'\')">Del</button>':'-';
-    r.innerHTML='<td><b>'+esc(a.name)+'</b></td><td>'+esc(a.proj)+'</td><td><span class="bdg bN">'+esc(a.type)+'</span></td><td>'+esc(a.loc)+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td><td><div style="display:flex;align-items:center;gap:6px"><div class="pw" style="width:60px"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><b style="font-size:11px;color:'+col+'">'+pct+'%</b></div></td><td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td>'+actActions+'</td>';
-    c.appendChild(r);
+    var actActions=activityCanEdit(a)?'<button class="b bo bs" onclick="openEditActivity(\''+a.id+'\')">Edit</button> <button class="b bs" style="background:var(--red);color:#fff" onclick="deleteItem(\'activity\',\''+a.id+'\')">Del</button>':'-';
+    h+='<tr><td><b>'+esc(a.name)+'</b></td><td>'+esc(a.proj)+'</td><td><span class="bdg bN">'+esc(a.type)+'</span></td><td>'+esc(a.loc||'-')+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td>'+
+      '<td><div style="display:flex;align-items:center;gap:6px"><div class="pw" style="width:60px"><div class="pb" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></div></div><b style="font-size:11px;color:'+col+'">'+pct+'%</b></div></td>'+
+      '<td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td>'+actActions+'</td></tr>';
   });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderPatReview(){
+  var c=$('pat-review-body');if(!c)return;
+  var rows=DB.activities.filter(activityAtRisk).sort(function(a,b){return new Date(a.end)-new Date(b.end);});
+  if(!rows.length){c.innerHTML='<div class="empty">No overdue or at-risk activities</div>';return;}
+  var h='<table><thead><tr><th>Activity</th><th>Project</th><th>End Date</th><th>Progress</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+  rows.forEach(function(a){
+    var pct=a.target?Math.round(a.actual/a.target*100):0;
+    var od=activityOverdue(a);
+    var actAction=activityCanEdit(a)?'<button class="b bo bs" onclick="openEditActivity(\''+a.id+'\')">Update Progress</button>':'-';
+    h+='<tr><td><b>'+esc(a.name)+'</b></td><td>'+esc(a.proj)+'</td>'+
+      '<td'+(od?' style="color:var(--red);font-weight:600"':'')+'>'+dt(a.end)+(od?' — OVERDUE':' — due soon')+'</td>'+
+      '<td>'+pct+'%</td><td><span class="bdg '+(a.status==='In Progress'?'bB':'bY')+'">'+esc(a.status)+'</span></td>'+
+      '<td>'+actAction+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+function renderPatEvidence(){
+  var c=$('pat-evidence-body');if(!c)return;
+  var rows=DB.activities.slice().sort(function(a,b){return new Date(b.end||b.start||0)-new Date(a.end||a.start||0);});
+  if(!rows.length){c.innerHTML='<div class="empty">No activities recorded yet</div>';return;}
+  var h='<table><thead><tr><th>Activity</th><th>Project</th><th>Type</th><th>Start</th><th>End</th><th>Target</th><th>Actual</th><th>Status</th><th>Logged By</th></tr></thead><tbody>';
+  rows.forEach(function(a){
+    var sb=a.status==='Complete'?'bG':a.status==='In Progress'?'bB':'bY';
+    h+='<tr><td>'+esc(a.name)+'</td><td>'+esc(a.proj)+'</td><td>'+esc(a.type)+'</td><td>'+(a.start?dt(a.start):'-')+'</td><td>'+(a.end?dt(a.end):'-')+'</td><td>'+fmt(a.target)+'</td><td>'+fmt(a.actual)+'</td><td><span class="bdg '+sb+'">'+esc(a.status)+'</span></td><td>'+esc(a.createdBy||'-')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
 }
 
 function renderBenef(){
@@ -8700,7 +8911,7 @@ var PROJECT_SELECT_IDS=[
   {id:'fin-p',all:false,core:false},
   {id:'de-proj',all:false,core:false},
   {id:'ac-proj',all:false,core:false},
-  {id:'acf-proj',all:true,core:false},
+  {id:'pat-reg-proj',all:true,core:false},
   {id:'bn-proj',all:false,core:false},
   {id:'bf-proj',all:true,core:false},
   {id:'i-proj',all:false,core:false},
