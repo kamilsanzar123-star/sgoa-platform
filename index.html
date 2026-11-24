@@ -687,6 +687,16 @@ tbody tr:hover td{background:var(--g50);}
     <div class="st rd"><div class="stl">Open CFRM Cases</div><div class="stv" id="mh-cfrm">0</div><div style="font-size:10.5px;color:var(--g500);margin-top:2px" id="mh-cfrm-sub">—</div></div>
   </div>
 
+  <div class="cd"><div class="cdh"><div class="cdt">Beneficiaries Reached &amp; Project Status</div><span style="font-size:10.5px;color:var(--g400)">Verified beneficiaries, all time</span></div>
+    <div class="cdb">
+      <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+        <div class="st gr"><div class="stl">Total Reached (Verified)</div><div class="stv" id="mh-benef-total">0</div></div>
+        <div class="st nv"><div class="stl">From Completed Projects</div><div class="stv" id="mh-benef-completed">0</div></div>
+        <div class="st og"><div class="stl">From Ongoing Projects</div><div class="stv" id="mh-benef-ongoing">0</div></div>
+      </div>
+      <div class="tw" id="mh-benef-byproj"></div>
+    </div></div>
+
   <div class="g2">
     <div class="cd"><div class="cdh"><div class="cdt">Indicator Performance Status</div></div>
       <div class="cdb" style="display:flex;align-items:center;gap:16px">
@@ -5712,6 +5722,7 @@ function renderMealHome(){
   }
 
   renderMealActivity(pf);
+  renderMealBeneficiaryReach(pf);
 
   // ---- Documents & SOPs preview (real DB.docs, top 5 most recent) ----
   var dp=$('meal-docs-preview');
@@ -5729,6 +5740,32 @@ function renderMealHome(){
   }
 }
 
+function renderMealBeneficiaryReach(pf){
+  var verified=DB.benef.filter(function(b){return b.status==='Verified';});
+  var scoped=pf==='all'?verified:verified.filter(function(b){return b.proj===pf;});
+  var fromCompleted=scoped.filter(function(b){return PROJ[b.proj]&&PROJ[b.proj].status==='Completed';}).length;
+  var fromOngoing=scoped.length-fromCompleted;
+  if($('mh-benef-total'))$('mh-benef-total').textContent=fmt(scoped.length);
+  if($('mh-benef-completed'))$('mh-benef-completed').textContent=fmt(fromCompleted);
+  if($('mh-benef-ongoing'))$('mh-benef-ongoing').textContent=fmt(fromOngoing);
+
+  var box=$('mh-benef-byproj');
+  if(box){
+    var projKeys=Object.keys(PROJ);
+    if(!projKeys.length){box.innerHTML='<div class="empty">No projects yet</div>';}
+    else{
+      var rows=projKeys.map(function(k){
+        return {k:k,status:PROJ[k].status||'Active',cnt:verified.filter(function(b){return b.proj===k;}).length};
+      }).sort(function(a,b){return b.cnt-a.cnt;});
+      var h='<table><thead><tr><th>Project</th><th>Status</th><th>Beneficiaries Reached (Verified)</th></tr></thead><tbody>';
+      rows.forEach(function(r){
+        h+='<tr><td>'+esc(r.k)+'</td><td><span class="bdg '+(r.status==='Completed'?'bG':'bB')+'">'+esc(r.status)+'</span></td><td>'+fmt(r.cnt)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      box.innerHTML=h;
+    }
+  }
+}
 function renderMealActivity(pf){
   var c=$('meal-activity');if(!c)return;
   var items=[];
